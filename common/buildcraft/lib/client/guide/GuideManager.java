@@ -53,6 +53,7 @@ import buildcraft.lib.client.guide.parts.contents.GuidePageContents;
 import buildcraft.lib.client.guide.parts.contents.IContentsNode;
 import buildcraft.lib.client.guide.parts.contents.PageLink;
 import buildcraft.lib.client.guide.parts.contents.PageLinkNormal;
+import buildcraft.lib.client.guide.parts.recipe.GuideCraftingRecipes;
 import buildcraft.lib.client.guide.ref.GuideGroupManager;
 import buildcraft.lib.gui.ISimpleDrawable;
 import buildcraft.lib.guide.GuideBook;
@@ -64,6 +65,7 @@ import buildcraft.lib.misc.ProfilerUtil;
 import buildcraft.lib.misc.data.ProfilerBC;
 import buildcraft.lib.misc.data.ProfilerBC.IProfilerSection;
 import buildcraft.lib.misc.search.ISuffixArray;
+import buildcraft.lib.misc.search.SimpleSuffixArray;
 import buildcraft.lib.misc.search.VanillaSuffixArray;
 
 public enum GuideManager implements IResourceManagerReloadListener {
@@ -72,6 +74,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
     public static final String DEFAULT_LANG = "en_us";
     public static final Map<String, IPageLoader> PAGE_LOADERS = new HashMap<>();
     public static final GuideContentsData BOOK_ALL_DATA = new GuideContentsData(null);
+    public static final boolean DEBUG = BCDebugging.shouldDebugLog("lib.guide.loader");
 
     private final List<PageEntry<?>> entries = new ArrayList<>();
 
@@ -80,7 +83,6 @@ public enum GuideManager implements IResourceManagerReloadListener {
      * For example a partial path might be "buildcraftcore:wrench.md" and the */
     private final Map<ResourceLocation, GuidePageFactory> pages = new HashMap<>();
     private final Map<ItemStack, GuidePageFactory> generatedPages = new HashMap<>();
-    public static final boolean DEBUG = BCDebugging.shouldDebugLog("lib.guide.loader");
 
     /** Internal use only! Use {@link #addChild(ResourceLocation, JsonTypeTags, PageLink)} instead! */
     public ISuffixArray<PageLink> quickSearcher;
@@ -155,6 +157,8 @@ public enum GuideManager implements IResourceManagerReloadListener {
             domains.put(book, new HashSet<>());
         }
 
+        prof.endStartSection("index_crafting");
+        GuideCraftingRecipes.INSTANCE.generateIndices();
         prof.endStartSection("add_pages");
 
         for (PageEntry<?> entry : manager.getAllEntries()) {
@@ -177,7 +181,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
         }
         pages.clear();
 
-        prof.endStartSection("load_default_lang");
+        prof.endStartSection("load_lang");
         Language currentLanguage = Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage();
         String langCode;
         if (currentLanguage == null) {
@@ -190,8 +194,6 @@ public enum GuideManager implements IResourceManagerReloadListener {
         // load the default ones
         loadLangInternal(resourceManager, DEFAULT_LANG, prof);
         // replace any existing with the new ones.
-
-        prof.endStartSection("load_real_lang");
 
         if (!DEFAULT_LANG.equals(langCode)) {
             loadLangInternal(resourceManager, langCode, prof);
@@ -213,7 +215,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
             + " not found) in " + time / 1000 + "ms.");
         BCLog.logger.info("[lib.guide] Performance information for guide loading:");
         ProfilerUtil.logProfilerResults(prof, "root", time * 1000);
-        BCLog.logger.info("[lib.guide] End of guide loading performance information.");
+        BCLog.logger.info("[lib.guide] End of guide loading performance information. (" + time / 1000 + "ms)");
     }
 
     private void loadLangInternal(IResourceManager resourceManager, String lang, Profiler prof) {
@@ -270,7 +272,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
         for (GuideBook book : GuideBookRegistry.INSTANCE.getAllEntries()) {
             genTypeMap(book);
         }
-        quickSearcher = new VanillaSuffixArray<>();
+        quickSearcher = false ? new VanillaSuffixArray<>() : new SimpleSuffixArray<>();
         pageLinksAdded.clear();
         prof.endStartSection("add_pages");
 
@@ -327,12 +329,12 @@ public enum GuideManager implements IResourceManagerReloadListener {
         };
         for (PageValueType<?> type : GuidePageRegistry.INSTANCE.types) {
             prof.startSection(type.getClass().getName().replace('.', '/'));
-            type.iterateAllDefault(adder);
+            type.iterateAllDefault(adder, prof);
             prof.endSection();
         }
 
         prof.endStartSection("generate_quick_search");
-        quickSearcher.generate();
+        quickSearcher.generate(prof);
 
         prof.endStartSection("sort");
         for (Map<TypeOrder, ContentsNode> map : contents.values()) {
@@ -384,7 +386,11 @@ public enum GuideManager implements IResourceManagerReloadListener {
                         throw new IllegalStateException("Unknown node type " + subNode.getClass());
                     }
                 }
-                nodePath[nodePath.length - 1].addChild(page);
+                if (nodePath.length == 0) {
+                    node.addChild(page);
+                } else {
+                    nodePath[nodePath.length - 1].addChild(page);
+                }
             }
         }
     }
@@ -449,6 +455,6 @@ public enum GuideManager implements IResourceManagerReloadListener {
         }
         node.resetVisibility();
 
-        return new ContentsNodeGui(gui, guidePageContents, node);
+        return new ContentsNodeGui(gui, node);
     }
 }
