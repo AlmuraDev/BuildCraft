@@ -224,11 +224,11 @@ compileJava {
     options.compilerArgs << "-encoding" << "UTF-8"
 }
 
-javadoc {
-    options.setUse(true)
-    options.addStringsOption("Xmaxerrs").setValue(["2"])
-    options.addStringsOption("Xmaxwarns").setValue(["2"])
-}
+//javadoc {
+//    options.setUse(true)
+//    options.addStringsOption("Xmaxerrs").setValue(["2"])
+//    options.addStringsOption("Xmaxwarns").setValue(["2"])
+//}
 
 // --------------------
 // extra jar section
@@ -282,17 +282,17 @@ task unzipSourceJar(type: Copy, dependsOn: sourceJar) {
 }
 
 // add api classes to javadoc
-javadoc {
-    source += sourceSets.api.allSource
-}
+//javadoc {
+//    source += sourceSets.api.allSource
+//}
 
 // add a javadoc jar
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    destinationDir = libsDir
-    appendix = "main"
-    classifier = 'javadoc'
-    from '$projectDir/build/docs/javadoc'
-}
+//task javadocJar(type: Jar, dependsOn: javadoc) {
+//    destinationDir = libsDir
+//    appendix = "main"
+//    classifier = 'javadoc'
+//    from '$projectDir/build/docs/javadoc'
+//}
 
 // because the normal output has been made to be obfuscated
 task deobfJar(type: Jar) {
@@ -419,7 +419,8 @@ jar {
 }
 
 // make sure all of these happen when we run build
-build.dependsOn mainSrcJar, apiJar, deobfJar, javadocJar
+build.dependsOn mainSrcJar, apiJar, deobfJar
+//, javadocJar
 
 // --------------------
 // maven section
@@ -440,7 +441,7 @@ dependencies {
 artifacts {
     // the default jar is already here by default
     archives sourceJar
-    archives javadocJar
+   // archives javadocJar
 
     // Modules
     archives apiJar

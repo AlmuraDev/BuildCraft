@@ -90,7 +90,7 @@ public class WorldSavedDataWireSystems extends WorldSavedData {
         if (element.type == WireSystem.WireElement.Type.EMITTER_SIDE) {
             if (!emittersCache.containsKey(element)) {
                 if (!world.isBlockLoaded(element.blockPos)) {
-                    BCLog.logger.warn("[transport.wire] Ghost loading " + element.blockPos + " to look for an emitter!");
+                    //BCLog.logger.warn("[transport.wire] Ghost loading " + element.blockPos + " to look for an emitter!");
                 }
                 TileEntity tile = world.getTileEntity(element.blockPos);
                 if (tile instanceof IPipeHolder) {
@@ -111,7 +111,7 @@ public class WorldSavedDataWireSystems extends WorldSavedData {
 
     public boolean isEmitterEmitting(WireSystem.WireElement element, EnumDyeColor color) {
         if (!world.isBlockLoaded(element.blockPos)) {
-            BCLog.logger.warn("[transport.wire] Ghost loading " + element.blockPos + " to look for an emitter!");
+            //BCLog.logger.warn("[transport.wire] Ghost loading " + element.blockPos + " to look for an emitter!");
         }
         TileEntity tile = world.getTileEntity(element.blockPos);
         if(tile instanceof IPipeHolder) {
