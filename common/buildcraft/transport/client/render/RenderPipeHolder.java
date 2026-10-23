@@ -9,6 +9,7 @@ package buildcraft.transport.client.render;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureMap;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.util.EnumFacing;
 
 import net.minecraftforge.client.model.animation.FastTESR;
@@ -28,23 +29,29 @@ public class RenderPipeHolder extends FastTESR<TilePipeHolder> {
     @Override
     public void renderTileEntityFast(TilePipeHolder pipe, double x, double y, double z, float partialTicks,
         int destroyStage, float partial, BufferBuilder buffer) {
-        bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+        EntityLivingBase viewer = (EntityLivingBase) Minecraft.getMinecraft().getRenderViewEntity();
+        if (viewer == null) {
+            viewer = Minecraft.getMinecraft().player;
+        }
+        if (pipe.getDistanceSq(viewer.posX, viewer.posY, viewer.posZ) <= 64) {
+            bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
 
-        Minecraft.getMinecraft().mcProfiler.startSection("bc");
-        Minecraft.getMinecraft().mcProfiler.startSection("pipe");
+            Minecraft.getMinecraft().mcProfiler.startSection("bc");
+            Minecraft.getMinecraft().mcProfiler.startSection("pipe");
 
-        Minecraft.getMinecraft().mcProfiler.startSection("wire");
-        PipeWireRenderer.renderWires(pipe, x, y, z, buffer);
+            Minecraft.getMinecraft().mcProfiler.startSection("wire");
+            PipeWireRenderer.renderWires(pipe, x, y, z, buffer);
 
-        Minecraft.getMinecraft().mcProfiler.endStartSection("pluggable");
-        renderPluggables(pipe, x, y, z, partialTicks, buffer);
+            Minecraft.getMinecraft().mcProfiler.endStartSection("pluggable");
+            renderPluggables(pipe, x, y, z, partialTicks, buffer);
 
-        Minecraft.getMinecraft().mcProfiler.endStartSection("contents");
-        renderContents(pipe, x, y, z, partialTicks, buffer);
+            Minecraft.getMinecraft().mcProfiler.endStartSection("contents");
+            renderContents(pipe, x, y, z, partialTicks, buffer);
 
-        Minecraft.getMinecraft().mcProfiler.endSection();
-        Minecraft.getMinecraft().mcProfiler.endSection();
-        Minecraft.getMinecraft().mcProfiler.endSection();
+            Minecraft.getMinecraft().mcProfiler.endSection();
+            Minecraft.getMinecraft().mcProfiler.endSection();
+            Minecraft.getMinecraft().mcProfiler.endSection();
+        }
     }
 
     private static void renderPluggables(TilePipeHolder pipe, double x, double y, double z, float partialTicks,

@@ -66,6 +66,14 @@ esac
 
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
 
+# BuildCraft builds with Java 8 (this Gradle can't run on newer Java): use JAVA8_HOME if set, otherwise the default
+# JDK 8 install on Windows, whatever JAVA_HOME points to. Only applies inside this script.
+if [ -n "$JAVA8_HOME" ] ; then
+    JAVA_HOME="$JAVA8_HOME"
+elif [ -x "/c/Program Files/Java/jdk1.8.0_361/bin/java.exe" ] ; then
+    JAVA_HOME="/c/Program Files/Java/jdk1.8.0_361"
+fi
+
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
     if [ -x "$JAVA_HOME/jre/sh/java" ] ; then

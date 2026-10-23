@@ -81,6 +81,12 @@ public class MessageUtil {
                 // No-one was watching this chunk.
                 return;
             }
+            if (!playerChunkMap.isSentToPlayers()) {
+                // Its players are waiting for the chunk itself, which brings the tile's full state: an update now would
+                // reach them before the tile exists and be dropped ("Dropped message ... (found null)"), as vanilla's
+                // sendPacket avoids by the same check
+                return;
+            }
             // Slightly ugly hack to iterate through all players watching the chunk
             playerChunkMap.hasPlayerMatchingInRange(0, player -> {
                 MessageManager.sendTo(message, player);

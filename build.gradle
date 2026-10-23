@@ -36,6 +36,14 @@ buildscript {
     }
 }
 
+// ForgeGradle 2.3 only works on Java 8. gradle.properties points org.gradle.java.home at the JDK 8 install; this stops
+// with a clear message if the build is started some other way (another JAVA_HOME, an IDE set to a newer Gradle JVM).
+if (!JavaVersion.current().isJava8()) {
+    throw new GradleException("BuildCraft must be built with Java 8, but Gradle is running on Java ${JavaVersion.current()}" +
+            " (${System.getProperty('java.home')}). Set org.gradle.java.home in gradle.properties, or the Gradle JVM in" +
+            " your IDE, to a JDK 8.")
+}
+
 apply plugin: "net.minecraftforge.gradle.forge" // adds the forge dependency
 apply plugin: 'maven' // for uploading to a maven repo
 apply plugin: 'maven-publish' // for uploading to a maven repo

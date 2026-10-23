@@ -7,6 +7,8 @@
 package buildcraft.lib.client.sprite;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -133,6 +135,23 @@ public abstract class AtlasSpriteSwappable extends TextureAtlasSprite {
     @Override
     public void generateMipmaps(int level) {
         if (current != null) {
+            // OptiFine regenerates every sprite's mipmaps after stitching, sometimes for more levels than current's frames
+            // were loaded or last mipmapped with, and vanilla then reads past the end of their arrays
+            // (ArrayIndexOutOfBoundsException in TextureUtil.generateMipmapData). Pad each frame to the requested level
+            // count: vanilla builds the null levels from the ones above.
+            List<int[][]> frames = new ArrayList<>(current.getFrameCount());
+            boolean padded = false;
+            for (int i = 0; i < current.getFrameCount(); i++) {
+                int[][] frame = current.getFrameTextureData(i);
+                if (frame != null && frame.length < level + 1) {
+                    frame = Arrays.copyOf(frame, level + 1);
+                    padded = true;
+                }
+                frames.add(frame);
+            }
+            if (padded) {
+                current.setFramesTextureData(frames);
+            }
             current.generateMipmaps(level);
         }
     }
