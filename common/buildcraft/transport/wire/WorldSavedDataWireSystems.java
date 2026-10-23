@@ -29,7 +29,6 @@ import net.minecraft.world.storage.WorldSavedData;
 
 import net.minecraftforge.common.util.Constants;
 
-import buildcraft.api.core.BCLog;
 import buildcraft.api.transport.EnumWirePart;
 import buildcraft.api.transport.IWireEmitter;
 import buildcraft.api.transport.pipe.IPipeHolder;
@@ -90,7 +89,8 @@ public class WorldSavedDataWireSystems extends WorldSavedData {
         if (element.type == WireSystem.WireElement.Type.EMITTER_SIDE) {
             if (!emittersCache.containsKey(element)) {
                 if (!world.isBlockLoaded(element.blockPos)) {
-                    BCLog.logger.warn("[transport.wire] Ghost loading " + element.blockPos + " to look for an emitter!");
+                    // Almura: don't load the chunk to find it (it used to, logging "Ghost loading ..."); see isEmitterEmitting
+                    return null;
                 }
                 TileEntity tile = world.getTileEntity(element.blockPos);
                 if (tile instanceof IPipeHolder) {
@@ -111,7 +111,11 @@ public class WorldSavedDataWireSystems extends WorldSavedData {
 
     public boolean isEmitterEmitting(WireSystem.WireElement element, EnumDyeColor color) {
         if (!world.isBlockLoaded(element.blockPos)) {
-            BCLog.logger.warn("[transport.wire] Ghost loading " + element.blockPos + " to look for an emitter!");
+            // Almura: don't load the emitter's chunk just to ask (it used to, logging "Ghost loading ..."). A gate in an unloaded chunk
+            // can't change what it emits, so its last known state holds; one never seen counts as off until its chunk loads and the gate
+            // ticks, which marks the gates changed if it emits anything.
+            IWireEmitter cached = emittersCache.get(element);
+            return cached != null && cached.isEmitting(color);
         }
         TileEntity tile = world.getTileEntity(element.blockPos);
         if(tile instanceof IPipeHolder) {
@@ -131,6 +135,9 @@ public class WorldSavedDataWireSystems extends WorldSavedData {
                         return wireSystems.put(wireSystem, newPowered) != newPowered;
                     })
                     .forEach(changedSystems::add);
+            // Almura: never cleared before, so after the first gate change every wire system was updated every tick, checking (and so
+            // loading) every emitter's chunk. Gates set it again whenever what they emit changes.
+            gatesChanged = false;
         }
         world.getPlayers(EntityPlayerMP.class, Predicates.alwaysTrue()).forEach(player -> {
             Map<Integer, WireSystem> changedWires = this.wireSystems.keySet().stream()
