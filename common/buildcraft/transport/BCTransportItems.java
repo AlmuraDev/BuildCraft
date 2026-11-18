@@ -26,37 +26,47 @@ public class BCTransportItems {
     public static ItemPipeHolder pipeItemWood;
     public static ItemPipeHolder pipeFluidWood;
     public static ItemPipeHolder pipePowerWood;
+    public static ItemPipeHolder pipeRfWood;
 
     public static ItemPipeHolder pipeItemStone;
     public static ItemPipeHolder pipeFluidStone;
     public static ItemPipeHolder pipePowerStone;
+    public static ItemPipeHolder pipeRfStone;
 
     public static ItemPipeHolder pipeItemCobble;
     public static ItemPipeHolder pipeFluidCobble;
     public static ItemPipeHolder pipePowerCobble;
+    public static ItemPipeHolder pipeRfCobble;
 
     public static ItemPipeHolder pipeItemQuartz;
     public static ItemPipeHolder pipeFluidQuartz;
     public static ItemPipeHolder pipePowerQuartz;
+    public static ItemPipeHolder pipeRfQuartz;
 
     public static ItemPipeHolder pipeItemGold;
     public static ItemPipeHolder pipeFluidGold;
     public static ItemPipeHolder pipePowerGold;
+    public static ItemPipeHolder pipeRfGold;
 
     public static ItemPipeHolder pipeItemSandstone;
     public static ItemPipeHolder pipeFluidSandstone;
     public static ItemPipeHolder pipePowerSandstone;
+    public static ItemPipeHolder pipeRfSandstone;
 
     public static ItemPipeHolder pipeItemIron;
     public static ItemPipeHolder pipeFluidIron;
-    // public static ItemPipeHolder pipePowerIron;
+    public static ItemPipeHolder pipePowerIron;
+    public static ItemPipeHolder pipeRfIron;
 
     public static ItemPipeHolder pipeItemDiamond;
     public static ItemPipeHolder pipeFluidDiamond;
-    // public static ItemPipeHolder pipePowerDiamond;
+    public static ItemPipeHolder pipePowerDiamond;
+    public static ItemPipeHolder pipeRfDiamond;
 
     public static ItemPipeHolder pipeItemDiaWood;
     public static ItemPipeHolder pipeFluidDiaWood;
+    public static ItemPipeHolder pipePowerDiaWood;
+    public static ItemPipeHolder pipeRfDiaWood;
 
     public static ItemPipeHolder pipeItemClay;
     public static ItemPipeHolder pipeFluidClay;
@@ -117,9 +127,23 @@ public class BCTransportItems {
         pipePowerCobble = makePipeItem(BCTransportPipes.cobblePower);
         pipePowerStone = makePipeItem(BCTransportPipes.stonePower);
         pipePowerQuartz = makePipeItem(BCTransportPipes.quartzPower);
+        pipePowerIron = makePipeItem(BCTransportPipes.ironPower);
         pipePowerGold = makePipeItem(BCTransportPipes.goldPower);
-        // pipePowerIron = makePipeItem(BCTransportPipes.ironPower);
         pipePowerSandstone = makePipeItem(BCTransportPipes.sandstonePower);
+        pipePowerDiamond = makePipeItem(BCTransportPipes.diamondPower);
+        pipePowerDiaWood = makePipeItem(BCTransportPipes.diaWoodPower);
+
+        if (!BCTransportConfig.disableRfPipe) {
+            pipeRfWood = makePipeItem(BCTransportPipes.woodRf);
+            pipeRfCobble = makePipeItem(BCTransportPipes.cobbleRf);
+            pipeRfStone = makePipeItem(BCTransportPipes.stoneRf);
+            pipeRfQuartz = makePipeItem(BCTransportPipes.quartzRf);
+            pipeRfIron = makePipeItem(BCTransportPipes.ironRf);
+            pipeRfGold = makePipeItem(BCTransportPipes.goldRf);
+            pipeRfSandstone = makePipeItem(BCTransportPipes.sandstoneRf);
+            pipeRfDiamond = makePipeItem(BCTransportPipes.diamondRf);
+            pipeRfDiaWood = makePipeItem(BCTransportPipes.diaWoodRf);
+        }
 
         plugBlocker = HELPER.addItem(new ItemPluggableSimple("item.plug.blocker", BCTransportPlugs.blocker));
         plugPowerAdaptor = HELPER.addItem(new ItemPluggableSimple("item.plug.power_adaptor",

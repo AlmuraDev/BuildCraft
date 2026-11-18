@@ -7,6 +7,7 @@
 package buildcraft.transport.statements;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import javax.annotation.Nonnull;
 
@@ -22,10 +23,13 @@ import buildcraft.api.statements.IActionProvider;
 import buildcraft.api.statements.IStatementContainer;
 import buildcraft.api.transport.IWireEmitter;
 import buildcraft.api.transport.pipe.IPipeHolder;
+import buildcraft.api.transport.pipe.PipeDefinition;
 import buildcraft.api.transport.pipe.PipeEventStatement;
 
 import buildcraft.lib.misc.ColourUtil;
 
+import buildcraft.transport.BCTransportConfig;
+import buildcraft.transport.BCTransportPipes;
 import buildcraft.transport.BCTransportStatements;
 
 public enum ActionProviderPipes implements IActionProvider {
@@ -45,12 +49,33 @@ public enum ActionProviderPipes implements IActionProvider {
                     }
                 }
             }
+
+            PipeDefinition def = holder.getPipe().getDefinition();
+
+            if (def == BCTransportPipes.ironPower) {
+                Collections.addAll(actions, BCTransportStatements.ACTION_IRON_POWER_LIMIT);
+            }
+
+            if (def == BCTransportPipes.diamondPower) {
+                Collections.addAll(actions, BCTransportStatements.ACTION_DIAMOND_POWER_LIMIT);
+            }
+
+            if (!BCTransportConfig.disableRfPipe) {
+                if (def == BCTransportPipes.ironRf) {
+                    Collections.addAll(actions, BCTransportStatements.ACTION_IRON_RF_LIMIT);
+                }
+
+                if (def == BCTransportPipes.diamondRf) {
+                    Collections.addAll(actions, BCTransportStatements.ACTION_DIAMOND_RF_LIMIT);
+                }
+            }
         }
     }
 
     @Override
-    public void addInternalSidedActions(Collection<IActionInternalSided> actions, IStatementContainer container,
-        @Nonnull EnumFacing side) {
+    public void addInternalSidedActions(
+        Collection<IActionInternalSided> actions, IStatementContainer container, @Nonnull EnumFacing side
+    ) {
         if (container instanceof IGate) {
             IGate gate = (IGate) container;
             IPipeHolder holder = gate.getPipeHolder();

@@ -17,6 +17,9 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumFacing.Axis;
 import net.minecraft.util.text.TextFormatting;
 
+import buildcraft.api.mj.IMjToRfStatus;
+import buildcraft.api.mj.MjRfConversion;
+
 import buildcraft.lib.chunkload.IChunkLoadingTile;
 import buildcraft.lib.chunkload.IChunkLoadingTile.LoadType;
 import buildcraft.lib.client.sprite.AtlasSpriteSwappable;
@@ -26,7 +29,7 @@ import buildcraft.lib.misc.LocaleUtil;
 
 /** Configuration file for lib. In order to keep lib as close to being just a library mod as possible, these are not set
  * by a config file, but instead by BC Core. Feel free to set them yourself, from your own configs, if you do not depend
- * on BC COre itself, and it might not be loaded in the mod environment. */
+ * on BC Core itself, and it might not be loaded in the mod environment. */
 public class BCLibConfig {
 
     public static File guiConfigFile = null;
@@ -84,6 +87,12 @@ public class BCLibConfig {
 
     /** The maximum number of items that the guide book will index. */
     public static int guideItemSearchLimit = 10_000;
+
+    /** MJ to RF conversion. Requires {@link #powerMode} to be either {@link PowerMode#MJ_AUTOCONVERT_RF} or
+     * {@link PowerMode#DISPLAY_RF} to be used. */
+    public static MjRfConversion mjRfConversion = MjRfConversion.createDefault();
+
+    public static PowerMode powerMode = PowerMode.MJ_ONLY;
 
     public static final List<Runnable> configChangeListeners = new ArrayList<>();
 
@@ -183,6 +192,35 @@ public class BCLibConfig {
                 default:
                     throw new IllegalStateException("Unknown ChunkLoaderLevel " + this);
             }
+        }
+    }
+
+    public enum PowerMode {
+        /** MJ &lt;-&gt; RF conversion disabled, all machines require MJ exclusively to operate. */
+        MJ_ONLY(false),
+        /** MJ &lt;-&gt; RF conversion enabled, machines accept both MJ and RF. */
+        MJ_AUTOCONVERT_RF(true),
+        /** MJ &lt;-&gt; RF conversion enabled, machines accept both MJ and RF. Additionally machines will display power
+         * amounts in RF rather than MJ. */
+        DISPLAY_RF(true);
+
+        final boolean autoconvert;
+
+        private PowerMode(boolean autoconvert) {
+            this.autoconvert = autoconvert;
+        }
+    }
+
+    public static final class MjToRfStatus implements IMjToRfStatus {
+
+        @Override
+        public MjRfConversion getConversion() {
+            return BCLibConfig.mjRfConversion;
+        }
+
+        @Override
+        public boolean isAutoconvertEnabled() {
+            return powerMode.autoconvert;
         }
     }
 }

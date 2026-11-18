@@ -10,7 +10,9 @@ import net.minecraft.util.math.BlockPos;
 public enum BCFactoryGuis {
     AUTO_WORKBENCH_ITEMS,
     AUTO_WORKBENCH_FLUIDS,
-    CHUTE;
+    CHUTE,
+    TANK,
+    DISTILLER;
 
     public void openGUI(EntityPlayer player) {
         player.openGui(BCFactory.INSTANCE, ordinal(), player.getEntityWorld(), 0, 0, 0);

@@ -25,6 +25,7 @@ import buildcraft.api.core.BCLog;
 import buildcraft.api.mj.MjAPI;
 
 import buildcraft.lib.BCLibConfig;
+import buildcraft.lib.BCLibConfig.PowerMode;
 import buildcraft.lib.BCLibConfig.TimeGap;
 
 /** The central class for localizing objects. */
@@ -34,10 +35,12 @@ public class LocaleUtil {
     private static final Set<String> failedStrings = new HashSet<>();
 
     private static final NumberFormat FORMAT_FLUID = NumberFormat.getNumberInstance();
+    private static final NumberFormat FORMAT_RF = NumberFormat.getIntegerInstance();
 
     private static String localeKeyFluidStatic, localeKeyFluidFlow;
     private static String localeKeyFluidStaticCap, localeKeyFluidStaticEmpty, localeKeyFluidStaticFull;
     private static String localeKeyMjStatic, localeKeyMjFlow;
+    private static String localeKeyRfStatic, localeKeyRfFlow;
 
     static {
         BCLibConfig.configChangeListeners.add(LocaleUtil::onConfigChanged);
@@ -58,6 +61,8 @@ public class LocaleUtil {
         localeKeyFluidStaticFull = "buildcraft.fluid.full." + (bucketFlow ? "bucket." : "milli.") + longName;
         localeKeyMjStatic = "buildcraft.mj.static." + longName;
         localeKeyMjFlow = "buildcraft.mj.flow." + timeGap + longName;
+        localeKeyRfStatic = "buildcraft.rf.static." + longName;
+        localeKeyRfFlow = "buildcraft.rf.flow." + timeGap + longName;
     }
 
     /** Localizes the give key to the current locale.
@@ -90,7 +95,7 @@ public class LocaleUtil {
             return key + " " + Arrays.toString(args);
         }
         try {
-            return String.format(localized, args);
+            return StringUtilBC.formatSafe(localized, args);
         } catch (IllegalFormatException ife) {
             return "Bad Format: " + ife.getMessage();
         }
@@ -165,19 +170,38 @@ public class LocaleUtil {
     }
 
     public static String localizeMj(long mj) {
+        if (BCLibConfig.powerMode == PowerMode.DISPLAY_RF) {
+            return localizeRf((int) (mj / MjAPI.getRfConversion().mjPerRf));
+        }
         return localize(localeKeyMjStatic, MjAPI.formatMj(mj));
     }
 
     public static String localizeMjFlow(long mj) {
+        if (BCLibConfig.powerMode == PowerMode.DISPLAY_RF) {
+            return localizeRfFlow((int) (mj / MjAPI.getRfConversion().mjPerRf));
+        }
         mj = BCLibConfig.displayTimeGap.convertTicksToGap(mj);
         return localize(localeKeyMjFlow, MjAPI.formatMj(mj));
+    }
+
+    public static String localizeRf(int rf) {
+        return localize(localeKeyRfStatic, formatRf(rf));
+    }
+
+    public static String localizeRfFlow(int rf) {
+        rf = BCLibConfig.displayTimeGap.convertTicksToGap(rf);
+        return localize(localeKeyRfFlow, formatRf(rf));
+    }
+
+    public static String formatRf(int rf) {
+        return FORMAT_RF.format(rf);
     }
 
     public static String localizeHeat(double heat) {
         // if (BCLibConfig.useLongLocalizedName) {
         // return localize("buildcraft.heat.long", heat);
         // } else {
-        return String.format("%.2f \u00B0C", heat);
+        return StringUtilBC.formatSafe("%.2f \u00B0C", heat);
         // }
     }
 }

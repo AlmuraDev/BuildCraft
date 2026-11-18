@@ -22,6 +22,8 @@ import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
 import buildcraft.api.core.BCLog;
 
+import buildcraft.lib.BCLibConfig;
+import buildcraft.lib.BCLibConfig.PowerMode;
 import buildcraft.lib.config.EnumRestartRequirement;
 import buildcraft.lib.misc.ConfigUtil;
 
@@ -36,6 +38,9 @@ public class BCEnergyConfig {
     public static double oilWellGenerationRate;
     public static boolean enableOilSpouts;
     public static boolean enableOilBurn;
+    public static boolean oilIsSticky;
+    public static boolean enableRfEngine;
+    public static boolean enableMjDynamo;
 
     public static int smallSpoutMinHeight;
     public static int smallSpoutMaxHeight;
@@ -63,6 +68,9 @@ public class BCEnergyConfig {
     private static Property propOilWellGenerationRate;
     private static Property propEnableOilSpouts;
     private static Property propEnableOilBurn;
+    private static Property propOilIsSticky;
+    private static Property propEnableRfEngine;
+    private static Property propEnableMjDynamo;
 
     private static Property propSmallSpoutMinHeight;
     private static Property propSmallSpoutMaxHeight;
@@ -93,6 +101,9 @@ public class BCEnergyConfig {
         propEnableOilGeneration = BCCoreConfig.config.get("worldgen.oil", "enable", true,
             "Should any oil sprouts or lakes be generated at all?");
         propEnableOilBurn = BCCoreConfig.config.get("worldgen.oil", "can_burn", true, "Can oil blocks burn?");
+        propOilIsSticky = BCCoreConfig.config.get("general","oilIsDense", false, "Should oil be dense and drag entities down?");
+        propEnableRfEngine = BCCoreConfig.config.get("general","enableRfEngine", false, "Enable the RF to MJ engine?");
+        propEnableMjDynamo = BCCoreConfig.config.get("general","enableMjDynamo", false, "Enable the MJ to RF dynamo / engine / generator?");
 
         propOilWellGenerationRate =
             BCCoreConfig.config.get("worldgen.oil", "generationRate", 1.0, "The rate of occurrence of oil wells.");
@@ -122,6 +133,8 @@ public class BCEnergyConfig {
         game.setTo(propEnableOilGeneration);
         game.setTo(propOilWellGenerationRate);
         game.setTo(propEnableOilBurn);
+        game.setTo(propEnableRfEngine);
+        game.setTo(propEnableMjDynamo);
         game.setTo(propSmallOilGenProb);
         game.setTo(propMediumOilGenProb);
         game.setTo(propLargeOilGenProb);
@@ -223,6 +236,9 @@ public class BCEnergyConfig {
                 oilWellGenerationRate = propOilWellGenerationRate.getDouble();
                 enableOilSpouts = propEnableOilSpouts.getBoolean();
                 enableOilBurn = propEnableOilBurn.getBoolean();
+                oilIsSticky = propOilIsSticky.getBoolean();
+                enableRfEngine = propEnableRfEngine.getBoolean();
+                enableMjDynamo = propEnableMjDynamo.getBoolean();
 
                 smallSpoutMinHeight = propSmallSpoutMinHeight.getInt();
                 smallSpoutMaxHeight = propSmallSpoutMaxHeight.getInt();

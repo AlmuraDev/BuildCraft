@@ -20,6 +20,7 @@ import buildcraft.api.transport.IWireManager;
 import buildcraft.lib.client.sprite.SpriteHolderRegistry.SpriteHolder;
 import buildcraft.lib.misc.ColourUtil;
 import buildcraft.lib.misc.LocaleUtil;
+import buildcraft.lib.misc.StringUtilBC;
 
 import buildcraft.core.statements.BCStatement;
 import buildcraft.transport.BCTransportSprites;
@@ -53,8 +54,7 @@ public class TriggerPipeSignal extends BCStatement implements ITriggerInternal {
 
     @Override
     public String getDescription() {
-        return String.format(LocaleUtil.localize("gate.trigger.pipe.wire." + (active ? "active" : "inactive")),
-            ColourUtil.getTextFullTooltip(colour));
+        return StringUtilBC.formatSafe(LocaleUtil.localize("gate.trigger.pipe.wire." + (active ? "active" : "inactive")), ColourUtil.getTextFullTooltip(colour));
     }
 
     @Override
@@ -66,11 +66,7 @@ public class TriggerPipeSignal extends BCStatement implements ITriggerInternal {
         IGate gate = (IGate) container;
         IWireManager wires = gate.getPipeHolder().getWireManager();
 
-        if (active) {
-            if (!wires.isAnyPowered(colour)) {
-                return false;
-            }
-        } else if (wires.isAnyPowered(colour)) {
+        if (this.active != wires.isAnyPowered(this.colour)) {
             return false;
         }
 
@@ -80,11 +76,7 @@ public class TriggerPipeSignal extends BCStatement implements ITriggerInternal {
                 if (signal.colour == null) {
                     continue;
                 }
-                if (signal.active) {
-                    if (!wires.isAnyPowered(signal.colour)) {
-                        return false;
-                    }
-                } else if (wires.isAnyPowered(signal.colour)) {
+                if (signal.active != wires.isAnyPowered(signal.colour)) {
                     return false;
                 }
             }
