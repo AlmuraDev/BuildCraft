@@ -28,19 +28,10 @@ public enum StripesHandlerPlaceBlock implements IStripesHandlerItem {
         if (!(stack.getItem() instanceof BlockItem)) {
             return false;
         }
-        if (!world.isEmptyBlock(pos.offset(direction))) {
+        if (!world.isEmptyBlock(pos.relative(direction))) {
             return false;
         }
-        stack.getItem().onItemUse(
-            player,
-            world,
-            pos.offset(direction),
-            InteractionHand.MAIN_HAND,
-            direction,
-            0.5f,
-            0.5f,
-            0.5f
-        );
+        StripesHandlerHoe.useOn(player, stack, pos.relative(direction), direction, 0.5, 0.5, 0.5);
         return true;
     }
 }

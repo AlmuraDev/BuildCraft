@@ -1,0 +1,19 @@
+{
+  "display": {
+    "icon": {
+      "id": "buildcraftsilicon:plug_gate"
+    },
+    "title": {
+      "translate": "advancements.buildcrafttransport.extended_logic.title"
+    },
+    "description": {
+      "translate": "advancements.buildcrafttransport.extended_logic.description"
+    }
+  },
+  "parent": "buildcrafttransport:pipe_logic",
+  "criteria": {
+    "code_trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

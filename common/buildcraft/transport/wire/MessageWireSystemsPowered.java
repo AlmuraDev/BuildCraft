@@ -6,6 +6,7 @@
 
 package buildcraft.transport.wire;
 
+import buildcraft.lib.BCLibProxy;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,7 +14,6 @@ import io.netty.buffer.ByteBuf;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 import buildcraft.lib.net.IMessage;
@@ -69,7 +69,7 @@ public class MessageWireSystemsPowered implements IMessage {
                     WireSystem.WireElement element = elementPowered.getLeft();
                     boolean powered = elementPowered.getRight();
                     if (element.type == WireSystem.WireElement.Type.WIRE_PART) {
-                        BlockEntity tile = Minecraft.getMinecraft().world.getBlockEntity(element.blockPos);
+                        BlockEntity tile = BCLibProxy.getProxy().getClientWorld().getBlockEntity(element.blockPos);
                         if (tile instanceof IPipeHolder) {
                             IPipeHolder holder = (IPipeHolder) tile;
                             IWireManager iWireManager = holder.getWireManager();

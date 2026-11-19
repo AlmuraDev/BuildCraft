@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_sandstone_power",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_sandstone_power",
+      "components": {},
+      "strict": true
+    }
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_sandstone_item"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_sandstone_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_sandstone_power"
+    }
+  ]
+}

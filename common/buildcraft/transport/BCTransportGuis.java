@@ -28,7 +28,8 @@ public enum BCTransportGuis {
         openGui(player, pos.getX(), pos.getY(), pos.getZ());
     }
 
+    // TODO(26.3 GUIs batch): open the menus once the containers have menu types.
     public void openGui(Player player, int x, int y, int z) {
-        player.openGui(BCTransport.INSTANCE, ordinal(), player.getEntityWorld(), x, y, z);
+        buildcraft.api.core.BCLog.logger.debug("[transport.gui] " + name() + " isn't ported to 26.3 yet");
     }
 }

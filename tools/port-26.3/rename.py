@@ -205,6 +205,13 @@ CLASSES = {
 # Unambiguous method/field renames, applied everywhere: (regex, replacement). Only names that don't exist with another
 # meaning in 26.3; anything unsure is left for the compiler.
 METHODS = [
+    # Batch 2 (transport) additions
+    (r'\b(face|side|facing|dir|direction|f|emitterSide|from|to|d)\.getIndex\(\)', r'\1.get3DDataValue()'),
+    (r'(Direction\.\w+)\.getIndex\(\)', r'\1.get3DDataValue()'),
+    (r'\bDirection\.byIndex\(', 'Direction.from3DDataValue('),
+    (r'\bDyeColor\.byMetadata\(', 'DyeColor.byId('),
+    (r'\b(colour|color|c|col|dye)\.getMetadata\(\)', r'\1.getId()'),
+    (r'\bMinecraft\.getMinecraft\(\)', 'Minecraft.getInstance()'),
     (r'@SideOnly\(\s*Side\.CLIENT\s*\)', '@OnlyIn(Dist.CLIENT)'),
     (r'@SideOnly\(\s*Side\.SERVER\s*\)', '@OnlyIn(Dist.DEDICATED_SERVER)'),
     (r'@OnlyIn\(\s*LogicalSide\.CLIENT\s*\)', '@OnlyIn(Dist.CLIENT)'),

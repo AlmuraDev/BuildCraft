@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_diamond_fluid",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_diamond_item",
+      "components": {
+        "buildcrafttransport:colour": "cyan"
+      }
+    },
+    "buildcrafttransport:waterproof"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_diamond_fluid",
+    "components": {
+      "buildcrafttransport:colour": "cyan"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_diamond_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_diamond_fluid"
+    }
+  ]
+}

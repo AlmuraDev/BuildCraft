@@ -6,6 +6,9 @@
 
 package buildcraft.transport.stripes;
 
+import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.common.IShearable;
+import net.minecraft.world.item.ShearsItem;
 import java.util.List;
 
 import net.minecraft.world.level.block.Block;
@@ -13,13 +16,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.item.ItemShears;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
-import net.minecraftforge.common.IShearable;
 
 import buildcraft.api.transport.IStripesActivator;
 import buildcraft.api.transport.IStripesHandlerItem;
@@ -34,22 +35,23 @@ public enum StripesHandlerShears implements IStripesHandlerItem {
                           ItemStack stack,
                           Player player,
                           IStripesActivator activator) {
-        if (!(stack.getItem() instanceof ItemShears)) {
+        if (!(stack.getItem() instanceof ShearsItem)) {
             return false;
         }
 
-        pos = pos.offset(direction);
+        pos = pos.relative(direction);
         BlockState state = world.getBlockState(pos);
         Block block = state.getBlock();
 
         if (block instanceof IShearable) {
             IShearable shearableBlock = (IShearable) block;
-            if (shearableBlock.isShearable(stack, world, pos)) {
-                List<ItemStack> drops = shearableBlock.onSheared(stack, world, pos, 0);
-                if (stack.attemptDamageItem(1, player.getRNG(), player instanceof ServerPlayer ? (ServerPlayer) player : null)) {
-                    stack.shrink(1);
+            if (shearableBlock.isShearable(player, stack, world, pos)) {
+                List<ItemStack> drops = shearableBlock.onSheared(player, stack, world, pos);
+                if (world instanceof ServerLevel server) {
+                    stack.hurtAndBreak(1, server, player instanceof ServerPlayer ? (ServerPlayer) player : null,
+                        broken -> {});
                 }
-                world.setBlock(pos, Blocks.AIR.defaultBlockState(), 11); // Might become obsolete in 1.12+
+                world.setBlock(pos, Blocks.AIR.defaultBlockState(), 11);
                 for (ItemStack dropStack : drops) {
                     activator.sendItem(dropStack, direction);
                 }

@@ -120,8 +120,8 @@ public class PipeBehaviourLimiter extends PipeBehaviour {
                 limit = (int) ((transferInfo.transferPerTick >> limitShift) / MjAPI.MJ);
             }
             String key = "chat.pipe." + (isRf ? "rf" : "power") + ".iron.mode";
-            TextComponentTranslation chat = Component.translatable(key, limit);
-            player.sendStatusMessage(chat, true);
+            net.minecraft.network.chat.MutableComponent chat = Component.translatable(key, limit);
+            player.sendOverlayMessage(chat);
 
             requestReconfigure();
         }

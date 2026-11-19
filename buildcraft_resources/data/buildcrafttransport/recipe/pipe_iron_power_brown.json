@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_iron_power",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_iron_item",
+      "components": {
+        "buildcrafttransport:colour": "brown"
+      }
+    },
+    "#c:dusts/redstone"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_iron_power",
+    "components": {
+      "buildcrafttransport:colour": "brown"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_iron_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_iron_power"
+    }
+  ]
+}

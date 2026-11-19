@@ -115,23 +115,23 @@ public class PipeBehaviourObsidian extends PipeBehaviour implements IMjRedstoneR
         switch (openFace) {
             default:
             case WEST:
-                return bb.offset(-distance, 0, 0).grow(0.5, distance, distance);
+                return bb.move(-distance, 0, 0).inflate(0.5, distance, distance);
             case EAST:
-                return bb.offset(distance, 0, 0).grow(0.5, distance, distance);
+                return bb.move(distance, 0, 0).inflate(0.5, distance, distance);
             case DOWN:
-                return bb.offset(0, -distance, 0).grow(distance, 0.5, distance);
+                return bb.move(0, -distance, 0).inflate(distance, 0.5, distance);
             case UP:
-                return bb.offset(0, distance, 0).grow(distance, 0.5, distance);
+                return bb.move(0, distance, 0).inflate(distance, 0.5, distance);
             case NORTH:
-                return bb.offset(0, 0, -distance).grow(distance, distance, 0.5);
+                return bb.move(0, 0, -distance).inflate(distance, distance, 0.5);
             case SOUTH:
-                return bb.offset(0, 0, distance).grow(distance, distance, 0.5);
+                return bb.move(0, 0, distance).inflate(distance, distance, 0.5);
         }
     }
 
     /** @return The left over power */
     protected long trySuckEntity(Entity entity, Direction faceFrom, long power, boolean simulate) {
-        if (entity.isDead || entity instanceof LivingEntity) {
+        if (entity.isRemoved() || entity instanceof LivingEntity) {
             return power;
         }
 
@@ -160,7 +160,7 @@ public class PipeBehaviourObsidian extends PipeBehaviour implements IMjRedstoneR
                 max = Integer.MAX_VALUE;
                 powerReqPerItem = 0;
             } else {
-                double distance = Math.sqrt(entity.getDistanceSqToCenter(pipe.getHolder().getPipePos()));
+                double distance = Math.sqrt(entity.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pipe.getHolder().getPipePos())));
                 powerReqPerItem = (long) (Math.max(1, distance) * POWER_PER_METRE + POWER_PER_ITEM);
                 max = (int) (power / powerReqPerItem);
             }

@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_clay_item",
+  "key": {
+    "l": "minecraft:clay",
+    "g": "minecraft:cyan_stained_glass",
+    "r": "minecraft:clay"
+  },
+  "pattern": [
+    "lgr"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_clay_item",
+    "count": 8,
+    "components": {
+      "buildcrafttransport:colour": "cyan"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_clay_item"
+    }
+  ]
+}

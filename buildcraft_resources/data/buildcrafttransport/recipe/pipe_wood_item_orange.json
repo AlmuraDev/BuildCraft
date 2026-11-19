@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_wood_item",
+  "key": {
+    "l": "#minecraft:planks",
+    "g": "minecraft:orange_stained_glass",
+    "r": "#minecraft:planks"
+  },
+  "pattern": [
+    "lgr"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_wood_item",
+    "count": 8,
+    "components": {
+      "buildcrafttransport:colour": "orange"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_wood_item"
+    }
+  ]
+}

@@ -127,12 +127,12 @@ public class PipeFlowPower extends PipeFlow implements IFlowPower, IDebuggable {
     @Override
     public boolean canConnect(Direction face, BlockEntity oTile) {
         if (isReceiver) {
-            IMjPassiveProvider provider = oTile.getCapability(MjAPI.CAP_PASSIVE_PROVIDER, face.getOpposite());
+            IMjPassiveProvider provider = CapUtil.getCapability(oTile, MjAPI.CAP_PASSIVE_PROVIDER, face.getOpposite());
             if (provider != null) {
                 return true;
             }
         }
-        IMjConnector receiver = oTile.getCapability(MjAPI.CAP_CONNECTOR, face.getOpposite());
+        IMjConnector receiver = CapUtil.getCapability(oTile, MjAPI.CAP_CONNECTOR, face.getOpposite());
         return receiver != null && receiver.canConnect(sections.get(face));
     }
 
@@ -174,7 +174,7 @@ public class PipeFlowPower extends PipeFlow implements IFlowPower, IDebuggable {
         if (tile == null) {
             return 0;
         }
-        IMjPassiveProvider receiver = tile.getCapability(MjAPI.CAP_PASSIVE_PROVIDER, from.getOpposite());
+        IMjPassiveProvider receiver = CapUtil.getCapability(tile, MjAPI.CAP_PASSIVE_PROVIDER, from.getOpposite());
         if (receiver == null) {
             return 0;
         }
@@ -198,9 +198,9 @@ public class PipeFlowPower extends PipeFlow implements IFlowPower, IDebuggable {
         if (facing == null) {
             return null;
         } else if (capability == MjAPI.CAP_RECEIVER) {
-            return isReceiver ? MjAPI.CAP_RECEIVER.cast(sections.get(facing)) : null;
+            return isReceiver ? (T) sections.get(facing) : null;
         } else if (capability == MjAPI.CAP_CONNECTOR) {
-            return MjAPI.CAP_CONNECTOR.cast(sections.get(facing));
+            return (T) (sections.get(facing));
         } else {
             return null;
         }

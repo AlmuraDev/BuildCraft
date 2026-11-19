@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_stripes_item",
+  "key": {
+    "l": "#c:gears/gold",
+    "g": "#c:glass_blocks/colorless",
+    "r": "#c:gears/gold"
+  },
+  "pattern": [
+    "lgr"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_stripes_item",
+    "count": 8
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_stripes_item"
+    }
+  ]
+}

@@ -6,6 +6,7 @@
 
 package buildcraft.transport.wire;
 
+import buildcraft.lib.misc.data.NbtSavedData;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,8 +26,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.storage.MapStorage;
-import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
 
 import buildcraft.api.transport.EnumWirePart;
@@ -36,7 +38,7 @@ import buildcraft.api.transport.pluggable.PipePluggable;
 
 import buildcraft.lib.net.MessageManager;
 
-public class WorldSavedDataWireSystems extends SavedData {
+public class WorldSavedDataWireSystems extends NbtSavedData {
     public static final String DATA_NAME = "buildcraft_wire_systems";
     public Level world;
     public final Map<WireSystem, Boolean> wireSystems = new HashMap<>();
@@ -48,13 +50,10 @@ public class WorldSavedDataWireSystems extends SavedData {
 
     private final Map<WireSystem.WireElement, List<WireSystem>> elementsToWireSystemsIndex = new HashMap<>();
 
-    public WorldSavedDataWireSystems() {
-        super(DATA_NAME);
-    }
+    public static final SavedDataType<WorldSavedDataWireSystems> TYPE = NbtSavedData.type(
+        Identifier.fromNamespaceAndPath("buildcrafttransport", "wire_systems"), WorldSavedDataWireSystems::new);
 
-    public WorldSavedDataWireSystems(String name) {
-        super(name);
-    }
+    public WorldSavedDataWireSystems() {}
 
     public void markStructureChanged() {
         structureChanged = true;
@@ -165,7 +164,7 @@ public class WorldSavedDataWireSystems extends SavedData {
             // loading) every emitter's chunk. Gates set it again whenever what they emit changes.
             gatesChanged = false;
         }
-        world.getPlayers(ServerPlayer.class, Predicates.alwaysTrue()).forEach(player -> {
+        ((ServerLevel) world).players().forEach(player -> {
             Map<Integer, WireSystem> changedWires = this.wireSystems.keySet().stream()
                     .filter(wireSystem -> wireSystem.isPlayerWatching(player) && (structureChanged || changedPlayers.contains(player)))
                     .collect(Collectors.toMap(ws -> ws.networkId, Function.identity()));
@@ -184,7 +183,7 @@ public class WorldSavedDataWireSystems extends SavedData {
             }
         });
         if(structureChanged || !changedSystems.isEmpty()) {
-            markDirty();
+            setDirty();
         }
         structureChanged = false;
         changedSystems.clear();
@@ -220,12 +219,7 @@ public class WorldSavedDataWireSystems extends SavedData {
         if(world.isClientSide()) {
             throw new UnsupportedOperationException("Attempted to get WorldSavedDataWireSystems on the client!");
         }
-        MapStorage storage = world.getPerWorldStorage();
-        WorldSavedDataWireSystems instance = (WorldSavedDataWireSystems) storage.getOrLoadData(WorldSavedDataWireSystems.class, DATA_NAME);
-        if (instance == null) {
-            instance = new WorldSavedDataWireSystems();
-            storage.setData(DATA_NAME, instance);
-        }
+        WorldSavedDataWireSystems instance = ((ServerLevel) world).getDataStorage().computeIfAbsent(TYPE);
         instance.world = world;
         return instance;
     }

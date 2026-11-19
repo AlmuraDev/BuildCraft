@@ -52,7 +52,7 @@ public enum PipeFlowRendererFluids implements IPipeFlowRenderer<PipeFlowFluids> 
             return;
         }
 
-        ProfilerFiller prof = Minecraft.getMinecraft().mcProfiler;
+        ProfilerFiller prof = Minecraft.getInstance().mcProfiler;
         prof.startSection("calc");
 
         boolean[] sides = new boolean[6];
@@ -79,7 +79,7 @@ public enum PipeFlowRendererFluids implements IPipeFlowRenderer<PipeFlowFluids> 
             prof.endStartSection("build");
             for (Direction face : Direction.values()) {
                 double size = ((Pipe) flow.pipe).getConnectedDist(face);
-                double amount = amounts[face.getIndex()];
+                double amount = amounts[face.get3DDataValue()];
                 if (face.getAxis() != Axis.Y) {
                     horizontal |= flow.pipe.isConnected(face) && amount > 0;
                 }
@@ -94,7 +94,7 @@ public enum PipeFlowRendererFluids implements IPipeFlowRenderer<PipeFlowFluids> 
                     radius = new Vec3(perc * 0.24, radius.y, perc * 0.24);
                 }
 
-                Vec3 offset = offsets[face.getIndex()];
+                Vec3 offset = offsets[face.get3DDataValue()];
                 if (offset == null) offset = Vec3.ZERO;
                 center = center.add(offset);
                 fluidBuffer.setTranslation(x - offset.x, y - offset.y, z - offset.z);
@@ -149,7 +149,7 @@ public enum PipeFlowRendererFluids implements IPipeFlowRenderer<PipeFlowFluids> 
 
             // gl state setup
             RenderHelper.disableStandardItemLighting();
-            Minecraft.getMinecraft().getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+            Minecraft.getInstance().getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA);
             GlStateManager.enableCull();

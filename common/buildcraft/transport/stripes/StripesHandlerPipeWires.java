@@ -6,6 +6,8 @@
 
 package buildcraft.transport.stripes;
 
+import buildcraft.transport.item.ItemWire;
+import buildcraft.lib.misc.CapUtil;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
@@ -25,14 +27,14 @@ public class StripesHandlerPipeWires implements IStripesHandlerItem {
 
     @Override
     public boolean handle(Level world, BlockPos pos, Direction direction, ItemStack stack, Player player, IStripesActivator activator) {
-        DyeColor pipeWireColor = DyeColor.byMetadata(stack.getMetadata());
+        DyeColor pipeWireColor = ItemWire.getColour(stack);
 
         for (int i = PIPES_TO_TRY; i > 0; i--) {
-            pos = pos.offset(direction.getOpposite());
+            pos = pos.relative(direction.getOpposite());
 
             BlockEntity tile = world.getBlockEntity(pos);
-            if (tile != null && tile.hasCapability(PipeApi.CAP_PIPE_HOLDER, null)) {
-                IPipeHolder pipeHolder = tile.getCapability(PipeApi.CAP_PIPE_HOLDER, null);
+            if (tile != null && (CapUtil.getCapability(tile, PipeApi.CAP_PIPE_HOLDER, null) != null)) {
+                IPipeHolder pipeHolder = CapUtil.getCapability(tile, PipeApi.CAP_PIPE_HOLDER, null);
 
                 /*
                 if (!pipeHolder.pipe.wireSet[pipeWireColor]) {

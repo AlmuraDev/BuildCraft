@@ -209,8 +209,8 @@ public final class WireSystem {
     public boolean isPlayerWatching(ServerPlayer player) {
         if (player.level() instanceof ServerLevel) {
             ServerLevel world = (ServerLevel) player.level();
-            return getChunkPosesAsStream().map(chunkPos -> world.getPlayerChunkMap().getEntry(chunkPos.x, chunkPos.z))
-                    .anyMatch(playerChunkMapEntry -> playerChunkMapEntry != null && playerChunkMapEntry.containsPlayer(player));
+            return getChunkPosesAsStream().map(chunkPos -> world.getChunkSource().chunkMap.getPlayers(chunkPos, false))
+                    .anyMatch(players -> players.contains(player));
         }
         return false;
     }
@@ -228,9 +228,9 @@ public final class WireSystem {
     public CompoundTag writeToNBT() {
         CompoundTag nbt = new CompoundTag();
         ListTag elementsList = new ListTag();
-        elements.stream().map(WireElement::writeToNBT).forEach(elementsList::appendTag);
+        elements.stream().map(WireElement::writeToNBT).forEach(elementsList::add);
         nbt.put("elements", elementsList);
-        nbt.putInt("color", color.getMetadata());
+        nbt.putInt("color", color.getId());
         return nbt;
     }
 
@@ -238,8 +238,8 @@ public final class WireSystem {
         networkId = nextServerNetworkId();
         ListTag elementsList = nbt.getListOrEmpty("elements");
         //noinspection UnstableApiUsage
-        elements = IntStream.range(0, elementsList.size()).mapToObj(elementsList::getCompoundTagAt).map(WireElement::new).collect(ImmutableList.toImmutableList());
-        color = DyeColor.byMetadata(nbt.getIntOr("color", 0));
+        elements = IntStream.range(0, elementsList.size()).mapToObj(elementsList::getCompoundOrEmpty).map(WireElement::new).collect(ImmutableList.toImmutableList());
+        color = DyeColor.byId(nbt.getIntOr("color", 0));
 
         this.cachedHashCode = this.computeHashCode();
         this.cachedWiresHashCode = this.computeCachedWiresHashCode();
@@ -340,7 +340,7 @@ public final class WireSystem {
                 buf.writeInt(wirePart.ordinal());
             } else if (type == Type.EMITTER_SIDE) {
                 assert emitterSide != null;
-                buf.writeInt(emitterSide.getIndex());
+                buf.writeInt(emitterSide.get3DDataValue());
             }
         }
 
@@ -353,7 +353,7 @@ public final class WireSystem {
                 nbt.putInt("wirePart", wirePart.ordinal());
             } else if (type == Type.EMITTER_SIDE) {
                 assert emitterSide != null;
-                nbt.putInt("emitterSide", emitterSide.getIndex());
+                nbt.putInt("emitterSide", emitterSide.get3DDataValue());
             }
             return nbt;
         }

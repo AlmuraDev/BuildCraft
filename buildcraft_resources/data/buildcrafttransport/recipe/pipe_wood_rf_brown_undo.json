@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_wood_rf",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_wood_rf",
+      "components": {
+        "buildcrafttransport:colour": "brown"
+      }
+    }
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_wood_power",
+    "components": {
+      "buildcrafttransport:colour": "brown"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_wood_power"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_wood_rf"
+    }
+  ]
+}

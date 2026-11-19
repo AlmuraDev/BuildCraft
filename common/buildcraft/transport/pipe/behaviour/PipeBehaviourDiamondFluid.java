@@ -6,6 +6,7 @@
 
 package buildcraft.transport.pipe.behaviour;
 
+import buildcraft.lib.misc.FluidUtilBC;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
@@ -38,11 +39,11 @@ public class PipeBehaviourDiamondFluid extends PipeBehaviourDiamond {
                     ItemStack compareTo = filters.getStackInSlot(offset + i);
                     if (compareTo.isEmpty()) continue;
                     FluidStack target = FluidUtilBC.getFluidContained(compareTo);
-                    if (target == null || target.amount <= 0) {
+                    if (target == null || target.getAmount() <= 0) {
                         continue;
                     }
                     foundItem = true;
-                    if (target.isFluidEqual(toCompare)) {
+                    if (FluidUtilBC.isFluidEqual(target, toCompare)) {
                         sideAllowed = true;
                         break;
                     }

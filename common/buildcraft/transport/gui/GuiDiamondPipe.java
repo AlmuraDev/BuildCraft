@@ -32,7 +32,7 @@ public class GuiDiamondPipe extends GuiBC8<ContainerDiamondPipe> {
 
     public GuiDiamondPipe(Player player, PipeBehaviourDiamond pipe) {
         super(new ContainerDiamondPipe(player, pipe));
-        this.playerInventory = player.inventory;
+        this.playerInventory = player.getInventory();
         this.filterInventory = pipe.filters;
         xSize = SIZE_X;
         ySize = SIZE_Y;

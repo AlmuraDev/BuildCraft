@@ -55,6 +55,10 @@ BLOCK_STATE_ITEMS = {
 }
 
 
+# The current mod's _constants.json (1.12.2 recipe constants: "#name" items)
+CONSTANTS = {}
+
+
 def ore_to_tag(name):
     if name in SPECIAL:
         return SPECIAL[name]
@@ -71,6 +75,11 @@ def ingredient(value, warnings, where):
         for v in value:
             i = ingredient(v, warnings, where)
             out.extend(i if isinstance(i, list) else [i])
+        if len(out) == 1:
+            return out[0]
+        if any(not isinstance(i, str) or i.startswith('#') for i in out):
+            # A plain list may only hold item ids
+            return {'neoforge:ingredient_type': 'neoforge:compound', 'children': out}
         return out
     if isinstance(value, str):
         return value
@@ -84,6 +93,10 @@ def ingredient(value, warnings, where):
             return '#c:unknown/' + ore
         return '#' + tag
     item = value['item']
+    if item.startswith('#') and ':' not in item:
+        if item[1:] in CONSTANTS:
+            return ingredient(CONSTANTS[item[1:]], warnings, where)
+        return ingredient({'type': 'forge:ore_dict', 'ore': item[1:]}, warnings, where)
     data = value.get('data')
     if data is None or data == 32767:
         return item
@@ -250,6 +263,107 @@ def convert_advancement(data, warnings, where):
     return data
 
 
+# ---- Transport: pipes were crafted in code (BCTransportRecipes) ----
+
+def _pipe_id(name):
+    return 'buildcrafttransport:' + name
+
+
+def _coloured(item, colour, strict_plain=False):
+    """An ingredient for a pipe of the given colour (or an uncoloured one if colour is None)."""
+    if colour is None:
+        return {'neoforge:ingredient_type': 'neoforge:components', 'items': item, 'components': {}, 'strict': True}
+    return {'neoforge:ingredient_type': 'neoforge:components', 'items': item,
+            'components': {'buildcrafttransport:colour': colour}}
+
+
+def _pipe_result(item, count, colour):
+    out = {'id': item}
+    if count != 1:
+        out['count'] = count
+    if colour is not None:
+        out['components'] = {'buildcrafttransport:colour': colour}
+    return out
+
+
+# pipe -> (left, right) materials, as 1.12.2's addPipeRecipe
+PIPES = {
+    'pipe_wood_item': ('#minecraft:planks', '#minecraft:planks'),
+    'pipe_cobble_item': ('#c:cobblestones', '#c:cobblestones'),
+    'pipe_stone_item': ('#c:stones', '#c:stones'),
+    'pipe_quartz_item': ('#c:storage_blocks/quartz', '#c:storage_blocks/quartz'),
+    'pipe_iron_item': ('#c:ingots/iron', '#c:ingots/iron'),
+    'pipe_gold_item': ('#c:ingots/gold', '#c:ingots/gold'),
+    'pipe_clay_item': ('minecraft:clay', 'minecraft:clay'),
+    'pipe_sandstone_item': ('#c:sandstone/blocks', '#c:sandstone/blocks'),
+    'pipe_void_item': ('#c:dyes/black', '#c:dusts/redstone'),
+    'pipe_obsidian_item': ('minecraft:obsidian', 'minecraft:obsidian'),
+    'pipe_diamond_item': ('minecraft:diamond', 'minecraft:diamond'),
+    'pipe_lapis_item': ('minecraft:lapis_block', 'minecraft:lapis_block'),
+    'pipe_daizuli_item': ('minecraft:lapis_block', 'minecraft:diamond'),
+    'pipe_diamond_wood_item': ('#minecraft:planks', 'minecraft:diamond'),
+    'pipe_stripes_item': ('#c:gears/gold', '#c:gears/gold'),
+}
+
+# (from, to, additional), as 1.12.2's addPipeUpgradeRecipe
+UPGRADES = [('pipe_diamond_wood_item', 'pipe_emzuli_item', 'minecraft:lapis_block')]
+for m in ['wood', 'cobble', 'stone', 'quartz', 'iron', 'gold', 'clay', 'sandstone', 'void', 'obsidian', 'diamond',
+          'diamond_wood']:
+    UPGRADES.append(('pipe_%s_item' % m, 'pipe_%s_fluid' % m, 'buildcrafttransport:waterproof'))
+for m in ['wood', 'cobble', 'stone', 'quartz', 'iron', 'gold', 'sandstone', 'diamond', 'diamond_wood']:
+    UPGRADES.append(('pipe_%s_item' % m, 'pipe_%s_power' % m, '#c:dusts/redstone'))
+for m in ['wood', 'cobble', 'stone']:
+    UPGRADES.append(('pipe_%s_power' % m, 'pipe_%s_rf' % m, '#c:dusts/redstone'))
+
+
+def transport_recipes():
+    out = {}
+    for pipe, (left, right) in PIPES.items():
+        item = _pipe_id(pipe)
+        for colour in [None] + DYE_BY_DAMAGE:
+            glass = '#c:glass_blocks/colorless' if colour is None else 'minecraft:%s_stained_glass' % colour
+            out['%s_%s' % (pipe, colour or 'colorless')] = {
+                'type': 'minecraft:crafting_shaped',
+                'category': 'misc',
+                'group': item,
+                'key': {'l': left, 'g': glass, 'r': right},
+                'pattern': ['lgr'],
+                'result': _pipe_result(item, 8, colour),
+                'neoforge:conditions': exists(item),
+            }
+    for frm, to, additional in UPGRADES:
+        f_item, t_item = _pipe_id(frm), _pipe_id(to)
+        for colour in [None] + DYE_BY_DAMAGE:
+            suffix = colour or 'colorless'
+            conds = [{'type': 'neoforge:item_exists', 'item': f_item}, {'type': 'neoforge:item_exists', 'item': t_item}]
+            out['%s_%s' % (to, suffix)] = {
+                'type': 'minecraft:crafting_shapeless',
+                'category': 'misc',
+                'group': t_item,
+                'ingredients': [_coloured(f_item, colour), additional],
+                'result': _pipe_result(t_item, 1, colour),
+                'neoforge:conditions': conds,
+            }
+            out['%s_%s_undo' % (to, suffix)] = {
+                'type': 'minecraft:crafting_shapeless',
+                'category': 'misc',
+                'group': t_item,
+                'ingredients': [_coloured(t_item, colour)],
+                'result': _pipe_result(f_item, 1, colour),
+                'neoforge:conditions': conds,
+            }
+    return out
+
+
+CODE_RECIPES['buildcrafttransport'] = transport_recipes()
+# TODO(26.3 silicon batch): wire (8 of a colour from redstone + dye) is an assembly table recipe.
+
+LOOT['buildcrafttransport'] = {
+    'filtered_buffer': self_drop('buildcrafttransport:filtered_buffer'),
+    # the pipe holder computes its own drops (BlockPipeHolder.getDrops)
+}
+
+
 def write_json(path, data):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w', encoding='utf-8', newline='\n') as f:
@@ -262,6 +376,12 @@ def main(mods):
     count = 0
     for mod in mods:
         src = os.path.join(RES, 'assets', mod, 'recipes')
+        CONSTANTS.clear()
+        consts = os.path.join(src, '_constants.json')
+        if os.path.isfile(consts):
+            with open(consts, encoding='utf-8') as f:
+                for c in json.load(f):
+                    CONSTANTS[c['name']] = c['ingredient']
         if os.path.isdir(src):
             for fn in sorted(os.listdir(src)):
                 if not fn.endswith('.json') or fn.startswith('_'):

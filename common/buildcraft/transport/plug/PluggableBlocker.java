@@ -37,12 +37,12 @@ public class PluggableBlocker extends PipePluggable {
         double min = 4 / 16.0;
         double max = 12 / 16.0;
 
-        BOXES[Direction.DOWN.getIndex()] = new AABB(min, ll, min, max, lu, max);
-        BOXES[Direction.UP.getIndex()] = new AABB(min, ul, min, max, uu, max);
-        BOXES[Direction.NORTH.getIndex()] = new AABB(min, min, ll, max, max, lu);
-        BOXES[Direction.SOUTH.getIndex()] = new AABB(min, min, ul, max, max, uu);
-        BOXES[Direction.WEST.getIndex()] = new AABB(ll, min, min, lu, max, max);
-        BOXES[Direction.EAST.getIndex()] = new AABB(ul, min, min, uu, max, max);
+        BOXES[Direction.DOWN.get3DDataValue()] = new AABB(min, ll, min, max, lu, max);
+        BOXES[Direction.UP.get3DDataValue()] = new AABB(min, ul, min, max, uu, max);
+        BOXES[Direction.NORTH.get3DDataValue()] = new AABB(min, min, ll, max, max, lu);
+        BOXES[Direction.SOUTH.get3DDataValue()] = new AABB(min, min, ul, max, max, uu);
+        BOXES[Direction.WEST.get3DDataValue()] = new AABB(ll, min, min, lu, max, max);
+        BOXES[Direction.EAST.get3DDataValue()] = new AABB(ul, min, min, uu, max, max);
     }
 
     public PluggableBlocker(PluggableDefinition definition, IPipeHolder holder, Direction side) {
@@ -51,7 +51,7 @@ public class PluggableBlocker extends PipePluggable {
 
     @Override
     public AABB getBoundingBox() {
-        return BOXES[side.getIndex()];
+        return BOXES[side.get3DDataValue()];
     }
 
     @Override

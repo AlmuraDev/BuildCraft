@@ -6,6 +6,7 @@
 
 package buildcraft.transport.pipe.flow;
 
+import buildcraft.api.core.NbtStacks;
 import java.util.EnumSet;
 import java.util.function.Supplier;
 
@@ -79,9 +80,9 @@ public class TravellingItem {
 
     public TravellingItem(CompoundTag nbt, long tickNow) {
         clientItemLink = () -> ItemStack.EMPTY;
-        stack = new ItemStack(nbt.getCompoundOrEmpty("stack"));
+        stack = NbtStacks.readItemStack(nbt.getCompoundOrEmpty("stack"));
         int c = nbt.getByteOr("colour", (byte) 0);
-        this.colour = c == 0 ? null : DyeColor.byMetadata(c - 1);
+        this.colour = c == 0 ? null : DyeColor.byId(c - 1);
         this.toCenter = nbt.getBooleanOr("toCenter", false);
         this.speed = nbt.getDoubleOr("speed", 0D);
         if (speed < 0.001) {
@@ -103,8 +104,8 @@ public class TravellingItem {
 
     public CompoundTag writeToNbt(long tickNow) {
         CompoundTag nbt = new CompoundTag();
-        nbt.put("stack", stack.serializeNBT());
-        nbt.putByte("colour", (byte) (colour == null ? 0 : colour.getMetadata() + 1));
+        nbt.put("stack", NbtStacks.writeItemStack(stack));
+        nbt.putByte("colour", (byte) (colour == null ? 0 : colour.getId() + 1));
         nbt.putBoolean("toCenter", toCenter);
         nbt.putDouble("speed", speed);
         nbt.putInt("tickStarted", (int) (tickStarted - tickNow));

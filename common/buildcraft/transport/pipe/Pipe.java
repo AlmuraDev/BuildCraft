@@ -6,6 +6,8 @@
 
 package buildcraft.transport.pipe;
 
+import buildcraft.transport.item.ItemPipeHolder;
+import buildcraft.lib.misc.CapUtil;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.List;
@@ -142,7 +144,7 @@ public final class Pipe implements IPipe, IDebuggable {
 
     public void writePayload(PacketBufferBC buffer, LogicalSide side) {
         if (side == LogicalSide.SERVER) {
-            buffer.writeByte(colour == null ? 0 : colour.getMetadata() + 1);
+            buffer.writeByte(colour == null ? 0 : colour.getId() + 1);
             for (Direction face : Direction.values()) {
                 Float con = connected.get(face);
                 if (con != null) {
@@ -164,7 +166,7 @@ public final class Pipe implements IPipe, IDebuggable {
             types.clear();
 
             int nColour = buffer.readUnsignedByte();
-            colour = nColour == 0 ? null : DyeColor.byMetadata(nColour - 1);
+            colour = nColour == 0 ? null : DyeColor.byId(nColour - 1);
 
             for (Direction face : Direction.values()) {
                 if (buffer.readBoolean()) {
@@ -285,7 +287,7 @@ public final class Pipe implements IPipe, IDebuggable {
                 if (oBehaviour == null) {
                     continue;
                 }
-                PipePluggable oPlug = oTile.getCapability(PipeApi.CAP_PLUG, facing.getOpposite());
+                PipePluggable oPlug = CapUtil.getCapability(oTile, PipeApi.CAP_PLUG, facing.getOpposite());
                 if (oPlug == null || !oPlug.isBlocking()) {
                     if (canPipesConnect(facing, this, oPipe)) {
                         connected.put(facing, DEFAULT_CONNECTION_DISTANCE);
@@ -295,7 +297,7 @@ public final class Pipe implements IPipe, IDebuggable {
                 }
             }
 
-            BlockPos nPos = holder.getPipePos().offset(facing);
+            BlockPos nPos = holder.getPipePos().relative(facing);
             BlockState neighbour = holder.getPipeWorld().getBlockState(nPos);
 
             ICustomPipeConnection cust = PipeConnectionAPI.getCustomConnection(neighbour.getBlock());
@@ -330,7 +332,7 @@ public final class Pipe implements IPipe, IDebuggable {
     public void addDrops(NonNullList<ItemStack> toDrop, int fortune) {
         Item item = (Item) PipeApi.pipeRegistry.getItemForPipe(definition);
         if (item != null) {
-            toDrop.add(new ItemStack(item, 1, colour == null ? 0 : 1 + colour.ordinal()));
+            toDrop.add(item instanceof ItemPipeHolder pipeItem ? pipeItem.createStack(colour) : new ItemStack(item));
         }
         flow.addDrops(toDrop, fortune);
         behaviour.addDrops(toDrop, fortune);

@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_quartz_power",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_quartz_power",
+      "components": {
+        "buildcrafttransport:colour": "light_blue"
+      }
+    }
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_quartz_item",
+    "components": {
+      "buildcrafttransport:colour": "light_blue"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_quartz_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_quartz_power"
+    }
+  ]
+}

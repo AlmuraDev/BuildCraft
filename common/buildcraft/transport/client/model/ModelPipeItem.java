@@ -158,7 +158,7 @@ public enum ModelPipeItem implements IBakedModel {
         }
 
         if (colour > 0 && colour <= 16) {
-            DyeColor rColour = DyeColor.byMetadata(colour - 1);
+            DyeColor rColour = DyeColor.byId(colour - 1);
             int rgb = 0xFF_00_00_00 | ColourUtil.swapArgbToAbgr(ColourUtil.getLightHex(rColour));
             if (colourType == EnumPipeColourType.TRANSLUCENT) {
                 TextureAtlasSprite sprite = BCTransportSprites.PIPE_COLOUR.getSprite();

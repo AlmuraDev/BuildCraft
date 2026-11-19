@@ -101,6 +101,71 @@ ITEMS = {
 }
 
 
+
+# ---- Transport ----
+# Pipe items: 1.12.2 built their models from the pipe's sprites in code. Until pipe items get a special model renderer,
+# each one is a flat item of its pipe texture (pipe registry name -> texture under textures/pipes/).
+PIPE_ITEM_TEXTURES = {'pipe_structure': 'structure'}
+for _m, _tex in [('wood', 'wood'), ('cobble', 'cobblestone'), ('stone', 'stone'), ('quartz', 'quartz'), ('iron', 'iron'),
+                 ('gold', 'gold'), ('clay', 'clay'), ('sandstone', 'sandstone'), ('void', 'void'), ('obsidian', 'obsidian'),
+                 ('diamond', 'diamond'), ('diamond_wood', 'diamond_wood'), ('lapis', 'lapis'), ('daizuli', 'daizuli'),
+                 ('emzuli', 'emzuli'), ('stripes', 'stripes')]:
+    for _t in ['item', 'fluid', 'power', 'rf']:
+        _name = '%s_%s' % (_tex, _t)
+        if _m in ('wood', 'iron', 'diamond_wood', 'emzuli'):
+            _name += '_clear'
+        elif _m == 'lapis':
+            _name += '_base'
+        elif _m == 'daizuli':
+            _name += '_white'
+        PIPE_ITEM_TEXTURES['pipe_%s_%s' % (_m, _t)] = _name
+
+ITEMS['buildcrafttransport'] = {
+    'waterproof': model('buildcrafttransport:item/waterproof'),
+    'filtered_buffer': model('buildcrafttransport:item/filtered_buffer'),
+    'plug_blocker': model('buildcrafttransport:item/plug_blocker'),
+    'plug_power_adaptor': model('buildcrafttransport:item/plug_power_adaptor'),
+    'wire': select_component('buildcrafttransport:colour',
+                             [(d, 'buildcrafttransport:item/wire/' + DYE_MODEL[d]) for d in DYES],
+                             'buildcrafttransport:item/wire/white'),
+}
+
+# Item models written by this tool: mod -> {model path: model json}
+MODELS = {'buildcrafttransport': {
+    'item/plug_blocker': {'parent': 'item/generated', 'textures': {'layer0': 'buildcrafttransport:pipes/plug'}},
+    'item/plug_power_adaptor': {'parent': 'item/generated',
+                                'textures': {'layer0': 'buildcrafttransport:items/pipePowerAdapter'}},
+    # The pipe holder draws everything itself (TODO(26.3): pipe rendering); the model only gives the particle texture
+    'block/pipe_holder': {'textures': {'particle': 'buildcrafttransport:pipes/structure'}},
+}}
+BLOCKSTATES = {'buildcrafttransport': {
+    'pipe_holder': {'variants': {'': {'model': 'buildcrafttransport:block/pipe_holder'}}, '__converted_26_3': True},
+}}
+
+
+def _add_pipe_items():
+    import os
+    tex_dir = os.path.join(ASSETS, 'buildcrafttransport', 'textures', 'pipes')
+    for pipe, tex in PIPE_ITEM_TEXTURES.items():
+        if not os.path.isfile(os.path.join(tex_dir, tex + '.png')):
+            continue
+        MODELS['buildcrafttransport']['item/' + pipe] = {
+            'parent': 'item/generated', 'textures': {'layer0': 'buildcrafttransport:pipes/' + tex}}
+        ITEMS['buildcrafttransport'][pipe] = model('buildcrafttransport:item/' + pipe)
+
+
+_add_pipe_items()
+
+
+def write_models_and_states():
+    for ns, models in MODELS.items():
+        for path, data in models.items():
+            write_json(os.path.join(ASSETS, ns, 'models', path + '.json'), data)
+    for ns, states in BLOCKSTATES.items():
+        for name, data in states.items():
+            write_json(os.path.join(ASSETS, ns, 'blockstates', name + '.json'), data)
+
+
 def block_model_id(ns, name):
     """1.12.2 blockstate model names were relative to models/block/."""
     if ':' in name:
@@ -240,6 +305,7 @@ def main():
     n = convert_blockstates(warnings, sys.argv[1:])
     write_atlases()
     i = write_items()
+    write_models_and_states()
     print('%d blockstates converted, %d item definitions written' % (n, i))
     for w in warnings:
         print('  warning: ' + w)

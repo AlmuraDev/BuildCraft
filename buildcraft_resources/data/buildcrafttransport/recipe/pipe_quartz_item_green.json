@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_quartz_item",
+  "key": {
+    "l": "#c:storage_blocks/quartz",
+    "g": "minecraft:green_stained_glass",
+    "r": "#c:storage_blocks/quartz"
+  },
+  "pattern": [
+    "lgr"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_quartz_item",
+    "count": 8,
+    "components": {
+      "buildcrafttransport:colour": "green"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_quartz_item"
+    }
+  ]
+}

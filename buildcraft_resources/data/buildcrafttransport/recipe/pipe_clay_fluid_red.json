@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_clay_fluid",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_clay_item",
+      "components": {
+        "buildcrafttransport:colour": "red"
+      }
+    },
+    "buildcrafttransport:waterproof"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_clay_fluid",
+    "components": {
+      "buildcrafttransport:colour": "red"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_clay_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_clay_fluid"
+    }
+  ]
+}

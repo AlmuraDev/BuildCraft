@@ -6,6 +6,7 @@
 
 package buildcraft.transport.pipe.behaviour;
 
+import buildcraft.lib.misc.FluidUtilBC;
 import java.io.IOException;
 
 import net.minecraft.world.entity.player.Player;
@@ -187,14 +188,14 @@ public class PipeBehaviourWoodDiamond extends PipeBehaviourWood {
                     return extracted;
                 }
 
-                if (extracted == null || extracted.amount <= 0) {
+                if (extracted == null || extracted.getAmount() <= 0) {
                     for (int i = 0; i < filters.getSlots(); i++) {
                         ItemStack stack = filters.getStackInSlot(i);
                         if (stack.isEmpty()) {
                             continue;
                         }
                         extracted = flow.tryExtractFluid(millibuckets, dir, FluidUtilBC.getFluidContained(stack), simulate);
-                        if (extracted != null && extracted.amount > 0) {
+                        if (extracted != null && extracted.getAmount() > 0) {
                             return extracted;
                         }
                     }

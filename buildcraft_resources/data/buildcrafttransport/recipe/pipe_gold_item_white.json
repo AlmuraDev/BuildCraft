@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_gold_item",
+  "key": {
+    "l": "#c:ingots/gold",
+    "g": "minecraft:white_stained_glass",
+    "r": "#c:ingots/gold"
+  },
+  "pattern": [
+    "lgr"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_gold_item",
+    "count": 8,
+    "components": {
+      "buildcrafttransport:colour": "white"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_gold_item"
+    }
+  ]
+}

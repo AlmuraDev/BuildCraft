@@ -44,3 +44,20 @@ type = "required"
 versionRange = "[${version}]"
 ordering = "AFTER"
 side = "BOTH"
+
+[[mods]]
+modId = "buildcrafttransport"
+version = "${version}"
+displayName = "BuildCraft Transport"
+logoFile = "assets/buildcraft/logo.png"
+credits = "Created by SpaceToad"
+authors = "SpaceToad, BuildCraft Team, AlmuraDev"
+displayURL = "https://www.mod-buildcraft.com/"
+description = '''Pipes, wires and pluggables for moving items, fluids and power.'''
+
+[[dependencies.buildcrafttransport]]
+modId = "buildcraftcore"
+type = "required"
+versionRange = "[${version}]"
+ordering = "AFTER"
+side = "BOTH"

@@ -115,7 +115,7 @@ public enum PipeFlowRendererRf implements IPipeFlowRenderer<PipeFlowRedstoneFlux
             }
 
             AABB box = new AABB(centre.subtract(radiusV).scale(0.5), centre.add(radiusV).scale(0.5));
-            box = box.offset(VecUtil.offset(Vec3.ZERO, side, offset * side.getAxisDirection().getStep() / 32));
+            box = box.move(VecUtil.offset(Vec3.ZERO, side, offset * side.getAxisDirection().getStep() / 32));
             ModelUtil.mapBoxToUvs(box, face, uvs);
 
             MutableQuad quad = ModelUtil.createFace(face, centreF, radiusF, uvs);
@@ -145,7 +145,7 @@ public enum PipeFlowRendererRf implements IPipeFlowRenderer<PipeFlowRedstoneFlux
                 new Vec3(0.5 - radius, 0.5 - radius, 0.5 - radius).scale(0.5), //
                 new Vec3(0.5 + radius, 0.5 + radius, 0.5 + radius).scale(0.5)//
             );
-            box = box.offset(offsetX / 32.0, offsetY / 32.0, offsetZ / 32.0);
+            box = box.move(offsetX / 32.0, offsetY / 32.0, offsetZ / 32.0);
             ModelUtil.mapBoxToUvs(box, face, uvs);
 
             MutableQuad quad = ModelUtil.createFace(face, centre, radiusP, uvs);

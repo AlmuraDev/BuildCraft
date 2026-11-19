@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_cobble_item",
+  "key": {
+    "l": "#c:cobblestones",
+    "g": "#c:glass_blocks/colorless",
+    "r": "#c:cobblestones"
+  },
+  "pattern": [
+    "lgr"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_cobble_item",
+    "count": 8
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_cobble_item"
+    }
+  ]
+}

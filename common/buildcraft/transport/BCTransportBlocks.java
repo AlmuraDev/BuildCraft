@@ -6,7 +6,7 @@
 
 package buildcraft.transport;
 
-import net.minecraft.block.material.Material;
+import net.neoforged.bus.api.IEventBus;
 
 import buildcraft.lib.registry.RegistrationHelper;
 
@@ -16,16 +16,16 @@ import buildcraft.transport.tile.TileFilteredBuffer;
 import buildcraft.transport.tile.TilePipeHolder;
 
 public class BCTransportBlocks {
-    private static final RegistrationHelper HELPER = new RegistrationHelper();
 
     public static BlockFilteredBuffer filteredBuffer;
     public static BlockPipeHolder pipeHolder;
 
-    public static void preInit() {
-        filteredBuffer = HELPER.addBlockAndItem(new BlockFilteredBuffer(Material.IRON, "block.filtered_buffer"));
-        pipeHolder = HELPER.addBlock(new BlockPipeHolder(Material.IRON, "block.pipe_holder"));
+    public static void preInit(IEventBus modBus) {
+        RegistrationHelper helper = new RegistrationHelper(BCTransport.MODID, modBus);
+        helper.addBlockAndItem("block.filtered_buffer", BlockFilteredBuffer::new, b -> filteredBuffer = b);
+        helper.addBlock("block.pipe_holder", true, BlockPipeHolder::new, b -> pipeHolder = b);
 
-        HELPER.registerTile(TileFilteredBuffer.class, "tile.filtered_buffer");
-        HELPER.registerTile(TilePipeHolder.class, "tile.pipe_holder");
+        helper.registerTile("tile.filtered_buffer", TileFilteredBuffer::new, () -> filteredBuffer);
+        helper.registerTile("tile.pipe_holder", TilePipeHolder::new, () -> pipeHolder);
     }
 }

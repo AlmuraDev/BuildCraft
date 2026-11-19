@@ -6,6 +6,7 @@
 
 package buildcraft.transport.pipe;
 
+import buildcraft.transport.item.ItemPipeHolder;
 import java.util.List;
 
 import javax.annotation.Nonnull;
@@ -45,7 +46,7 @@ public class SchematicBlockPipe implements ISchematicBlock {
         if (tileEntity == null) {
             throw new IllegalStateException();
         }
-        tileNbt = tileEntity.serializeNBT();
+        tileNbt = tileEntity.saveWithFullMetadata(context.world.registryAccess());
     }
 
     @Nonnull
@@ -60,15 +61,8 @@ public class SchematicBlockPipe implements ISchematicBlock {
                 tileNbt.getCompoundOrEmpty("pipe").get("col"),
                 DyeColor.class
             );
-            Item item = (Item) PipeApi.pipeRegistry.getItemForPipe(definition);
-            if (item != null) {
-                builder.add(
-                    new ItemStack(
-                        item,
-                        1,
-                        color == null ? 0 : color.getMetadata() + 1
-                    )
-                );
+            if (PipeApi.pipeRegistry.getItemForPipe(definition) instanceof ItemPipeHolder item) {
+                builder.add(item.createStack(color));
             }
             return builder.build();
         } catch (InvalidInputDataException e) {
@@ -80,7 +74,7 @@ public class SchematicBlockPipe implements ISchematicBlock {
     public SchematicBlockPipe getRotated(Rotation rotation) {
         SchematicBlockPipe schematicBlock = new SchematicBlockPipe();
         schematicBlock.tileNbt = tileNbt;
-        schematicBlock.tileRotation = tileRotation.add(rotation);
+        schematicBlock.tileRotation = tileRotation.getRotated(rotation);
         return schematicBlock;
     }
 
@@ -93,13 +87,11 @@ public class SchematicBlockPipe implements ISchematicBlock {
     @Override
     public boolean build(Level world, BlockPos blockPos) {
         if (world.setBlock(blockPos, BCTransportBlocks.pipeHolder.defaultBlockState(), 11)) {
-            BlockEntity tileEntity = BlockEntity.create(world, tileNbt);
+            BlockEntity tileEntity = BlockEntity.loadStatic(blockPos, BCTransportBlocks.pipeHolder.defaultBlockState(),
+                tileNbt, world.registryAccess());
             if (tileEntity != null) {
-                tileEntity.setWorld(world);
-                world.setTileEntity(blockPos, tileEntity);
-                if (tileRotation != Rotation.NONE) {
-                    tileEntity.rotate(tileRotation);
-                }
+                // Pipe holders don't rotate (1.12.2's TileEntity.rotate did nothing for them either)
+                world.setBlockEntity(tileEntity);
                 return true;
             }
         }
@@ -110,13 +102,11 @@ public class SchematicBlockPipe implements ISchematicBlock {
     @Override
     public boolean buildWithoutChecks(Level world, BlockPos blockPos) {
         if (world.setBlock(blockPos, BCTransportBlocks.pipeHolder.defaultBlockState(), 0)) {
-            BlockEntity tileEntity = BlockEntity.create(world, tileNbt);
+            BlockEntity tileEntity = BlockEntity.loadStatic(blockPos, BCTransportBlocks.pipeHolder.defaultBlockState(),
+                tileNbt, world.registryAccess());
             if (tileEntity != null) {
-                tileEntity.setWorld(world);
-                world.setTileEntity(blockPos, tileEntity);
-                if (tileRotation != Rotation.NONE) {
-                    tileEntity.rotate(tileRotation);
-                }
+                // Pipe holders don't rotate (1.12.2's TileEntity.rotate did nothing for them either)
+                world.setBlockEntity(tileEntity);
                 return true;
             }
         }

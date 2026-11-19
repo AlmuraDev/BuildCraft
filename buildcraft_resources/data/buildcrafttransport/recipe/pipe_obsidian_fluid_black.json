@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_obsidian_fluid",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_obsidian_item",
+      "components": {
+        "buildcrafttransport:colour": "black"
+      }
+    },
+    "buildcrafttransport:waterproof"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_obsidian_fluid",
+    "components": {
+      "buildcrafttransport:colour": "black"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_obsidian_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_obsidian_fluid"
+    }
+  ]
+}

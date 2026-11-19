@@ -34,11 +34,11 @@ public enum StripesHandlerEntityInteract implements IStripesHandlerItem {
                           IStripesActivator activator) {
         List<LivingEntity> entities = world.getEntitiesOfClass(
             LivingEntity.class,
-            new AABB(pos.offset(direction))
+            new AABB(pos.relative(direction))
         );
         Collections.shuffle(entities);
         for (LivingEntity entity : entities) {
-            if (player.interactOn(entity, InteractionHand.MAIN_HAND) == InteractionResult.SUCCESS) {
+            if (player.interactOn(entity, InteractionHand.MAIN_HAND, entity.position()).consumesAction()) {
                 return true;
             }
         }

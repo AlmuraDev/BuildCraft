@@ -1,0 +1,125 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:component",
+    "component": "buildcrafttransport:colour",
+    "cases": [
+      {
+        "when": "white",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/white"
+        }
+      },
+      {
+        "when": "orange",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/orange"
+        }
+      },
+      {
+        "when": "magenta",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/magenta"
+        }
+      },
+      {
+        "when": "light_blue",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/light_blue"
+        }
+      },
+      {
+        "when": "yellow",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/yellow"
+        }
+      },
+      {
+        "when": "lime",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/lime"
+        }
+      },
+      {
+        "when": "pink",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/pink"
+        }
+      },
+      {
+        "when": "gray",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/gray"
+        }
+      },
+      {
+        "when": "light_gray",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/silver"
+        }
+      },
+      {
+        "when": "cyan",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/cyan"
+        }
+      },
+      {
+        "when": "purple",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/purple"
+        }
+      },
+      {
+        "when": "blue",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/blue"
+        }
+      },
+      {
+        "when": "brown",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/brown"
+        }
+      },
+      {
+        "when": "green",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/green"
+        }
+      },
+      {
+        "when": "red",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/red"
+        }
+      },
+      {
+        "when": "black",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcrafttransport:item/wire/black"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "buildcrafttransport:item/wire/white"
+    }
+  }
+}

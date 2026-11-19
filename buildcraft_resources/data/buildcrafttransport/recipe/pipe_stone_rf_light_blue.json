@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_stone_rf",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_stone_power",
+      "components": {
+        "buildcrafttransport:colour": "light_blue"
+      }
+    },
+    "#c:dusts/redstone"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_stone_rf",
+    "components": {
+      "buildcrafttransport:colour": "light_blue"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_stone_power"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_stone_rf"
+    }
+  ]
+}

@@ -6,11 +6,11 @@
 
 package buildcraft.transport.stripes;
 
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecartContainer;
+import net.minecraft.world.entity.vehicle.minecart.AbstractMinecart;
 import java.util.Collections;
 import java.util.List;
 
-import net.minecraft.entity.item.EntityMinecart;
-import net.minecraft.entity.item.EntityMinecartContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
@@ -28,28 +28,26 @@ public enum StripesHandlerMinecartDestroy implements IStripesHandlerBlock {
 
     @Override
     public boolean handle(Level world, BlockPos pos, Direction direction, Player player, IStripesActivator activator) {
-        AABB box = new AABB(pos, pos.add(1, 1, 1));
-        List<EntityMinecart> minecarts = world.getEntitiesOfClass(EntityMinecart.class, box);
+        AABB box = new AABB(pos);
+        List<AbstractMinecart> minecarts = world.getEntitiesOfClass(AbstractMinecart.class, box);
 
         if (minecarts.size() > 0) {
             Collections.shuffle(minecarts);
-            EntityMinecart cart = minecarts.get(0);
-            if (cart instanceof EntityMinecartContainer) {
-                // good job, Mojang. :<
-                EntityMinecartContainer container = (EntityMinecartContainer) cart;
+            AbstractMinecart cart = minecarts.get(0);
+            if (cart instanceof AbstractMinecartContainer container) {
                 for (int i = 0; i < container.getContainerSize(); i++) {
-                    ItemStack s = container.getStackInSlot(i);
+                    ItemStack s = container.getItem(i);
                     if (!s.isEmpty()) {
                         container.setItem(i, StackUtil.EMPTY);
                         // Safety check
-                        if (container.getStackInSlot(i).isEmpty()) {
+                        if (container.getItem(i).isEmpty()) {
                             activator.sendItem(s, direction);
                         }
                     }
                 }
             }
-            cart.setDead();
-            activator.sendItem(StackUtil.asNonNull(cart.getCartItem()), direction);
+            cart.discard();
+            activator.sendItem(StackUtil.asNonNull(cart.getPickResult()), direction);
             return true;
         }
         return false;

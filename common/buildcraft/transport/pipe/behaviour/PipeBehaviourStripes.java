@@ -171,14 +171,14 @@ public class PipeBehaviourStripes extends PipeBehaviour implements IStripesActiv
         }
         battery.tick(world, pipe.getHolder().getPipePos());
         if (direction != null) {
-            BlockPos offset = pos.offset(direction);
+            BlockPos offset = pos.relative(direction);
             long target = BlockUtil.computeBlockBreakPower(world, offset);
             if (target > 0) {
                 int offsetHash = offset.hashCode();
                 if (progress < target) {
                     progress += battery.extractPower(0, Math.min(target - progress, MjAPI.MJ * 10));
                     if (progress > 0) {
-                        world.sendBlockBreakProgress(offsetHash, offset, (int) (progress * 9 / target));
+                        world.destroyBlockProgress(offsetHash, offset, (int) (progress * 9 / target));
                     }
                 } else {
                     BlockUtil.breakBlockAndGetDrops(
@@ -204,13 +204,13 @@ public class PipeBehaviourStripes extends PipeBehaviour implements IStripesActiv
         Level world = holder.getPipeWorld();
         BlockPos pos = holder.getPipePos();
         FakePlayer player = BuildCraftAPI.fakePlayerProvider.getFakePlayer((ServerLevel) world, holder.getOwner(), pos);
-        player.inventory.clear();
+        player.getInventory().clearContent();
         // set the main hand of the fake player to the stack
-        player.inventory.setItem(player.inventory.currentItem, event.getStack());
+        player.getInventory().setItem(player.getInventory().getSelectedSlot(), event.getStack());
         if (PipeApi.stripeRegistry.handleItem(world, pos, direction, event.getStack(), player, this)) {
             event.setStack(StackUtil.EMPTY);
-            for (int i = 0; i < player.inventory.getContainerSize(); i++) {
-                ItemStack stack = player.inventory.removeItemNoUpdate(i);
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                ItemStack stack = player.getInventory().removeItemNoUpdate(i);
                 if (!stack.isEmpty()) {
                     sendItem(stack, direction);
                 }
@@ -237,13 +237,13 @@ public class PipeBehaviourStripes extends PipeBehaviour implements IStripesActiv
     @Override
     public <T> T getCapability(@Nonnull BlockCapability<T, Direction> capability, Direction facing) {
         if (capability == MjAPI.CAP_REDSTONE_RECEIVER) {
-            return MjAPI.CAP_REDSTONE_RECEIVER.cast(this);
+            return (T) (this);
         }
         if (capability == MjAPI.CAP_RECEIVER) {
-            return MjAPI.CAP_RECEIVER.cast(this);
+            return (T) (this);
         }
         if (capability == MjAPI.CAP_CONNECTOR) {
-            return MjAPI.CAP_CONNECTOR.cast(this);
+            return (T) (this);
         }
         return super.getCapability(capability, facing);
     }

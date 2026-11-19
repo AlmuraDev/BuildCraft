@@ -48,10 +48,10 @@ public class PipeBehaviourWoodPower extends PipeBehaviour {
             return 0;
         }
         if (pipe.getFlow() instanceof PipeFlowRedstoneFlux) {
-            IEnergyStorage recv = tile.getCapability(CapUtil.CAP_RF, face.getOpposite());
+            IEnergyStorage recv = CapUtil.getCapability(tile, CapUtil.CAP_RF, face.getOpposite());
             return recv == null ? 1 : recv.canReceive() ? 0 : 1;
         } else {
-            IMjReceiver recv = tile.getCapability(MjAPI.CAP_RECEIVER, face.getOpposite());
+            IMjReceiver recv = CapUtil.getCapability(tile, MjAPI.CAP_RECEIVER, face.getOpposite());
             return recv == null ? 1 : recv.canReceive() ? 0 : 1;
         }
     }

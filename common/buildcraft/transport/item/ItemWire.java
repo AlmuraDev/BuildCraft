@@ -6,52 +6,43 @@
 
 package buildcraft.transport.item;
 
-import gnu.trove.map.hash.TIntObjectHashMap;
-
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.NonNullList;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-
-import buildcraft.lib.client.render.font.SpecialColourFontRenderer;
 import buildcraft.lib.item.ItemBC_Neptune;
 import buildcraft.lib.misc.ColourUtil;
 
+import buildcraft.transport.BCTransportItems;
+
+/** Gate wire. The colour is the "buildcrafttransport:colour" component (1.12.2 used the damage value). */
 public class ItemWire extends ItemBC_Neptune {
-    public ItemWire(String id) {
-        super(id);
-        setHasSubtypes(true);
+    public ItemWire(Item.Properties properties, String id) {
+        super(properties, id);
+    }
+
+    /** @return The wire's colour (white if the stack has none). */
+    public static DyeColor getColour(ItemStack stack) {
+        return stack.getOrDefault(BCTransportItems.COLOUR, DyeColor.WHITE);
+    }
+
+    public ItemStack createStack(DyeColor colour, int count) {
+        ItemStack stack = new ItemStack(this, count);
+        stack.set(BCTransportItems.COLOUR, colour);
+        return stack;
     }
 
     @Override
-    public void addSubItems(CreativeTabs tab, NonNullList<ItemStack> subItems) {
-        for (int i = 0; i < 16; i++) {
-            subItems.add(new ItemStack(this, 1, i));
+    public void addSubItems(NonNullList<ItemStack> subItems) {
+        for (DyeColor colour : DyeColor.values()) {
+            subItems.add(createStack(colour, 1));
         }
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
-    public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
-        for (DyeColor color : DyeColor.values()) {
-            addVariant(variants, color.getMetadata(), color.getName());
-        }
-    }
-
-    @Override
-    public String getItemStackDisplayName(ItemStack stack) {
-        return ColourUtil.getTextFullTooltipSpecial(DyeColor.byMetadata(stack.getMetadata())) + " " + super.getItemStackDisplayName(stack);
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public Font getFontRenderer(ItemStack stack) {
-        return SpecialColourFontRenderer.INSTANCE;
+    public Component getName(ItemStack stack) {
+        return Component.literal(ColourUtil.getTextFullTooltip(getColour(stack)) + " ").append(super.getName(stack));
     }
 }

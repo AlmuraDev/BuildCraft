@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_diamond_wood_power",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_diamond_wood_power",
+      "components": {
+        "buildcrafttransport:colour": "purple"
+      }
+    }
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_diamond_wood_item",
+    "components": {
+      "buildcrafttransport:colour": "purple"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_diamond_wood_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_diamond_wood_power"
+    }
+  ]
+}

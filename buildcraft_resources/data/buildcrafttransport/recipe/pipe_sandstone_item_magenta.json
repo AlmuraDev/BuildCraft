@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_sandstone_item",
+  "key": {
+    "l": "#c:sandstone/blocks",
+    "g": "minecraft:magenta_stained_glass",
+    "r": "#c:sandstone/blocks"
+  },
+  "pattern": [
+    "lgr"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_sandstone_item",
+    "count": 8,
+    "components": {
+      "buildcrafttransport:colour": "magenta"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_sandstone_item"
+    }
+  ]
+}

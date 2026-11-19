@@ -6,8 +6,11 @@
  */
 package buildcraft.transport.stripes;
 
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.item.ItemHoe;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.core.Direction;
@@ -29,38 +32,27 @@ public enum StripesHandlerHoe implements IStripesHandlerItem {
                           Player player,
                           IStripesActivator activator) {
 
-        if (!(stack.getItem() instanceof ItemHoe)) {
+        if (!stack.is(ItemTags.HOES)) {
             return false;
         }
 
-        pos = pos.offset(direction);
-        if (stack.onItemUse(
-                player,
-                world,
-                pos,
-                InteractionHand.MAIN_HAND,
-                Direction.UP,
-                0.0f,
-                0.0f,
-                0.0f
-        ) != InteractionResult.PASS) {
+        pos = pos.relative(direction);
+        if (useOn(player, stack, pos, Direction.UP, 0, 0, 0) != InteractionResult.PASS) {
             return true;
         }
 
-        if (direction != Direction.UP && stack.onItemUse(
-                player,
-                world,
-                pos.down(),
-                InteractionHand.MAIN_HAND,
-                Direction.UP,
-                0.0f,
-                0.0f,
-                0.0f
-        ) != InteractionResult.PASS) {
+        if (direction != Direction.UP && useOn(player, stack, pos.below(), Direction.UP, 0, 0, 0) != InteractionResult.PASS) {
             return true;
         }
 
         return false;
     }
 
+    /** Uses the stack (held in the stripes pipe's fake player's main hand) on the given face of the block. */
+    static InteractionResult useOn(Player player, ItemStack stack, BlockPos pos, Direction face, double hitX, double hitY,
+        double hitZ) {
+        BlockHitResult hit = new BlockHitResult(new Vec3(pos.getX() + hitX, pos.getY() + hitY, pos.getZ() + hitZ), face,
+            pos, false);
+        return stack.useOn(new UseOnContext(player.level(), player, InteractionHand.MAIN_HAND, stack, hit));
+    }
 }

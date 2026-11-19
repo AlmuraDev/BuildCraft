@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_emzuli_item",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_emzuli_item",
+      "components": {
+        "buildcrafttransport:colour": "lime"
+      }
+    }
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_diamond_wood_item",
+    "components": {
+      "buildcrafttransport:colour": "lime"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_diamond_wood_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_emzuli_item"
+    }
+  ]
+}

@@ -371,7 +371,7 @@ public enum PipeBaseModelGenStandard implements IPipeBaseModelGen {
 
     private static TextureAtlasSprite getSprite(TextureAtlasSprite[] array, int index) {
         if (array == null || index < 0 || index >= array.length) {
-            return Minecraft.getMinecraft().getTextureMapBlocks().getMissingSprite();
+            return Minecraft.getInstance().getTextureMapBlocks().getMissingSprite();
         }
         return array[index];
     }

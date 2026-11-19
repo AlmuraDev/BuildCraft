@@ -63,7 +63,7 @@ public class TriggerParameterSignal implements IStatementParameter {
 
     public static TriggerParameterSignal readFromNbt(CompoundTag nbt) {
         if (nbt.contains("color")) {
-            DyeColor colour = DyeColor.byMetadata(nbt.getByteOr("color", (byte) 0));
+            DyeColor colour = DyeColor.byId(nbt.getByteOr("color", (byte) 0));
             boolean active = nbt.getBooleanOr("active", false);
             return get(active, colour);
         } else {
@@ -74,7 +74,7 @@ public class TriggerParameterSignal implements IStatementParameter {
     @Override
     public void writeToNbt(CompoundTag nbt) {
         if (colour != null) {
-            nbt.putByte("color", (byte) colour.getMetadata());
+            nbt.putByte("color", (byte) colour.getId());
             nbt.putBoolean("active", active);
         }
     }

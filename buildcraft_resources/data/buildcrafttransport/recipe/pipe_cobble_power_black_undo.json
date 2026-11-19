@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_cobble_power",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_cobble_power",
+      "components": {
+        "buildcrafttransport:colour": "black"
+      }
+    }
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_cobble_item",
+    "components": {
+      "buildcrafttransport:colour": "black"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_cobble_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_cobble_power"
+    }
+  ]
+}

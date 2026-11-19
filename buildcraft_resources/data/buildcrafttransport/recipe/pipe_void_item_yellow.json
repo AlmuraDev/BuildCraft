@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_void_item",
+  "key": {
+    "l": "#c:dyes/black",
+    "g": "minecraft:yellow_stained_glass",
+    "r": "#c:dusts/redstone"
+  },
+  "pattern": [
+    "lgr"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_void_item",
+    "count": 8,
+    "components": {
+      "buildcrafttransport:colour": "yellow"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_void_item"
+    }
+  ]
+}

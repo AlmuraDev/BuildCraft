@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_wood_fluid",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_wood_item",
+      "components": {
+        "buildcrafttransport:colour": "green"
+      }
+    },
+    "buildcrafttransport:waterproof"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_wood_fluid",
+    "components": {
+      "buildcrafttransport:colour": "green"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_wood_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_wood_fluid"
+    }
+  ]
+}

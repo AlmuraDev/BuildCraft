@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_lapis_item",
+  "key": {
+    "l": "minecraft:lapis_block",
+    "g": "minecraft:orange_stained_glass",
+    "r": "minecraft:lapis_block"
+  },
+  "pattern": [
+    "lgr"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_lapis_item",
+    "count": 8,
+    "components": {
+      "buildcrafttransport:colour": "orange"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_lapis_item"
+    }
+  ]
+}

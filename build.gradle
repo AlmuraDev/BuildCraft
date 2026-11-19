@@ -34,6 +34,7 @@ def portedPackages = [
         'buildcraft/api/**',
         'buildcraft/lib/**',
         'buildcraft/core/**',
+        'buildcraft/transport/**',
 ]
 
 // Client rendering, models, the guide book and the GUI screens inside the ported packages. They are ported in the
@@ -88,6 +89,17 @@ def deferredSources = [
         'buildcraft/core/list/GuiList.java',
         'buildcraft/core/list/ListTooltipHandler.java',
         'buildcraft/core/marker/volume/AddonDefaultRenderer.java',
+]
+
+// transport client and GUIs (render batch / GUIs batch)
+deferredSources += [
+        'buildcraft/transport/client/*.java',
+        'buildcraft/transport/client/model/*.java',
+        'buildcraft/transport/client/model/plug/**',
+        'buildcraft/transport/client/render/**',
+        'buildcraft/transport/gui/**',
+        'buildcraft/transport/container/**',
+        'buildcraft/transport/BCTransportModels.java',
 ]
 
 def mainResourceDirs = ['buildcraft_resources', 'BuildCraft-Localization', 'BuildCraftGuide/guide_resources']

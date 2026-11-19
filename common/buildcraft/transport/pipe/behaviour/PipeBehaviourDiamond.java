@@ -62,7 +62,7 @@ public abstract class PipeBehaviourDiamond extends PipeBehaviour {
             }
         }
         if (count >= FILTERS_PER_SIDE - 2) {
-            AdvancementUtil.unlockAdvancement(pipe.getHolder().getOwner().getId(), ADVANCEMENT_NEED_LIST);
+            AdvancementUtil.unlockAdvancement(pipe.getHolder().getOwner().id(), ADVANCEMENT_NEED_LIST);
         }
     }
 

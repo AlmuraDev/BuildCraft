@@ -12,18 +12,11 @@ import java.util.Locale;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.core.Direction;
 
-import net.minecraftforge.client.event.ModelBakeEvent;
-import net.minecraftforge.client.event.TextureStitchEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.bus.api.SubscribeEvent;
 
 import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import buildcraft.lib.client.sprite.SpriteHolderRegistry.SpriteHolder;
 import buildcraft.lib.misc.ColourUtil;
 
-import buildcraft.transport.client.model.PipeModelCacheAll;
-import buildcraft.transport.client.model.PipeModelCacheBase;
-import buildcraft.transport.client.render.PipeFlowRendererItems;
 import buildcraft.transport.pipe.behaviour.PipeBehaviourEmzuli.SlotIndex;
 
 public class BCTransportSprites {
@@ -120,20 +113,8 @@ public class BCTransportSprites {
         return SpriteHolderRegistry.getHolder("buildcraft" + module + ":" + loc);
     }
 
-    public static void fmlPreInit() {
-        NeoForge.EVENT_BUS.register(BCTransportSprites.class);
-    }
-
-    @SubscribeEvent
-    public static void onTextureStitchPre(TextureStitchEvent.Pre event) {
-        PipeModelCacheBase.generator.onTextureStitchPre(event.getMap());
-    }
-
-    @SubscribeEvent
-    public static void onModelBake(ModelBakeEvent event) {
-        PipeModelCacheAll.clearModels();
-        PipeFlowRendererItems.onModelBake();
-    }
+    /** Touches the class so the holders exist. (The pipe model caches are rebuilt by the client proxy.) */
+    public static void fmlPreInit() {}
 
     public static SpriteHolder getPipeSignal(boolean active, DyeColor colour) {
         return (active ? PIPE_SIGNAL_ON : PIPE_SIGNAL_OFF).get(colour);

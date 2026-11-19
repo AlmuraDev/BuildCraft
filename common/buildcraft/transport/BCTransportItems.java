@@ -6,6 +6,15 @@
 
 package buildcraft.transport;
 
+import java.util.function.Consumer;
+
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.DyeColor;
+
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
 import buildcraft.api.transport.pipe.PipeDefinition;
 
 import buildcraft.lib.item.ItemBC_Neptune;
@@ -17,7 +26,11 @@ import buildcraft.transport.item.ItemWire;
 import buildcraft.transport.pipe.PipeRegistry;
 
 public class BCTransportItems {
-    private static final RegistrationHelper HELPER = new RegistrationHelper();
+    /** The colour of pipe and wire stacks: "buildcrafttransport:colour" (1.12.2 used the damage value). */
+    public static final DataComponentType<DyeColor> COLOUR = DataComponentType.<DyeColor> builder()
+        .persistent(DyeColor.CODEC)
+        .networkSynchronized(DyeColor.STREAM_CODEC)
+        .build();
 
     public static ItemBC_Neptune waterproof;
 
@@ -87,72 +100,79 @@ public class BCTransportItems {
 
     public static ItemWire wire;
 
-    public static void preInit() {
-        waterproof = HELPER.addItem(new ItemBC_Neptune("item.waterproof"));
+    public static void preInit(IEventBus modBus) {
+        DeferredRegister<DataComponentType<?>> components =
+            RegistrationHelper.createRegister(Registries.DATA_COMPONENT_TYPE, BCTransport.MODID, modBus);
+        components.register("colour", () -> COLOUR);
 
-        pipeStructure = makePipeItem(BCTransportPipes.structure);
+        RegistrationHelper helper = new RegistrationHelper(BCTransport.MODID, modBus);
+        helper.addItem("item.waterproof", ItemBC_Neptune::new, i -> waterproof = i);
+
+        makePipeItem(BCTransportPipes.structure, i -> pipeStructure = i);
 
         // Register them in order of type -- item, fluid, power
-        pipeItemWood = makePipeItem(BCTransportPipes.woodItem);
-        pipeItemCobble = makePipeItem(BCTransportPipes.cobbleItem);
-        pipeItemStone = makePipeItem(BCTransportPipes.stoneItem);
-        pipeItemQuartz = makePipeItem(BCTransportPipes.quartzItem);
-        pipeItemIron = makePipeItem(BCTransportPipes.ironItem);
-        pipeItemGold = makePipeItem(BCTransportPipes.goldItem);
-        pipeItemClay = makePipeItem(BCTransportPipes.clayItem);
-        pipeItemSandstone = makePipeItem(BCTransportPipes.sandstoneItem);
-        pipeItemVoid = makePipeItem(BCTransportPipes.voidItem);
-        pipeItemObsidian = makePipeItem(BCTransportPipes.obsidianItem);
-        pipeItemDiamond = makePipeItem(BCTransportPipes.diamondItem);
-        pipeItemDiaWood = makePipeItem(BCTransportPipes.diaWoodItem);
-        pipeItemLapis = makePipeItem(BCTransportPipes.lapisItem);
-        pipeItemDaizuli = makePipeItem(BCTransportPipes.daizuliItem);
-        pipeItemEmzuli = makePipeItem(BCTransportPipes.emzuliItem);
-        pipeItemStripes = makePipeItem(BCTransportPipes.stripesItem);
+        makePipeItem(BCTransportPipes.woodItem, i -> pipeItemWood = i);
+        makePipeItem(BCTransportPipes.cobbleItem, i -> pipeItemCobble = i);
+        makePipeItem(BCTransportPipes.stoneItem, i -> pipeItemStone = i);
+        makePipeItem(BCTransportPipes.quartzItem, i -> pipeItemQuartz = i);
+        makePipeItem(BCTransportPipes.ironItem, i -> pipeItemIron = i);
+        makePipeItem(BCTransportPipes.goldItem, i -> pipeItemGold = i);
+        makePipeItem(BCTransportPipes.clayItem, i -> pipeItemClay = i);
+        makePipeItem(BCTransportPipes.sandstoneItem, i -> pipeItemSandstone = i);
+        makePipeItem(BCTransportPipes.voidItem, i -> pipeItemVoid = i);
+        makePipeItem(BCTransportPipes.obsidianItem, i -> pipeItemObsidian = i);
+        makePipeItem(BCTransportPipes.diamondItem, i -> pipeItemDiamond = i);
+        makePipeItem(BCTransportPipes.diaWoodItem, i -> pipeItemDiaWood = i);
+        makePipeItem(BCTransportPipes.lapisItem, i -> pipeItemLapis = i);
+        makePipeItem(BCTransportPipes.daizuliItem, i -> pipeItemDaizuli = i);
+        makePipeItem(BCTransportPipes.emzuliItem, i -> pipeItemEmzuli = i);
+        makePipeItem(BCTransportPipes.stripesItem, i -> pipeItemStripes = i);
 
-        pipeFluidWood = makePipeItem(BCTransportPipes.woodFluid);
-        pipeFluidCobble = makePipeItem(BCTransportPipes.cobbleFluid);
-        pipeFluidStone = makePipeItem(BCTransportPipes.stoneFluid);
-        pipeFluidQuartz = makePipeItem(BCTransportPipes.quartzFluid);
-        pipeFluidGold = makePipeItem(BCTransportPipes.goldFluid);
-        pipeFluidIron = makePipeItem(BCTransportPipes.ironFluid);
-        pipeFluidClay = makePipeItem(BCTransportPipes.clayFluid);
-        pipeFluidSandstone = makePipeItem(BCTransportPipes.sandstoneFluid);
-        pipeFluidVoid = makePipeItem(BCTransportPipes.voidFluid);
-        pipeFluidDiamond = makePipeItem(BCTransportPipes.diamondFluid);
-        pipeFluidDiaWood = makePipeItem(BCTransportPipes.diaWoodFluid);
-        // pipeFluidObsidian = makePipeItem(BCTransportPipes.obsidianFluid);
+        makePipeItem(BCTransportPipes.woodFluid, i -> pipeFluidWood = i);
+        makePipeItem(BCTransportPipes.cobbleFluid, i -> pipeFluidCobble = i);
+        makePipeItem(BCTransportPipes.stoneFluid, i -> pipeFluidStone = i);
+        makePipeItem(BCTransportPipes.quartzFluid, i -> pipeFluidQuartz = i);
+        makePipeItem(BCTransportPipes.goldFluid, i -> pipeFluidGold = i);
+        makePipeItem(BCTransportPipes.ironFluid, i -> pipeFluidIron = i);
+        makePipeItem(BCTransportPipes.clayFluid, i -> pipeFluidClay = i);
+        makePipeItem(BCTransportPipes.sandstoneFluid, i -> pipeFluidSandstone = i);
+        makePipeItem(BCTransportPipes.voidFluid, i -> pipeFluidVoid = i);
+        makePipeItem(BCTransportPipes.diamondFluid, i -> pipeFluidDiamond = i);
+        makePipeItem(BCTransportPipes.diaWoodFluid, i -> pipeFluidDiaWood = i);
+        // makePipeItem(BCTransportPipes.obsidianFluid, i -> pipeFluidObsidian = i);
 
-        pipePowerWood = makePipeItem(BCTransportPipes.woodPower);
-        pipePowerCobble = makePipeItem(BCTransportPipes.cobblePower);
-        pipePowerStone = makePipeItem(BCTransportPipes.stonePower);
-        pipePowerQuartz = makePipeItem(BCTransportPipes.quartzPower);
-        pipePowerIron = makePipeItem(BCTransportPipes.ironPower);
-        pipePowerGold = makePipeItem(BCTransportPipes.goldPower);
-        pipePowerSandstone = makePipeItem(BCTransportPipes.sandstonePower);
-        pipePowerDiamond = makePipeItem(BCTransportPipes.diamondPower);
-        pipePowerDiaWood = makePipeItem(BCTransportPipes.diaWoodPower);
+        makePipeItem(BCTransportPipes.woodPower, i -> pipePowerWood = i);
+        makePipeItem(BCTransportPipes.cobblePower, i -> pipePowerCobble = i);
+        makePipeItem(BCTransportPipes.stonePower, i -> pipePowerStone = i);
+        makePipeItem(BCTransportPipes.quartzPower, i -> pipePowerQuartz = i);
+        makePipeItem(BCTransportPipes.ironPower, i -> pipePowerIron = i);
+        makePipeItem(BCTransportPipes.goldPower, i -> pipePowerGold = i);
+        makePipeItem(BCTransportPipes.sandstonePower, i -> pipePowerSandstone = i);
+        makePipeItem(BCTransportPipes.diamondPower, i -> pipePowerDiamond = i);
+        makePipeItem(BCTransportPipes.diaWoodPower, i -> pipePowerDiaWood = i);
 
         if (!BCTransportConfig.disableRfPipe) {
-            pipeRfWood = makePipeItem(BCTransportPipes.woodRf);
-            pipeRfCobble = makePipeItem(BCTransportPipes.cobbleRf);
-            pipeRfStone = makePipeItem(BCTransportPipes.stoneRf);
-            pipeRfQuartz = makePipeItem(BCTransportPipes.quartzRf);
-            pipeRfIron = makePipeItem(BCTransportPipes.ironRf);
-            pipeRfGold = makePipeItem(BCTransportPipes.goldRf);
-            pipeRfSandstone = makePipeItem(BCTransportPipes.sandstoneRf);
-            pipeRfDiamond = makePipeItem(BCTransportPipes.diamondRf);
-            pipeRfDiaWood = makePipeItem(BCTransportPipes.diaWoodRf);
+            makePipeItem(BCTransportPipes.woodRf, i -> pipeRfWood = i);
+            makePipeItem(BCTransportPipes.cobbleRf, i -> pipeRfCobble = i);
+            makePipeItem(BCTransportPipes.stoneRf, i -> pipeRfStone = i);
+            makePipeItem(BCTransportPipes.quartzRf, i -> pipeRfQuartz = i);
+            makePipeItem(BCTransportPipes.ironRf, i -> pipeRfIron = i);
+            makePipeItem(BCTransportPipes.goldRf, i -> pipeRfGold = i);
+            makePipeItem(BCTransportPipes.sandstoneRf, i -> pipeRfSandstone = i);
+            makePipeItem(BCTransportPipes.diamondRf, i -> pipeRfDiamond = i);
+            makePipeItem(BCTransportPipes.diaWoodRf, i -> pipeRfDiaWood = i);
         }
 
-        plugBlocker = HELPER.addItem(new ItemPluggableSimple("item.plug.blocker", BCTransportPlugs.blocker));
-        plugPowerAdaptor = HELPER.addItem(new ItemPluggableSimple("item.plug.power_adaptor",
-            BCTransportPlugs.powerAdaptor, ItemPluggableSimple.PIPE_BEHAVIOUR_ACCEPTS_RS_POWER));
+        helper.addItem("item.plug.blocker",
+            (props, id) -> new ItemPluggableSimple(props, id, BCTransportPlugs.blocker), i -> plugBlocker = i);
+        helper.addItem("item.plug.power_adaptor", (props, id) -> new ItemPluggableSimple(props, id,
+            BCTransportPlugs.powerAdaptor, ItemPluggableSimple.PIPE_BEHAVIOUR_ACCEPTS_RS_POWER), i -> plugPowerAdaptor = i);
 
-        wire = HELPER.addItem(new ItemWire("item.wire"));
+        helper.addItem("item.wire", ItemWire::new, i -> wire = i);
     }
 
-    public static ItemPipeHolder makePipeItem(PipeDefinition def) {
-        return PipeRegistry.INSTANCE.createItemForPipe(def);
+    /** Queues the pipe's item; the setter is given it when items are registered. */
+    public static void makePipeItem(PipeDefinition def, Consumer<ItemPipeHolder> setter) {
+        PipeRegistry.INSTANCE.createItemForPipe(def, item -> setter.accept((ItemPipeHolder) item));
     }
 }

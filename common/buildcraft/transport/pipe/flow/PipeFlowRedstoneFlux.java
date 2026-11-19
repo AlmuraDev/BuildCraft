@@ -118,7 +118,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
 
     @Override
     public boolean canConnect(Direction face, BlockEntity oTile) {
-        return oTile.hasCapability(CapUtil.CAP_RF, face.getOpposite());
+        return (CapUtil.getCapability(oTile, CapUtil.CAP_RF, face.getOpposite()) != null);
     }
 
     @Override
@@ -145,7 +145,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
         if (tile == null) {
             return 0;
         }
-        IEnergyStorage storage = tile.getCapability(CapUtil.CAP_RF, from.getOpposite());
+        IEnergyStorage storage = CapUtil.getCapability(tile, CapUtil.CAP_RF, from.getOpposite());
         if (storage == null) {
             return 0;
         }
@@ -169,7 +169,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
         if (facing == null) {
             return null;
         } else if (capability == CapUtil.CAP_RF) {
-            return isReceiver ? CapUtil.CAP_RF.cast(sections.get(facing)) : null;
+            return isReceiver ? (T) sections.get(facing) : null;
         } else {
             return null;
         }

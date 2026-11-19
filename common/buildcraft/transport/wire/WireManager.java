@@ -155,7 +155,7 @@ public class WireManager implements IWireManager {
 
         if (!recursive) {
             for (Direction side : Direction.values()) {
-                BlockEntity tile = holder.getPipeWorld().getBlockEntity(holder.getPipePos().offset(side));
+                BlockEntity tile = holder.getPipeWorld().getBlockEntity(holder.getPipePos().relative(side));
                 if (tile instanceof IPipeHolder) {
                     ((IPipeHolder) tile).getWireManager().updateBetweens(true);
                 }
@@ -210,7 +210,7 @@ public class WireManager implements IWireManager {
         int[] i = { 0 };
         parts.forEach((part, color) -> {
             wiresArray[i[0]] = part.ordinal();
-            wiresArray[i[0] + 1] = color.getMetadata();
+            wiresArray[i[0] + 1] = color.getId();
             i[0] += 2;
         });
         nbt.putIntArray("parts", wiresArray);
@@ -221,7 +221,7 @@ public class WireManager implements IWireManager {
         parts.clear();
         int[] wiresArray = nbt.getIntArray("parts").orElse(new int[0]);
         for (int i = 0; i < wiresArray.length; i += 2) {
-            parts.put(EnumWirePart.VALUES[wiresArray[i]], DyeColor.byMetadata(wiresArray[i + 1]));
+            parts.put(EnumWirePart.VALUES[wiresArray[i]], DyeColor.byId(wiresArray[i + 1]));
         }
     }
 

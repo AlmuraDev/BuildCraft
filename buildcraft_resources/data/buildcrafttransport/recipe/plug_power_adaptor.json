@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "s": "buildcrafttransport:pipe_structure",
+    "g": "#c:gears/stone",
+    "r": "minecraft:redstone",
+    "i": "minecraft:gold_ingot"
+  },
+  "pattern": [
+    "sis",
+    "sgs",
+    "srs"
+  ],
+  "result": {
+    "id": "buildcrafttransport:plug_power_adaptor",
+    "count": 4
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:plug_power_adaptor"
+    }
+  ]
+}

@@ -16,7 +16,6 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.world.item.Item;
 import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.InvalidInputDataException;
@@ -26,14 +25,20 @@ import buildcraft.api.transport.pipe.PipeDefinition;
 
 import buildcraft.lib.registry.RegistrationHelper;
 
+import buildcraft.transport.BCTransportBlocks;
 import buildcraft.transport.item.ItemPipeHolder;
 
 public enum PipeRegistry implements IPipeRegistry {
     INSTANCE;
 
-    private final RegistrationHelper helper = new RegistrationHelper();
+    private RegistrationHelper helper;
     private final Map<Identifier, PipeDefinition> definitions = new HashMap<>();
     private final Map<PipeDefinition, IItemPipe> pipeItems = new IdentityHashMap<>();
+
+    /** Lets pipe items be registered on transport's mod bus. */
+    public void init(RegistrationHelper transportHelper) {
+        this.helper = transportHelper;
+    }
 
     @Override
     public void registerPipe(PipeDefinition definition) {
@@ -53,24 +58,18 @@ public enum PipeRegistry implements IPipeRegistry {
     }
 
     @Override
-    public ItemPipeHolder createItemForPipe(PipeDefinition definition) {
-        ItemPipeHolder item = ItemPipeHolder.createAndTag(definition);
-        helper.addForcedItem(item);
-        if (definitions.values().contains(definition)) {
-            setItemForPipe(definition, item);
+    public void createItemForPipe(PipeDefinition definition, Consumer<IItemPipe> onCreated) {
+        if (helper == null) {
+            throw new IllegalStateException("Pipe items can only be made while transport is being constructed");
         }
-        return item;
-    }
-
-    @Override
-    public IItemPipe createUnnamedItemForPipe(PipeDefinition definition, Consumer<Item> postCreate) {
-        ItemPipeHolder item = ItemPipeHolder.create(definition);
-        postCreate.accept(item);
-        helper.addForcedItem(item);
-        if (definitions.values().contains(definition)) {
-            setItemForPipe(definition, item);
-        }
-        return item;
+        String tagId = ItemPipeHolder.tagIdFor(definition);
+        helper.addItem(tagId, (String) null,
+            (props, id) -> new ItemPipeHolder(BCTransportBlocks.pipeHolder, definition, props, id), item -> {
+                if (definitions.values().contains(definition)) {
+                    setItemForPipe(definition, item);
+                }
+                onCreated.accept(item);
+            });
     }
 
     @Override

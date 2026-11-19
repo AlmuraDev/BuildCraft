@@ -6,13 +6,16 @@
 
 package buildcraft.transport.stripes;
 
+import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.dispenser.DispenseItemBehavior;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.DispenserBlock;
+
+import buildcraft.api.core.BCLog;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.block.BlockDispenser;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.dispenser.IBehaviorDispenseItem;
-import net.minecraft.dispenser.IBlockSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.Item;
@@ -31,52 +34,10 @@ public enum StripesHandlerDispenser implements IStripesHandlerItem {
     public static final List<Item> ITEMS = new ArrayList<>();
     public static final List<Class<? extends Item>> ITEM_CLASSES = new ArrayList<>();
 
-    public static class Source implements IBlockSource {
-        private final Level world;
-        private final BlockPos pos;
-        private final Direction side;
-
-        public Source(Level world, BlockPos pos, Direction side) {
-            this.world = world;
-            this.pos = pos;
-            this.side = side;
-        }
-
-        @Override
-        public double getX() {
-            return pos.getX() + 0.5D;
-        }
-
-        @Override
-        public double getY() {
-            return pos.getY() + 0.5D;
-        }
-
-        @Override
-        public double getZ() {
-            return pos.getZ() + 0.5D;
-        }
-
-        @Override
-        public BlockPos getBlockPos() {
-            return pos;
-        }
-
-        @Override
-        public BlockState getBlockState() {
-            return Blocks.DISPENSER.defaultBlockState().setValue(BlockDispenser.FACING, side);
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public <T extends BlockEntity> T getBlockTileEntity() {
-            return (T) world.getBlockEntity(pos);
-        }
-
-        @Override
-        public Level getWorld() {
-            return world;
-        }
+    /** A dispenser facing the stripes pipe's direction, at the pipe. There is no dispenser block entity behind it, so
+     * behaviours that put things back into the dispenser can't run (1.12.2 gave them the pipe's tile instead). */
+    public static BlockSource createSource(ServerLevel world, BlockPos pos, Direction side) {
+        return new BlockSource(world, pos, Blocks.DISPENSER.defaultBlockState().setValue(DispenserBlock.FACING, side), null);
     }
 
     private static boolean shouldHandle(ItemStack stack) {
@@ -101,18 +62,21 @@ public enum StripesHandlerDispenser implements IStripesHandlerItem {
                           ItemStack stack,
                           Player player,
                           IStripesActivator activator) {
-        if (!BlockDispenser.DISPENSE_BEHAVIOR_REGISTRY.containsKey(stack.getItem())) {
+        DispenseItemBehavior behaviour = DispenserBlock.DISPENSER_REGISTRY.get(stack.getItem());
+        if (behaviour == null || !(world instanceof ServerLevel server)) {
             return false;
         }
-        IBehaviorDispenseItem behaviour = BlockDispenser.DISPENSE_BEHAVIOR_REGISTRY.getObject(stack.getItem());
-        // Temp: for testing
-        // if (!shouldHandle(stack)) {
-        // return false;
-        // }
 
-        IBlockSource source = new Source(world, pos, direction);
-        ItemStack output = behaviour.dispense(source, stack.copy());
-        player.inventory.setItem(player.inventory.currentItem, output);
+        BlockSource source = createSource(server, pos, direction);
+        ItemStack output;
+        try {
+            output = behaviour.dispense(source, stack.copy());
+        } catch (RuntimeException e) {
+            // Mostly behaviours that wanted the dispenser block entity
+            BCLog.logger.debug("[transport.stripes] Couldn't dispense " + stack + " from a stripes pipe", e);
+            return false;
+        }
+        player.getInventory().setItem(player.getInventory().getSelectedSlot(), output);
         return true;
     }
 }

@@ -8,74 +8,60 @@ package buildcraft.transport;
 
 import java.util.function.Consumer;
 
-import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLInterModComms.IMCEvent;
-import net.minecraftforge.fml.common.event.FMLInterModComms.IMCMessage;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent.ServerTickEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.neoforge.common.NeoForge;
 
-import buildcraft.api.BCModules;
-import buildcraft.api.core.BCLog;
-import buildcraft.api.facades.FacadeAPI;
 import buildcraft.api.schematics.SchematicBlockFactoryRegistry;
 
-import buildcraft.lib.BCLib;
 import buildcraft.lib.config.EnumRestartRequirement;
 import buildcraft.lib.registry.CreativeTabManager;
-import buildcraft.lib.registry.CreativeTabManager.CreativeTabBC;
+import buildcraft.lib.registry.RegistrationHelper;
 import buildcraft.lib.registry.RegistryConfig;
 import buildcraft.lib.registry.TagManager;
 import buildcraft.lib.registry.TagManager.EnumTagType;
 import buildcraft.lib.registry.TagManager.TagEntry;
 
 import buildcraft.core.BCCore;
-import buildcraft.silicon.plug.FacadeStateManager;
-import buildcraft.transport.net.PipeItemMessageQueue;
+import buildcraft.transport.pipe.PipeRegistry;
 import buildcraft.transport.pipe.SchematicBlockPipe;
 
-//@formatter:off
-@Mod(
-    modid = BCTransport.MODID,
-    name = "BuildCraft Transport",
-    version = BCLib.VERSION,
-    dependencies = "required-after:buildcraftcore@[" + BCLib.VERSION + "]"
-)
-//@formatter:on
+/** BuildCraft Transport. 1.12.2's pre-init happens in the constructor, init in common setup and post-init once loading
+ * completes. (1.12.2 also passed facade IMC messages sent here on to silicon; facades are silicon's alone now.) */
+@Mod(BCTransport.MODID)
 public class BCTransport {
     public static final String MODID = "buildcrafttransport";
 
-    @Mod.Instance(MODID)
     public static BCTransport INSTANCE = null;
+    public static IEventBus MOD_BUS;
 
-    private static CreativeTabBC tabPipes;
-    private static CreativeTabBC tabPlugs;
-
-    @Mod.EventHandler
-    public static void preInit(FMLPreInitializationEvent evt) {
+    public BCTransport(IEventBus modBus, ModContainer container) {
+        INSTANCE = this;
+        MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
 
-        tabPipes = CreativeTabManager.createTab("buildcraft.pipes");
-        tabPlugs = CreativeTabManager.createTab("buildcraft.plugs");
+        CreativeTabManager.createTab("buildcraft.pipes");
+        CreativeTabManager.createTab("buildcraft.plugs");
+        CreativeTabManager.setItemStack("buildcraft.pipes",
+            () -> new net.minecraft.world.item.ItemStack(BCTransportItems.pipeItemDiamond));
+        CreativeTabManager.setItemStack("buildcraft.plugs",
+            () -> new net.minecraft.world.item.ItemStack(BCTransportItems.plugBlocker));
+
+        PipeRegistry.INSTANCE.init(new RegistrationHelper(MODID, modBus));
 
         BCTransportRegistries.preInit();
         BCTransportConfig.preInit();
-        BCTransportBlocks.preInit();
+        BCTransportBlocks.preInit(modBus);
         BCTransportPipes.preInit();
         BCTransportPlugs.preInit();
-        BCTransportItems.preInit();
+        BCTransportItems.preInit(modBus);
         BCTransportStatements.preInit();
 
         // Reload after all of the pipe defs have been created.
         BCTransportConfig.reloadConfig(EnumRestartRequirement.GAME);
-
-        tabPipes.setItem(BCTransportItems.pipeItemDiamond);
-        tabPlugs.setItem(BCTransportItems.plugBlocker);
-
-        NetworkRegistry.INSTANCE.registerGuiHandler(INSTANCE, BCTransportProxy.getProxy());
 
         SchematicBlockFactoryRegistry.registerFactory("pipe", 300, SchematicBlockPipe::predicate,
             SchematicBlockPipe::new);
@@ -83,57 +69,20 @@ public class BCTransport {
         BCTransportProxy.getProxy().fmlPreInit();
 
         NeoForge.EVENT_BUS.register(BCTransportEventDist.INSTANCE);
+
+        modBus.addListener(BCTransport::init);
+        modBus.addListener(BCTransport::postInit);
     }
 
-    @Mod.EventHandler
-    public static void init(FMLInitializationEvent evt) {
-        BCTransportProxy.getProxy().fmlInit();
-        BCTransportRegistries.init();
+    private static void init(FMLCommonSetupEvent evt) {
+        evt.enqueueWork(() -> {
+            BCTransportProxy.getProxy().fmlInit();
+            BCTransportRegistries.init();
+        });
     }
 
-    // How much time we wasted during a tantrum
-    // We ensure that this never exceeds 15 seconds, even if we receive over a million invalid IMC messages
-    private static int totalTantrumTime;
-
-    @Mod.EventHandler
-    public static void onImcEvent(IMCEvent imc) {
-        for (IMCMessage message : imc.getMessages()) {
-            if (FacadeAPI.isFacadeMessageId(message.key)) {
-                // As this used to be in transport we will need to
-                // pass messages on to silicon
-
-                // Although we'll make a bit of a fuss about doing so
-                BCLog.logger.warn(
-                    "[transport] Recieved a facade IMC message that should be directed to 'buildcraftsilicon' instead!");
-
-                // a bit bigger fuss
-                new IllegalArgumentException().printStackTrace();
-
-                {
-                    // and a tantrum
-                    int time = 1000;
-                    if (time + totalTantrumTime > 15000) {
-                        time = 0;
-                    } else {
-                        totalTantrumTime += time;
-                        try {
-                            Thread.sleep(time);
-                        } catch (InterruptedException ignored) {
-                            // We don't really care about this error
-                        }
-                    }
-                }
-                // Ok, tantrum over
-                if (BCModules.SILICON.isLoaded()) {
-                    FacadeStateManager.receiveInterModComms(message);
-                }
-            }
-        }
-    }
-
-    @Mod.EventHandler
-    public static void postInit(FMLPostInitializationEvent evt) {
-        BCTransportProxy.getProxy().fmlPostInit();
+    private static void postInit(FMLLoadCompleteEvent evt) {
+        evt.enqueueWork(() -> BCTransportProxy.getProxy().fmlPostInit());
     }
 
     static {

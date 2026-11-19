@@ -92,7 +92,7 @@ public class PipeBehaviourEmzuli extends PipeBehaviourWood {
         for (SlotIndex index : SlotIndex.VALUES) {
             byte c = nbt.getByteOr("slotColors[" + index.ordinal() + "]", (byte) 0);
             if (c > 0 && c <= 16) {
-                slotColours.put(index, DyeColor.byMetadata(c - 1));
+                slotColours.put(index, DyeColor.byId(c - 1));
             }
         }
     }
@@ -105,7 +105,7 @@ public class PipeBehaviourEmzuli extends PipeBehaviourWood {
         nbt.put("currentSlot", NBTUtilBC.writeEnum(currentSlot));
         for (SlotIndex index : SlotIndex.VALUES) {
             DyeColor c = slotColours.get(index);
-            nbt.putByte("slotColors[" + index.ordinal() + "]", (byte) (c == null ? 0 : c.getMetadata() + 1));
+            nbt.putByte("slotColors[" + index.ordinal() + "]", (byte) (c == null ? 0 : c.getId() + 1));
         }
         return nbt;
     }
@@ -210,7 +210,7 @@ public class PipeBehaviourEmzuli extends PipeBehaviourWood {
         if (EntityUtil.getWrenchHand(player) != null) {
             return super.onPipeActivate(player, trace, hitX, hitY, hitZ, part);
         }
-        if (player.isServerWorld()) {
+        if (!player.level().isClientSide()) {
             BCTransportGuis.PIPE_EMZULI.openGui(player, pipe.getHolder().getPipePos());
         }
         return true;

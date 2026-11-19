@@ -5,7 +5,6 @@ import java.util.function.Consumer;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.world.item.Item;
 import net.minecraft.resources.Identifier;
 
 public interface IPipeRegistry {
@@ -19,18 +18,11 @@ public interface IPipeRegistry {
 
     IItemPipe getItemForPipe(PipeDefinition definition);
 
-    /** Creates an {@link IItemPipe} for the given {@link PipeDefinition}. If the {@link PipeDefinition} has been
-     * registered with {@link #registerPipe(PipeDefinition)} then it will also be registered with
-     * {@link #setItemForPipe(PipeDefinition, IItemPipe)}. The returned item will be automatically registered with
-     * forge. */
-    IItemPipe createItemForPipe(PipeDefinition definition);
-
-    /** Identical to {@link #createItemForPipe(PipeDefinition)}, but doesn't require registering tags with buildcraft
-     * lib in order to register.
-     * 
-     * @param postCreate A function to call in order to setup the {@link Item#setRegistryName(Identifier)} and
-     *            {@link Item#setUnlocalizedName(String)}. */
-    IItemPipe createUnnamedItemForPipe(PipeDefinition definition, Consumer<Item> postCreate);
+    /** Queues an {@link IItemPipe} for the given {@link PipeDefinition}: on 26.3 items can only be created while items
+     * are being registered, so the item is made then (with BuildCraft's tags for its name) and given to
+     * {@code onCreated}. If the {@link PipeDefinition} has been registered with {@link #registerPipe(PipeDefinition)}
+     * then the item will also be registered with {@link #setItemForPipe(PipeDefinition, IItemPipe)}. */
+    void createItemForPipe(PipeDefinition definition, Consumer<IItemPipe> onCreated);
 
     Iterable<PipeDefinition> getAllRegisteredPipes();
 }

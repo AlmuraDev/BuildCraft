@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "p": "minecraft:piston",
+    "c": "minecraft:chest",
+    "d": "buildcrafttransport:pipe_diamond_item",
+    "w": "#minecraft:planks"
+  },
+  "pattern": [
+    "wdw",
+    "wcw",
+    "wpw"
+  ],
+  "result": {
+    "id": "buildcrafttransport:filtered_buffer"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftbuilders:quarry"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_stone_fluid",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_stone_fluid",
+      "components": {
+        "buildcrafttransport:colour": "red"
+      }
+    }
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_stone_item",
+    "components": {
+      "buildcrafttransport:colour": "red"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_stone_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_stone_fluid"
+    }
+  ]
+}

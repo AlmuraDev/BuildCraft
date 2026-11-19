@@ -9,9 +9,6 @@ package buildcraft.transport;
 import net.neoforged.neoforge.common.NeoForge;
 import buildcraft.lib.config.Configuration;
 import buildcraft.lib.config.Property;
-import net.minecraftforge.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent;
-import net.neoforged.fml.ModList;
-import net.minecraftforge.fml.common.LoaderState;
 import net.neoforged.bus.api.SubscribeEvent;
 
 import buildcraft.api.BCModules;
@@ -173,12 +170,12 @@ public class BCTransportConfig {
         PipeApi.rfTransferData.put(def, new RedstoneFluxTransferInfo(maxTransfer, recv));
     }
 
-    @SubscribeEvent
-    public static void onConfigChange(OnConfigChangedEvent cce) {
-        if (BCModules.isBcMod(cce.getModID())) {
+    /** Reloads after a BuildCraft mod's config was edited in game (1.12.2's config GUI fired an event for this). */
+    public static void onConfigChange(String modId) {
+        if (BCModules.isBcMod(modId)) {
             EnumRestartRequirement req = EnumRestartRequirement.NONE;
-            if (ModList.get().isInState(LoaderState.AVAILABLE)) {
-                // The loaders state will be LoaderState.SERVER_STARTED when we are in a world
+            if (net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer() != null) {
+                // A world is open
                 req = EnumRestartRequirement.WORLD;
             }
             reloadConfig(req);

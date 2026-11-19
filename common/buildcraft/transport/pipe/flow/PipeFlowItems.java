@@ -261,9 +261,9 @@ public final class PipeFlowItems extends PipeFlow implements IFlowItems {
     @Override
     public <T> T getCapability(@Nonnull BlockCapability<T, Direction> capability, Direction facing) {
         if (capability == PipeApi.CAP_INJECTABLE) {
-            return PipeApi.CAP_INJECTABLE.cast(this);
+            return (T) (this);
         } else if (capability == CapUtil.CAP_ITEM_TRANSACTOR) {
-            return CapUtil.CAP_ITEM_TRANSACTOR.cast(ItemTransactorHelper.wrapInjectable(this, facing));
+            return (T) (ItemTransactorHelper.wrapInjectable(this, facing));
         } else {
             return super.getCapability(capability, facing);
         }
@@ -498,13 +498,11 @@ public final class PipeFlowItems extends PipeFlow implements IFlowItems {
         speed += 0.01;
         speed *= 2;
         ItemEntity ent = new ItemEntity(world, x, y, z, stack);
-        ent.motionX = motion.getStepX() * speed;
-        ent.motionY = motion.getStepY() * speed;
-        ent.motionZ = motion.getStepZ() * speed;
+        ent.setDeltaMovement(motion.getStepX() * speed, motion.getStepY() * speed, motion.getStepZ() * speed);
 
         PipeEventItem.Drop drop = new PipeEventItem.Drop(holder, this, ent);
         holder.fireEvent(drop);
-        if (ent.getItem().isEmpty() || ent.isDead) {
+        if (ent.getItem().isEmpty() || ent.isRemoved()) {
             return;
         }
 

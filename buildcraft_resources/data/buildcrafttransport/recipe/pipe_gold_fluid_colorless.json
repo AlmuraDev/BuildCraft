@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcrafttransport:pipe_gold_fluid",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcrafttransport:pipe_gold_item",
+      "components": {},
+      "strict": true
+    },
+    "buildcrafttransport:waterproof"
+  ],
+  "result": {
+    "id": "buildcrafttransport:pipe_gold_fluid"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_gold_item"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:pipe_gold_fluid"
+    }
+  ]
+}
