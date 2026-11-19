@@ -138,7 +138,9 @@ public class ItemHandlerManager implements ICapabilityProvider, INBTSerializable
     public <T> T getCapability(@Nonnull BlockCapability<T, Direction> capability, Direction facing) {
         if (capability == CapUtil.CAP_ITEMS) {
             Wrapper wrapper = wrappers.get(EnumPipePart.fromFacing(facing));
-            return CapUtil.CAP_ITEMS.cast(wrapper.combined);
+            @SuppressWarnings("unchecked")
+            T combined = (T) wrapper.combined;
+            return combined;
         }
         return null;
     }

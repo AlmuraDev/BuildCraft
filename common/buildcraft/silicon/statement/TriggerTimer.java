@@ -8,10 +8,11 @@ package buildcraft.silicon.statement;
 
 import java.util.Locale;
 
-import net.minecraft.world.World;
+import net.minecraft.world.level.Level;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.statements.IStatement;
 import buildcraft.api.statements.IStatementContainer;
@@ -53,8 +54,8 @@ public class TriggerTimer extends BCStatement implements ITriggerInternal {
 
     @Override
     public boolean isTriggerActive(IStatementContainer source, IStatementParameter[] parameters) {
-        World world = source.getTile().getWorld();
-        return world.getTotalWorldTime() % (20 * duration.duration) == 0;
+        Level world = source.getTile().getWorld();
+        return world.getGameTime() % (20 * duration.duration) == 0;
     }
 
     @Override
@@ -63,7 +64,7 @@ public class TriggerTimer extends BCStatement implements ITriggerInternal {
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public SpriteHolder getSprite() {
         switch (duration) {
             case SHORT: {

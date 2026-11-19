@@ -36,7 +36,9 @@ public enum BCLibEventDist {
 
     @SubscribeEvent
     public static void onWorldUnload(LevelEvent.Unload event) {
-        MarkerCache.onWorldUnload(event.getLevel());
+        if (event.getLevel() instanceof net.minecraft.world.level.Level level) {
+            MarkerCache.onWorldUnload(level);
+        }
         if (event.getLevel() instanceof ServerLevel) {
             FakePlayerProvider.INSTANCE.unloadWorld((ServerLevel) event.getLevel());
         }

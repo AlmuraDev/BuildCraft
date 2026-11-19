@@ -7,154 +7,108 @@
 package buildcraft.lib.list;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
-import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-import net.minecraftforge.oredict.OreDictionary;
 
 import buildcraft.api.lists.ListMatchHandler;
 
+/** Matches items by their tags, as 1.12.2 matched them by ore dictionary names. Tags like "c:ingots/iron" give a type
+ * ("c:ingots", 1.12.2's "ingot" prefix) and a material ("iron", the "Iron" suffix):
+ * <ul>
+ * <li>CLASS: the items share a tag.</li>
+ * <li>TYPE: the items share a type ("any ingot").</li>
+ * <li>MATERIAL: the items share a material ("anything iron").</li>
+ * </ul> */
 public class ListMatchHandlerOreDictionary extends ListMatchHandler {
-    private static int getUppercaseCount(String s) {
-        int j = 0;
-        for (int i = 0; i < s.length(); i++) {
-            if (Character.isUpperCase(s.codePointAt(i))) {
-                j++;
-            }
-        }
-        return j;
+
+    /** @return The tags that describe a kind of item ("c:ingots/iron"), rather than a behaviour. */
+    private static Set<TagKey<Item>> namedTags(ItemStack stack) {
+        return stack.typeHolder().tags().filter(tag -> tag.location().getPath().indexOf('/') > 0).collect(Collectors.toSet());
+    }
+
+    @Nullable
+    static String getType(TagKey<Item> tag) {
+        String path = tag.location().getPath();
+        int slash = path.lastIndexOf('/');
+        return slash > 0 ? tag.location().getNamespace() + ":" + path.substring(0, slash) : null;
+    }
+
+    @Nullable
+    static String getMaterial(TagKey<Item> tag) {
+        String path = tag.location().getPath();
+        int slash = path.lastIndexOf('/');
+        return slash > 0 ? path.substring(slash + 1) : null;
+    }
+
+    private static Set<String> keys(Set<TagKey<Item>> tags, Type type) {
+        return tags.stream().map(tag -> type == Type.MATERIAL ? getMaterial(tag) : getType(tag)).filter(s -> s != null)
+            .collect(Collectors.toSet());
     }
 
     @Override
     public boolean matches(Type type, @Nonnull ItemStack stack, @Nonnull ItemStack target, boolean precise) {
-        int[] oreIds = OreDictionary.getOreIDs(stack);
-
-        if (oreIds.length == 0) {
+        Set<TagKey<Item>> tags = namedTags(stack);
+        if (tags.isEmpty()) {
             // Unfortunately we cannot compare the items.
             return false;
         }
-
-        int[] matchesIds = OreDictionary.getOreIDs(target);
-
-        String[] oreNames = new String[oreIds.length];
-        for (int i = 0; i < oreIds.length; i++) {
-            oreNames[i] = OreDictionary.getOreName(oreIds[i]);
-        }
+        Set<TagKey<Item>> targetTags = namedTags(target);
 
         if (type == Type.CLASS) {
-            for (int i : oreIds) {
-                for (int j : matchesIds) {
-                    if (i == j) {
-                        return true;
-                    }
+            for (TagKey<Item> tag : tags) {
+                if (targetTags.contains(tag)) {
+                    return true;
                 }
             }
-        } else {
-            // Always pick only the longest OreDictionary string for matching.
-            // It's ugly, but should give us the most precise result for the
-            // cases in which a given stone is also used for crafting equivalents.
-            String s = getBestOreString(oreNames);
-            if (s != null) {
-                Set<Integer> stackIds = ListOreDictionaryCache.INSTANCE.getListOfPartialMatches(
-                    type == Type.MATERIAL ? ListOreDictionaryCache.getMaterial(s) : ListOreDictionaryCache.getType(s));
-                if (stackIds != null) {
-                    for (int j : stackIds) {
-                        for (int k : matchesIds) {
-                            if (j == k) {
-                                return true;
-                            }
-                        }
-                    }
-                }
+            return false;
+        }
+        Set<String> wanted = keys(tags, type);
+        for (String key : keys(targetTags, type)) {
+            if (wanted.contains(key)) {
+                return true;
             }
         }
-
         return false;
     }
 
     @Override
     public boolean isValidSource(Type type, @Nonnull ItemStack stack) {
-        return OreDictionary.getOreIDs(stack).length > 0;
-    }
-
-    private static String getBestOreString(String[] oreIds) {
-        String s = null;
-        int suc = 0, suct;
-        for (String st : oreIds) {
-            suct = getUppercaseCount(st);
-            if (s == null || suct > suc) {
-                s = st;
-                suc = suct;
-            }
-        }
-        return s;
+        return !namedTags(stack).isEmpty();
     }
 
     @OnlyIn(Dist.CLIENT)
     @Override
     public NonNullList<ItemStack> getClientExamples(Type type, @Nonnull ItemStack stack) {
-        int[] oreIds = OreDictionary.getOreIDs(stack);
         NonNullList<ItemStack> stacks = NonNullList.create();
-
-        if (oreIds.length == 0) {
-            // No ore IDs? Time for the best effort plan of METADATA!
-            if (type == Type.TYPE) {
-                NonNullList<ItemStack> tempStack = NonNullList.create();
-                stack.getItem().getSubItems(CreativeTabs.SEARCH, tempStack);
-                for (ItemStack is : tempStack) {
-                    if (is.getItem() == stack.getItem()) {
-                        stacks.add(is);
-                    }
-                }
-            }
+        Set<TagKey<Item>> tags = namedTags(stack);
+        if (tags.isEmpty()) {
             return stacks;
         }
-
-        String[] oreNames = new String[oreIds.length];
-        for (int i = 0; i < oreIds.length; i++) {
-            oreNames[i] = OreDictionary.getOreName(oreIds[i]);
-        }
-
-        if (type == Type.CLASS) {
-            for (String s : oreNames) {
-                stacks.addAll(OreDictionary.getOres(s));
+        Set<String> wanted = type == Type.CLASS ? null : keys(tags, type);
+        for (Item item : BuiltInRegistries.ITEM) {
+            ItemStack example = new ItemStack(item);
+            Set<TagKey<Item>> exampleTags = namedTags(example);
+            boolean matches;
+            if (wanted == null) {
+                matches = exampleTags.stream().anyMatch(tags::contains);
+            } else {
+                matches = keys(exampleTags, type).stream().anyMatch(wanted::contains);
             }
-        } else {
-            String s = getBestOreString(oreNames);
-            if (s != null) {
-                Set<Integer> stackIds = ListOreDictionaryCache.INSTANCE.getListOfPartialMatches(
-                    type == Type.MATERIAL ? ListOreDictionaryCache.getMaterial(s) : ListOreDictionaryCache.getType(s));
-                if (stackIds != null) {
-                    for (int j : stackIds) {
-                        stacks.addAll(OreDictionary.getOres(OreDictionary.getOreName(j)));
-                    }
-                }
+            if (matches) {
+                stacks.add(example);
             }
         }
-
-        NonNullList<ItemStack> wildcard = NonNullList.create();
-
-        for (ItemStack is : stacks) {
-            if (is != null && is.getDamageValue() == OreDictionary.WILDCARD_VALUE && is.getHasSubtypes()) {
-                wildcard.add(is);
-            }
-        }
-        for (ItemStack is : wildcard) {
-            NonNullList<ItemStack> wll = NonNullList.create();
-            is.getItem().getSubItems(CreativeTabs.MISC, wll);
-            if (wll.size() > 0) {
-                stacks.remove(is);
-                stacks.addAll(wll);
-            }
-        }
-
         return stacks;
     }
 }

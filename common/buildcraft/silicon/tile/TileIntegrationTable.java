@@ -11,13 +11,13 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.recipes.IngredientStack;
@@ -90,7 +90,7 @@ public class TileIntegrationTable extends TileLaserTableBase {
     public void update() {
         super.update();
 
-        if (world.isRemote) {
+        if (world.isClientSide()) {
             return;
         }
 
@@ -114,43 +114,43 @@ public class TileIntegrationTable extends TileLaserTableBase {
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public CompoundTag writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
         if (recipe != null) {
-            nbt.setString("recipe", recipe.name.toString());
+            nbt.putString("recipe", recipe.name.toString());
         }
         return nbt;
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         super.readFromNBT(nbt);
-        if (nbt.hasKey("recipe")) {
-            recipe = lookupRecipe(nbt.getString("recipe"));
+        if (nbt.contains("recipe")) {
+            recipe = lookupRecipe(nbt.getStringOr("recipe", ""));
         } else {
             recipe = null;
         }
     }
 
     @Override
-    public void writePayload(int id, PacketBufferBC buffer, Side side) {
+    public void writePayload(int id, PacketBufferBC buffer, LogicalSide side) {
         super.writePayload(id, buffer, side);
 
         if (id == NET_GUI_DATA) {
             buffer.writeBoolean(recipe != null);
             if (recipe != null) {
-                buffer.writeString(recipe.name.toString());
+                buffer.writeUtf(recipe.name.toString());
             }
         }
     }
 
     @Override
-    public void readPayload(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+    public void readPayload(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         super.readPayload(id, buffer, side, ctx);
 
         if (id == NET_GUI_DATA) {
             if (buffer.readBoolean()) {
-                recipe = lookupRecipe(buffer.readString());
+                recipe = lookupRecipe(buffer.readUtf());
             } else {
                 recipe = null;
             }
@@ -158,13 +158,13 @@ public class TileIntegrationTable extends TileLaserTableBase {
     }
 
     @Override
-    public void getDebugInfo(List<String> left, List<String> right, EnumFacing side) {
+    public void getDebugInfo(List<String> left, List<String> right, Direction side) {
         super.getDebugInfo(left, right, side);
         left.add("recipe - " + recipe);
         left.add("target - " + getTarget());
     }
 
     private IntegrationRecipe lookupRecipe(String name) {
-        return IntegrationRecipeRegistry.INSTANCE.getRecipe(new ResourceLocation(name));
+        return IntegrationRecipeRegistry.INSTANCE.getRecipe(Identifier.parse(name));
     }
 }

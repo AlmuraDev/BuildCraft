@@ -6,11 +6,10 @@
 
 package buildcraft.lib.client.model;
 
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Point2f;
-import javax.vecmath.Tuple2f;
-import javax.vecmath.Tuple4f;
-import javax.vecmath.Vector3f;
+import org.joml.Matrix4f;
+import org.joml.Vector2f;
+import org.joml.Vector4f;
+import org.joml.Vector3f;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
@@ -227,7 +226,7 @@ public class MutableQuad {
                 return this;
             }
             case 1: {
-                Point2f t = vertex_0.tex();
+                Vector2f t = vertex_0.tex();
                 vertex_0.texv(vertex_1.tex());
                 vertex_1.texv(vertex_2.tex());
                 vertex_2.texv(vertex_3.tex());
@@ -235,8 +234,8 @@ public class MutableQuad {
                 return this;
             }
             case 2: {
-                Point2f t0 = vertex_0.tex();
-                Point2f t1 = vertex_1.tex();
+                Vector2f t0 = vertex_0.tex();
+                Vector2f t1 = vertex_1.tex();
                 vertex_0.texv(vertex_2.tex());
                 vertex_1.texv(vertex_3.tex());
                 vertex_2.texv(t0);
@@ -244,7 +243,7 @@ public class MutableQuad {
                 return this;
             }
             case 3: {
-                Point2f t = vertex_3.tex();
+                Vector2f t = vertex_3.tex();
                 vertex_3.texv(vertex_2.tex());
                 vertex_2.texv(vertex_1.tex());
                 vertex_1.texv(vertex_0.tex());
@@ -344,7 +343,7 @@ public class MutableQuad {
         return colouri((int) vec.a, (int) vec.b, (int) vec.c, (int) vec.d);
     }
 
-    public MutableQuad colourvf(Tuple4f vec) {
+    public MutableQuad colourvf(Vector4f vec) {
         return colourf(vec.x, vec.y, vec.z, vec.w);
     }
 
@@ -426,7 +425,7 @@ public class MutableQuad {
         return lighti((int) (block * 15), (int) (sky * 15));
     }
 
-    public MutableQuad lightvf(Tuple2f vec) {
+    public MutableQuad lightvf(Vector2f vec) {
         return lightf(vec.x, vec.y);
     }
 

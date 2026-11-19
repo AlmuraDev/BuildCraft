@@ -8,11 +8,12 @@ package buildcraft.builders.snapshot.pattern.parameter;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 import buildcraft.api.statements.IStatement;
@@ -48,8 +49,8 @@ public enum PatternParameterCenter implements IStatementParameter {
         offsetZ = z;
     }
 
-    public static PatternParameterCenter readFromNbt(NBTTagCompound nbt) {
-        int ord = nbt.getByte("dir");
+    public static PatternParameterCenter readFromNbt(CompoundTag nbt) {
+        int ord = nbt.getByteOr("dir", (byte) 0);
         if (ord < 0 || ord >= values().length) {
             return CENTER;
         }
@@ -57,8 +58,8 @@ public enum PatternParameterCenter implements IStatementParameter {
     }
 
     @Override
-    public void writeToNbt(NBTTagCompound nbt) {
-        nbt.setByte("dir", (byte) ordinal());
+    public void writeToNbt(CompoundTag nbt) {
+        nbt.putByte("dir", (byte) ordinal());
     }
 
     @Override
@@ -67,7 +68,7 @@ public enum PatternParameterCenter implements IStatementParameter {
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public ISprite getSprite() {
         return BCBuildersSprites.PARAM_CENTER.get(this);
     }

@@ -58,7 +58,7 @@ public class InventoryUtil {
     }
 
     public static void drop(Level world, BlockPos pos, @Nonnull ItemStack stack) {
-        Block.spawnAsEntity(world, pos, stack);
+        Block.popResource(world, pos, stack);
     }
 
     public static void drop(Level world, Vec3 vec, @Nonnull ItemStack stack) {
@@ -140,10 +140,10 @@ public class InventoryUtil {
     /** Adds the given {@link ItemStack} to the player's inventory, or drops it in front of them if their was not enough
      * room. */
     public static void addToPlayer(Player player, ItemStack stack) {
-        if (player.getInventory().addItemStackToInventory(stack)) {
+        if (player.addItem(stack)) {
             player.inventoryMenu.broadcastChanges();
         } else {
-            player.dropItem(stack, false, false);
+            net.minecraft.world.Containers.dropItemStack(player.level(), player.getX(), player.getY(), player.getZ(), stack);
         }
     }
 

@@ -6,11 +6,16 @@
 
 package buildcraft.lib.misc;
 
+import buildcraft.api.core.NbtStacks;
+import buildcraft.lib.misc.CapUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -26,7 +31,6 @@ import net.neoforged.neoforge.transfer.fluid.FluidUtil;
 import buildcraft.api.transfer.NeoTransfer;
 import buildcraft.api.transfer.IFluidHandler;
 import buildcraft.api.transfer.IFluidHandlerItem;
-import net.minecraftforge.items.ItemHandlerHelper;
 
 import buildcraft.api.core.IFluidFilter;
 import buildcraft.api.core.IFluidHandlerAdv;
@@ -50,7 +54,7 @@ public class FluidUtilBC {
             if (target == null) {
                 continue;
             }
-            IFluidHandler handler = target.getCapability(CapUtil.CAP_FLUIDS, side.getOpposite());
+            IFluidHandler handler = CapUtil.getCapability(target, CapUtil.CAP_FLUIDS, side.getOpposite());
             if (handler != null) {
                 int used = handler.fill(potential.copy(), true);
 
@@ -90,6 +94,27 @@ public class FluidUtilBC {
 
     public static boolean areFluidStackEqual(FluidStack a, FluidStack b) {
         return (a == null && b == null) || (a != null && isFluidEqual(a, b) && a.getAmount() == b.getAmount());
+    }
+
+    /** @return The fluid with the given id ("minecraft:water"), or 1.12.2 name ("water", "oil"), or null. */
+    @Nullable
+    public static Fluid getFluidByName(String name) {
+        String id = name.contains(":") ? name : NbtStacks.legacyFluidNames.apply(name);
+        if (id == null) {
+            return null;
+        }
+        Identifier loc = Identifier.tryParse(id);
+        if (loc == null || !BuiltInRegistries.FLUID.containsKey(loc)) {
+            return null;
+        }
+        return BuiltInRegistries.FLUID.getValue(loc);
+    }
+
+    /** @return The fluid in a fluid container stack, or null if it holds none (1.12.2's FluidUtil.getFluidContained). */
+    @Nullable
+    public static FluidStack getFluidContained(@Nonnull ItemStack stack) {
+        IFluidHandlerItem handler = NeoTransfer.fluidHandlerOf(stack);
+        return handler == null ? null : handler.drain(Integer.MAX_VALUE, false);
     }
 
     /** 1.12.2's FluidStack.isFluidEqual: same fluid and components, ignoring amounts. False if either is null or empty. */
@@ -201,7 +226,9 @@ public class FluidUtilBC {
             } else {
                 // if it was part of stack, shrink stack and give / drop the new one
                 held.shrink(1);
-                ItemHandlerHelper.giveItemToPlayer(player, flItem.getContainer());
+                if (!player.getInventory().add(flItem.getContainer())) {
+                    player.drop(flItem.getContainer(), false, net.minecraft.util.Prediction.SERVER_ONLY);
+                }
             }
             player.inventoryMenu.broadcastChanges();
         }

@@ -7,11 +7,16 @@ package buildcraft.core.marker;
 import java.util.List;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
 import buildcraft.lib.marker.MarkerSavedData;
+import buildcraft.lib.misc.data.NbtSavedData;
 
 public class VolumeSavedData extends MarkerSavedData<VolumeSubCache, VolumeConnection> {
     public static final String NAME = "buildcraft_marker_volume";
+    public static final SavedDataType<VolumeSavedData> TYPE =
+        NbtSavedData.type(Identifier.fromNamespaceAndPath("buildcraftcore", "marker_volume"), VolumeSavedData::new);
 
     public VolumeSavedData(String name) {
         super(name);

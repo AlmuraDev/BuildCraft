@@ -6,15 +6,18 @@
 
 package buildcraft.lib.gui;
 
+import javax.annotation.Nullable;
+
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.MenuType;
 
 import buildcraft.lib.tile.TileBC_Neptune;
 
 public abstract class ContainerBCTile<T extends TileBC_Neptune> extends ContainerBC_Neptune {
     public final T tile;
 
-    public ContainerBCTile(Player player, T tile) {
-        super(player);
+    public ContainerBCTile(@Nullable MenuType<?> type, int containerId, Player player, T tile) {
+        super(type, containerId, player);
         this.tile = tile;
         if (!tile.getWorld().isClientSide()) {
             tile.onPlayerOpen(player);
@@ -22,18 +25,18 @@ public abstract class ContainerBCTile<T extends TileBC_Neptune> extends Containe
     }
 
     @Override
-    public void onContainerClosed(Player player) {
-        super.onContainerClosed(player);
+    public void removed(Player player) {
+        super.removed(player);
         tile.onPlayerClose(player);
     }
 
     @Override
-    public final boolean canInteractWith(Player player) {
+    public final boolean stillValid(Player player) {
         return tile.canInteractWith(player);
     }
 
     @Override
-    public void detectAndSendChanges() {
+    public void broadcastChanges() {
         super.broadcastChanges();
         tile.sendNetworkGuiTick(this.player);
     }

@@ -41,12 +41,12 @@ public enum FakePlayerProvider implements IFakePlayerProvider {
     @Override
     @Deprecated
     public FakePlayerBC getBuildCraftPlayer(ServerLevel world) {
-        return getFakePlayer(world, NULL_PROFILE, BlockPos.ORIGIN);
+        return getFakePlayer(world, NULL_PROFILE, BlockPos.ZERO);
     }
 
     @Override
     public FakePlayerBC getFakePlayer(ServerLevel world, GameProfile profile) {
-        return getFakePlayer(world, profile, BlockPos.ORIGIN);
+        return getFakePlayer(world, profile, BlockPos.ZERO);
     }
 
     @Override
@@ -56,14 +56,11 @@ public enum FakePlayerProvider implements IFakePlayerProvider {
             profile = NULL_PROFILE;
         }
         FakePlayerBC player = players.computeIfAbsent(profile, p -> new FakePlayerBC(world, p));
-        player.level() = world;
-        player.getX() = pos.getX();
-        player.getY() = pos.getY();
-        player.getZ() = pos.getZ();
+        player.moveTo(world, pos);
         return player;
     }
 
     public void unloadWorld(ServerLevel world) {
-        players.values().removeIf(entry -> entry.world == world);
+        players.values().removeIf(entry -> entry.level() == world);
     }
 }

@@ -52,6 +52,43 @@ RENAMES = {
     ('getBoundingBox', 'method', 'BlockState'): 'getShape',
     ('getRenderPartialTicks', 'method', 'Minecraft'): 'getDeltaTracker',
     ('getActiveRenderInfo', 'method', ''): 'getMainCamera',
+    ('getString', 'method', 'StringTag'): 'value',
+    ('getByte', 'method', 'ByteTag'): 'byteValue',
+    ('getShort', 'method', 'ShortTag'): 'shortValue',
+    ('getInt', 'method', 'IntTag'): 'intValue',
+    ('getLong', 'method', 'LongTag'): 'longValue',
+    ('getFloat', 'method', 'FloatTag'): 'floatValue',
+    ('getDouble', 'method', 'DoubleTag'): 'doubleValue',
+    ('getByteArray', 'method', 'ByteArrayTag'): 'getAsByteArray',
+    ('getIntArray', 'method', 'IntArrayTag'): 'getAsIntArray',
+    ('getLongArray', 'method', 'LongArrayTag'): 'getAsLongArray',
+    ('getIdFromItem', 'method', 'Item'): 'getId',
+    ('getItemById', 'method', 'Item'): 'byId',
+    ('isCallingFromMinecraftThread', 'method', ''): 'isSameThread',
+    ('isInvalid', 'method', 'BlockEntity'): 'isRemoved',
+    ('toImmutable', 'method', 'BlockPos'): 'immutable',
+    ('up', 'method', 'BlockPos'): 'above',
+    ('down', 'method', 'BlockPos'): 'below',
+    ('setDead', 'method', ''): 'discard',
+    ('isBlockIndirectlyGettingPowered', 'method', 'Level'): 'getBestNeighborSignal',
+    ('getRedstonePowerFromNeighbors', 'method', 'Level'): 'getBestNeighborSignal',
+    ('isBlockPowered', 'method', 'Level'): 'hasNeighborSignal',
+    ('canInsertItem', 'method', 'WorldlyContainer'): 'canPlaceItemThroughFace',
+    ('canExtractItem', 'method', 'WorldlyContainer'): 'canTakeItemThroughFace',
+    ('getSlotsForFace', 'method', 'WorldlyContainer'): 'getSlotsForFace',
+    ('getCollisionBoundingBox', 'method', ''): 'getCollisionShape',
+    ('getPositionVector', 'method', ''): 'position',
+    ('getLookVec', 'method', ''): 'getLookAngle',
+    ('isSneaking', 'method', ''): 'isShiftKeyDown',
+    ('getFormattedText', 'method', 'Component'): 'getString',
+    ('getUnformattedText', 'method', 'Component'): 'getString',
+    ('getDimension', 'method', ''): 'dimension',
+    ('getStackInSlot', 'method', 'Inventory'): 'getItem',
+    ('getCurrentItem', 'method', 'Inventory'): 'getSelectedItem',
+    ('getCenter', 'method', 'AABB'): 'getCenter',
+    ('contract', 'method', 'AABB'): 'contract',
+    ('intersect', 'method', 'AABB'): 'intersect',
+    ('getBlockState', 'method', 'Block'): 'getStateDefinition',
 }
 
 # Field accesses that became methods: (field, location-type substring) -> method call (with parentheses).
@@ -147,6 +184,37 @@ def call_end(line, open_paren):
 
 
 # receiver.method(arg) -> Static.call(receiver, arg), for single-argument methods that became static helpers
+# receiver.getRegistryName() -> BuiltInRegistries.X.getKey(receiver), by the receiver's type
+REGISTRY_NAMES = {'Block': 'BLOCK', 'Item': 'ITEM', 'Fluid': 'FLUID', 'EntityType': 'ENTITY_TYPE', 'Biome': None,
+                  'SoundEvent': 'SOUND_EVENT', 'BlockEntityType': 'BLOCK_ENTITY_TYPE', 'MenuType': 'MENU'}
+
+# Imports a rewrite may need: (text that appears) -> import line
+NEEDED_IMPORTS = {
+    'BuiltInRegistries.': 'import net.minecraft.core.registries.BuiltInRegistries;',
+    'FluidUtilBC.': 'import buildcraft.lib.misc.FluidUtilBC;',
+    'CapUtil.': 'import buildcraft.lib.misc.CapUtil;',
+    'NbtStacks.': 'import buildcraft.api.core.NbtStacks;',
+    'NBTUtilBC.': 'import buildcraft.lib.misc.NBTUtilBC;',
+}
+
+def _write_stack(receiver, args):
+    arg = args.strip()
+    if arg.startswith('new CompoundTag('):
+        return 'NbtStacks.writeItemStack(' + receiver + ')'
+    return arg + '.merge(NbtStacks.writeItemStack(' + receiver + '))'
+
+
+# receiver.method(args) -> anything, by (method, location type substring)
+RECEIVER_RULES = {
+    ('writeToNBT', 'ItemStack'): _write_stack,
+    ('serializeNBT', 'ItemStack'): lambda r, a: 'NbtStacks.writeItemStack(' + r + ')',
+    ('hasTagCompound', 'ItemStack'): lambda r, a: 'NBTUtilBC.hasItemData(' + r + ')',
+    ('getTagCompound', 'ItemStack'): lambda r, a: 'NBTUtilBC.getItemData(' + r + ')',
+    ('setTagCompound', 'ItemStack'): lambda r, a: 'NBTUtilBC.setItemData(' + r + ', ' + a + ')',
+    ('getCapability', 'BlockEntity'): lambda r, a: 'CapUtil.getCapability(' + r + ', ' + a + ')',
+    ('hasCapability', 'BlockEntity'): lambda r, a: '(CapUtil.getCapability(' + r + ', ' + a + ') != null)',
+}
+
 STATIC_CALLS = {
     ('isFluidEqual', 'FluidStack'): 'FluidUtilBC.isFluidEqual',
     ('isItemEqual', 'ItemStack'): 'ItemStack.isSameItem',
@@ -161,7 +229,33 @@ def fix_line(line, col, err):
 
     if msg == 'cannot find symbol' and sym:
         m = re.match(r'method\s+(\w+)', sym)
+        if m and m.group(1) == 'getRegistryName':
+            reg = None
+            for t, r in REGISTRY_NAMES.items():
+                if loc_type == t or loc_type.endswith('.' + t) or re.match(t + r'\b', loc_type):
+                    reg = r
+            if reg is None:
+                return None
+            dot = line.find('.getRegistryName()', max(0, col - 1))
+            if dot < 0:
+                return None
+            start = receiver_start(line, dot)
+            if start >= dot:
+                return None
+            return (line[:start] + 'BuiltInRegistries.' + reg + '.getKey(' + line[start:dot] + ')'
+                    + line[dot + len('.getRegistryName()'):])
         if m:
+            for (name, t), rule in RECEIVER_RULES.items():
+                if m.group(1) == name and t in loc_type:
+                    dot = line.find('.' + name + '(', max(0, col - 1))
+                    if dot < 0:
+                        return None
+                    start = receiver_start(line, dot)
+                    paren = dot + len(name) + 1
+                    end = call_end(line, paren)
+                    if end < 0 or start >= dot:
+                        return None
+                    return line[:start] + rule(line[start:dot], line[paren + 1:end - 1]) + line[end:]
             for (name, t), static in STATIC_CALLS.items():
                 if m.group(1) == name and t in loc_type:
                     dot = line.find('.' + name + '(', max(0, col - 1))
@@ -197,6 +291,8 @@ def fix_line(line, col, err):
                         end = idx + 1 + len(name)
                         if end < len(line) and (line[end].isalnum() or line[end] == '_'):
                             return None
+                        if new.endswith('()') and re.match(r'\s*=[^=]', line[end:]):
+                            return None  # an assignment: needs hand porting
                         return line[:idx + 1] + new + line[end:]
         return None
 
@@ -240,6 +336,22 @@ def fix_line(line, col, err):
                 first = line[start:k].strip()
                 return line[:idx] + '(' + first + ').copyWithAmount(' + line[k + 1:].lstrip()
         return None
+
+    if msg.startswith('no suitable constructor found for ItemStack(CompoundTag)'):
+        idx = line.find('new ItemStack(', max(0, col - 4))
+        if idx < 0:
+            idx = line.find('new ItemStack(')
+        if idx < 0:
+            return None
+        return line[:idx] + 'NbtStacks.readItemStack(' + line[idx + len('new ItemStack('):]
+
+    if ((msg.startswith('constructor BlockPos in class BlockPos cannot be applied')
+            or msg == 'incompatible types: possible lossy conversion from double to int')
+            and 'new BlockPos(' in line):
+        idx = line.rfind('new BlockPos(', 0, col + 1)
+        if idx < 0:
+            idx = line.find('new BlockPos(')
+        return line[:idx] + 'BlockPos.containing(' + line[idx + len('new BlockPos('):]
 
     if msg == 'incompatible types: Direction cannot be converted to Vec3i':
         idx = line.rfind('.offset(', 0, col + 1)
@@ -288,6 +400,12 @@ def main(log, flt=None):
                 lines[n] = new
                 fixed += 1
         new_text = newline.join(lines)
+        for needle, imp in NEEDED_IMPORTS.items():
+            own_file = imp.split()[-1].rstrip(';').replace('.', '/') + '.java'
+            if needle in new_text and imp not in new_text and not path.replace(chr(92), '/').endswith(own_file):
+                first = re.search(r'^import .*$', new_text, re.M)
+                if first:
+                    new_text = new_text[:first.start()] + imp + newline + new_text[first.start():]
         if new_text != text:
             open(path, 'w', encoding='utf-8', newline='').write(new_text)
     print('%d fixes in %d files (%d errors read)' % (fixed, len(by_file), len(errors)))

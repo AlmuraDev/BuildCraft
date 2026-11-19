@@ -29,8 +29,6 @@ import net.neoforged.api.distmarker.OnlyIn;
 import buildcraft.api.core.IAreaProvider;
 import buildcraft.api.core.IBox;
 
-import buildcraft.lib.client.render.laser.LaserData_BC8;
-import buildcraft.lib.client.render.laser.LaserData_BC8.LaserType;
 import buildcraft.lib.misc.MessageUtil;
 import buildcraft.lib.misc.NBTUtilBC;
 import buildcraft.lib.misc.PositionUtil;
@@ -42,14 +40,14 @@ public class Box implements IBox {
     // Client side cache: used to compare current laser type with previously
     // rendered data.
 
-    @OnlyIn(Dist.CLIENT)
-    public LaserData_BC8[] laserData;
+    /** Client render cache (LaserData_BC8[]), kept untyped so this common class never names client code. */
+    public Object laserData;
 
-    @OnlyIn(Dist.CLIENT)
+    /** Client render cache. */
     public BlockPos lastMin, lastMax;
 
-    @OnlyIn(Dist.CLIENT)
-    public LaserType lastType;
+    /** Client render cache (LaserData_BC8.LaserType). */
+    public Object lastType;
 
     private BlockPos min, max;
 
@@ -137,7 +135,7 @@ public class Box implements IBox {
     public List<BlockPos> getBlocksInArea() {
         List<BlockPos> blocks = new ArrayList<>();
 
-        for (BlockPos pos : BlockPos.getAllInBox(min, max)) {
+        for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
             blocks.add(pos);
         }
 
@@ -187,12 +185,12 @@ public class Box implements IBox {
 
     @Override
     public BlockPos size() {
-        if (!isInitialized()) return BlockPos.ORIGIN;
+        if (!isInitialized()) return BlockPos.ZERO;
         return max.subtract(min).offset(VecUtil.POS_ONE);
     }
 
     public BlockPos center() {
-        return new BlockPos(centerExact());
+        return BlockPos.containing(centerExact());
     }
 
     public Vec3 centerExact() {
@@ -215,7 +213,7 @@ public class Box implements IBox {
     /** IMPORTANT: Use {@link #contains(Vec3)}instead of the returned {@link AABB#contains(Vec3)} as the
      * logic is different! */
     public AABB getBoundingBox() {
-        return new AABB(min, max.offset(VecUtil.POS_ONE));
+        return AABB.encapsulatingFullBlocks(min, max);
     }
 
     public Box extendToEncompass(Vec3 toBeContained) {

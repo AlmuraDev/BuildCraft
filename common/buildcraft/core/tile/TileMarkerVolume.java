@@ -88,7 +88,7 @@ public class TileMarkerVolume extends TileMarker<VolumeConnection> implements IT
     public void switchSignals() {
         if (!world.isClientSide()) {
             showSignals = !showSignals;
-            markDirty();
+            setChanged();
             sendNetworkUpdate(showSignals ? NET_SIGNALS_ON : NET_SIGNALS_OFF);
         }
     }
@@ -123,19 +123,6 @@ public class TileMarkerVolume extends TileMarker<VolumeConnection> implements IT
                 readNewSignalState(buffer.readBoolean());
             }
         }
-    }
-
-    @Nonnull
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public double getMaxRenderDistanceSquared() {
-        return BCCoreConfig.markerMaxDistance * 4 * BCCoreConfig.markerMaxDistance;
     }
 
     public void onManualConnectionAttempt(Player player) {

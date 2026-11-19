@@ -6,14 +6,14 @@ package buildcraft.builders;
 
 import java.util.function.Consumer;
 
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.fml.relauncher.Side;
+import net.neoforged.fml.LogicalSide;
 
 import buildcraft.lib.BCLib;
 import buildcraft.lib.registry.RegistryConfig;
@@ -54,7 +54,7 @@ public class BCBuilders {
 
         BCBuildersProxy.getProxy().fmlPreInit();
 
-        MinecraftForge.EVENT_BUS.register(BCBuildersEventDist.INSTANCE);
+        NeoForge.EVENT_BUS.register(BCBuildersEventDist.INSTANCE);
     }
 
     @Mod.EventHandler
@@ -73,7 +73,7 @@ public class BCBuilders {
 
     @Mod.EventHandler
     public static void onServerStarting(FMLServerStartingEvent event) {
-        GlobalSavedDataSnapshots.reInit(Side.SERVER);
+        GlobalSavedDataSnapshots.reInit(LogicalSide.SERVER);
     }
 
     static {

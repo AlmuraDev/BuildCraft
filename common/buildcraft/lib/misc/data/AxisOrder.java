@@ -37,9 +37,9 @@ public class AxisOrder {
     private AxisOrder(EnumAxisOrder order, Inversion inv) {
         this.order = order;
         this.inversion = inv;
-        first = Direction.getFacingFromAxis(inv.first, order.first);
-        second = Direction.getFacingFromAxis(inv.second, order.second);
-        third = Direction.getFacingFromAxis(inv.third, order.third);
+        first = Direction.fromAxisAndDirection(order.first, inv.first);
+        second = Direction.fromAxisAndDirection(order.second, inv.second);
+        third = Direction.fromAxisAndDirection(order.third, inv.third);
     }
 
     public static AxisOrder readNbt(CompoundTag nbt) {

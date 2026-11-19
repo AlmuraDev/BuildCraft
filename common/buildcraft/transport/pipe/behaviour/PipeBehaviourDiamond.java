@@ -6,14 +6,14 @@
 
 package buildcraft.transport.pipe.behaviour;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.HitResult;
 
-import net.minecraftforge.items.IItemHandlerModifiable;
+import buildcraft.api.transfer.IItemHandlerModifiable;
 
 import buildcraft.api.BCModules;
 import buildcraft.api.core.EnumPipePart;
@@ -28,7 +28,7 @@ import buildcraft.transport.BCTransportGuis;
 public abstract class PipeBehaviourDiamond extends PipeBehaviour {
 
     public static final int FILTERS_PER_SIDE = 9;
-    public static final ResourceLocation ADVANCEMENT_NEED_LIST =
+    public static final Identifier ADVANCEMENT_NEED_LIST =
         BCModules.TRANSPORT.createLocation("too_many_pipe_filters");
 
     public final ItemHandlerSimple filters = new ItemHandlerSimple(FILTERS_PER_SIDE * 6, this::onFilterSlotChange);
@@ -37,20 +37,20 @@ public abstract class PipeBehaviourDiamond extends PipeBehaviour {
         super(pipe);
     }
 
-    public PipeBehaviourDiamond(IPipe pipe, NBTTagCompound nbt) {
+    public PipeBehaviourDiamond(IPipe pipe, CompoundTag nbt) {
         super(pipe, nbt);
-        filters.deserializeNBT(nbt.getCompoundTag("filters"));
+        filters.deserializeNBT(nbt.getCompoundOrEmpty("filters"));
     }
 
     @Override
-    public NBTTagCompound writeToNbt() {
-        NBTTagCompound nbt = super.writeToNbt();
-        nbt.setTag("filters", filters.serializeNBT());
+    public CompoundTag writeToNbt() {
+        CompoundTag nbt = super.writeToNbt();
+        nbt.put("filters", filters.serializeNBT());
         return nbt;
     }
 
     protected void onFilterSlotChange(IItemHandlerModifiable itemHandler, int slot, ItemStack before, ItemStack after) {
-        if (pipe.getHolder().getPipeWorld().isRemote) {
+        if (pipe.getHolder().getPipeWorld().isClientSide()) {
             return;
         }
         int baseIndex = FILTERS_PER_SIDE * (slot / FILTERS_PER_SIDE);
@@ -67,14 +67,14 @@ public abstract class PipeBehaviourDiamond extends PipeBehaviour {
     }
 
     @Override
-    public int getTextureIndex(EnumFacing face) {
+    public int getTextureIndex(Direction face) {
         return face == null ? 0 : face.ordinal() + 1;
     }
 
     @Override
-    public boolean onPipeActivate(EntityPlayer player, RayTraceResult trace, float hitX, float hitY, float hitZ,
+    public boolean onPipeActivate(Player player, HitResult trace, float hitX, float hitY, float hitZ,
         EnumPipePart part) {
-        if (!player.world.isRemote) {
+        if (!player.level().isClientSide()) {
             BCTransportGuis.PIPE_DIAMOND.openGui(player, pipe.getHolder().getPipePos());
         }
         return true;

@@ -6,28 +6,30 @@
 
 package buildcraft.builders.client.render;
 
+import buildcraft.lib.debug.IDetachedRenderer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-import javax.vecmath.Point3f;
+import org.joml.Vector3f;
 
 import org.lwjgl.opengl.GL11;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.ModelUtil;
 import buildcraft.lib.client.render.DetachedRenderer;
@@ -35,28 +37,28 @@ import buildcraft.lib.client.render.DetachedRenderer;
 import buildcraft.builders.BCBuildersConfig;
 import buildcraft.builders.client.ClientArchitectTables;
 
-@SideOnly(Side.CLIENT)
-public enum RenderArchitectTables implements DetachedRenderer.IDetachedRenderer {
+@OnlyIn(Dist.CLIENT)
+public enum RenderArchitectTables implements IDetachedRenderer {
     INSTANCE;
 
     @Override
-    public void render(EntityPlayer player, float partialTicks) {
-        List<AxisAlignedBB> boxes = new ArrayList<>(ClientArchitectTables.BOXES.keySet());
+    public void render(Player player, float partialTicks) {
+        List<AABB> boxes = new ArrayList<>(ClientArchitectTables.BOXES.keySet());
         boxes.sort(
-            Comparator.<AxisAlignedBB>comparingDouble(bb ->
+            Comparator.<AABB>comparingDouble(bb ->
                 bb.getCenter().distanceTo(player.getPositionVector())
             ).reversed()
         );
         List<BlockPos> poses = new ArrayList<>(ClientArchitectTables.SCANNED_BLOCKS.keySet());
         poses.sort(
             Comparator.<BlockPos>comparingDouble(pos ->
-                new Vec3d(pos).distanceTo(player.getPositionVector())
+                new Vec3(pos).distanceTo(player.getPositionVector())
             ).reversed()
         );
 
         final boolean __STENCIL = BCBuildersConfig.enableStencil && Minecraft.getMinecraft().getFramebuffer().isStencilEnabled();
 
-        for (AxisAlignedBB bb : boxes) {
+        for (AABB bb : boxes) {
             if (__STENCIL) {
             GL11.glStencilMask(0xff);
             GL11.glClearStencil(1);
@@ -71,7 +73,7 @@ public enum RenderArchitectTables implements DetachedRenderer.IDetachedRenderer 
             }
             BufferBuilder buffer = Tessellator.getInstance().getBuffer();
             if (__STENCIL) {
-            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
+            buffer.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION);
             bb = bb.grow(0.01);
             buffer.pos(bb.minX, bb.maxY, bb.minZ).endVertex();
             buffer.pos(bb.maxX, bb.maxY, bb.minZ).endVertex();
@@ -109,21 +111,18 @@ public enum RenderArchitectTables implements DetachedRenderer.IDetachedRenderer 
             GlStateManager.enableBlend();
             GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
             Minecraft.getMinecraft().renderEngine.bindTexture(
-                new ResourceLocation(
-                    "buildcraftbuilders",
-                    "textures/blocks/scan.png"
-                )
+                Identifier.fromNamespaceAndPath("buildcraftbuilders", "textures/blocks/scan.png")
             );
-            buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
+            buffer.begin(GL11.GL_QUADS, DefaultVertexFormat.BLOCK);
             for (BlockPos pos : poses) {
-                if (!bb.intersects(new AxisAlignedBB(pos))) {
+                if (!bb.intersects(new AABB(pos))) {
                     continue;
                 }
-                for (EnumFacing face : EnumFacing.VALUES) {
+                for (Direction face : Direction.values()) {
                     ModelUtil.createFace(
                         face,
-                        new Point3f(pos.getX() + 0.5F, pos.getY() + 0.5F, pos.getZ() + 0.5F),
-                        new Point3f(0.5F, 0.5F, 0.5F),
+                        new Vector3f(pos.getX() + 0.5F, pos.getY() + 0.5F, pos.getZ() + 0.5F),
+                        new Vector3f(0.5F, 0.5F, 0.5F),
                         new ModelUtil.UvFaceData(0, 0, 1, 1)
                     )
                         .lighti(15, 15)

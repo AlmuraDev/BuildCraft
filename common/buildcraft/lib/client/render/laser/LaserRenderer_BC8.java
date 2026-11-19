@@ -131,7 +131,7 @@ public class LaserRenderer_BC8 {
         for (int xp = xl; xp <= xu; xp++) {
             for (int yp = yl; yp <= yu; yp++) {
                 for (int zp = zl; zp <= zu; zp++) {
-                    int light = world.getLightFor(type, new BlockPos(x + xp, y + yp, z + zp));
+                    int light = world.getLightFor(type, BlockPos.containing(x + xp, y + yp, z + zp));
                     if (light > 0) {
                         sum += light;
                         count++;

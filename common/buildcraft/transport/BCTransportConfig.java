@@ -6,13 +6,13 @@
 
 package buildcraft.transport;
 
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.common.config.Property;
+import net.neoforged.neoforge.common.NeoForge;
+import buildcraft.lib.config.Configuration;
+import buildcraft.lib.config.Property;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent;
-import net.minecraftforge.fml.common.Loader;
+import net.neoforged.fml.ModList;
 import net.minecraftforge.fml.common.LoaderState;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 
 import buildcraft.api.BCModules;
 import buildcraft.api.mj.MjAPI;
@@ -94,7 +94,7 @@ public class BCTransportConfig {
         ConfigUtil.setEnumProperty(propLossMode, PowerLossMode.VALUES);
         EnumRestartRequirement.WORLD.setTo(propLossMode);
 
-        MinecraftForge.EVENT_BUS.register(BCTransportConfig.class);
+        NeoForge.EVENT_BUS.register(BCTransportConfig.class);
     }
 
     public static void reloadConfig(EnumRestartRequirement restarted) {
@@ -177,7 +177,7 @@ public class BCTransportConfig {
     public static void onConfigChange(OnConfigChangedEvent cce) {
         if (BCModules.isBcMod(cce.getModID())) {
             EnumRestartRequirement req = EnumRestartRequirement.NONE;
-            if (Loader.instance().isInState(LoaderState.AVAILABLE)) {
+            if (ModList.get().isInState(LoaderState.AVAILABLE)) {
                 // The loaders state will be LoaderState.SERVER_STARTED when we are in a world
                 req = EnumRestartRequirement.WORLD;
             }

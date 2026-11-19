@@ -12,17 +12,17 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
 
-import net.minecraftforge.energy.CapabilityEnergy;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import buildcraft.lib.misc.CapUtil;
+import buildcraft.api.transfer.IEnergyStorage;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.mj.IMjConnector;
@@ -57,29 +57,29 @@ public class TileEngineRF extends TileEngineBase_BC8 {
     public final ItemHandlerSimple invUpgrades;
 
     public TileEngineRF() {
-        caps.addCapabilityInstance(CapabilityEnergy.ENERGY, new Rf(), EnumPipePart.VALUES);
+        caps.addCapabilityInstance(CapUtil.CAP_RF, new Rf(), EnumPipePart.VALUES);
         invUpgrades = itemManager.addInvHandler("upgrades", 4, this::isValidUpgrade, StackInsertionFunction.getInsertionFunction(1), EnumAccess.NONE);
     }
 
     // TileEntity overrides
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public CompoundTag writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
-        nbt.setInteger("currentRF", currentRF);
+        nbt.putInt("currentRF", currentRF);
         return nbt;
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         super.readFromNBT(nbt);
-        currentRF = nbt.getInteger("currentRF");
+        currentRF = nbt.getIntOr("currentRF", 0);
     }
 
     @Override
-    public void readPayload(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+    public void readPayload(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         super.readPayload(id, buffer, side, ctx);
-        if (side == Side.CLIENT) {
+        if (side == LogicalSide.CLIENT) {
             if (id == NET_GUI_DATA || id == NET_GUI_TICK) {
                 currentRF = buffer.readInt();
             }
@@ -87,9 +87,9 @@ public class TileEngineRF extends TileEngineBase_BC8 {
     }
 
     @Override
-    public void writePayload(int id, PacketBufferBC buffer, Side side) {
+    public void writePayload(int id, PacketBufferBC buffer, LogicalSide side) {
         super.writePayload(id, buffer, side);
-        if (side == Side.SERVER) {
+        if (side == LogicalSide.SERVER) {
             if (id == NET_GUI_DATA || id == NET_GUI_TICK) {
                 buffer.writeInt(currentRF);
             }
@@ -105,9 +105,9 @@ public class TileEngineRF extends TileEngineBase_BC8 {
 
     @Override
     public boolean onActivated(
-        EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ
+        Player player, InteractionHand hand, Direction side, float hitX, float hitY, float hitZ
     ) {
-        ItemStack current = player.getHeldItem(hand).copy();
+        ItemStack current = player.getItemInHand(hand).copy();
         if (super.onActivated(player, hand, side, hitX, hitY, hitZ)) {
             return true;
         }
@@ -119,7 +119,7 @@ public class TileEngineRF extends TileEngineBase_BC8 {
                 return false;
             }
         }
-        if (!world.isRemote) {
+        if (!world.isClientSide()) {
             BCEnergyGuis.ENGINE_RF.openGUI(player, getPos());
         }
         return true;

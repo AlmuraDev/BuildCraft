@@ -6,13 +6,14 @@
 
 package buildcraft.lib.misc;
 
-import java.util.List;
+import javax.annotation.Nullable;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.inventory.CraftingContainer;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.CraftingRecipe;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-
-import net.minecraftforge.fml.common.registry.GameRegistry;
 
 public final class CraftingUtil {
 
@@ -22,14 +23,12 @@ public final class CraftingUtil {
     private CraftingUtil() {
     }
 
-    public static Recipe findMatchingRecipe(CraftingContainer par1InventoryCrafting, Level par2World) {
-            List<Recipe> recipes = GameRegistry.findRegistry(Recipe.class).getValues();
-            for (Recipe recipe : recipes) {
-                if (recipe.matches(par1InventoryCrafting, par2World)) {
-                    return recipe;
-                }
-            }
+    /** @return The crafting recipe the grid matches, or null (recipes are only known on the server on 26.3). */
+    @Nullable
+    public static RecipeHolder<CraftingRecipe> findMatchingRecipe(CraftingContainer inventory, Level world) {
+        if (!(world instanceof ServerLevel server)) {
             return null;
-
+        }
+        return server.recipeAccess().getRecipeFor(RecipeType.CRAFTING, inventory.asCraftInput(), server).orElse(null);
     }
 }

@@ -6,6 +6,7 @@
 
 package buildcraft.core.list;
 
+import buildcraft.lib.misc.NBTUtilBC;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -176,7 +177,7 @@ public class GuiList extends GuiBC8<ContainerList> implements IButtonClickEventL
 
     private boolean isCarryingNonEmptyList() {
         ItemStack stack = mc.player.inventory.getItemStack();
-        return !stack.isEmpty() && stack.getItem() instanceof ItemList_BC8 && stack.getTagCompound() != null;
+        return !stack.isEmpty() && stack.getItem() instanceof ItemList_BC8 && NBTUtilBC.getItemData(stack) != null;
     }
 
     private boolean hasListEquipped() {

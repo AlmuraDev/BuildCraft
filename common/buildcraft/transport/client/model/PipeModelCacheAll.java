@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.util.BlockRenderLayer;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
+import buildcraft.api.core.BCRenderLayer;
 
 import buildcraft.lib.client.model.IModelCache;
 import buildcraft.lib.client.model.ModelCacheJoiner;
@@ -58,7 +58,7 @@ public class PipeModelCacheAll {
 
         public PipeAllCutoutKey(TilePipeHolder tile) {
             cutout = new PipeBaseCutoutKey(tile.getPipe().getModel());
-            this.pluggable = new PluggableKey(BlockRenderLayer.CUTOUT, tile);
+            this.pluggable = new PluggableKey(BCRenderLayer.CUTOUT, tile);
             hash = Objects.hash(cutout, pluggable);
         }
 
@@ -99,7 +99,7 @@ public class PipeModelCacheAll {
 
         public PipeAllTranslucentKey(TilePipeHolder tile) {
             translucent = new PipeBaseTranslucentKey(tile.getPipe().getModel());
-            this.pluggable = new PluggableKey(BlockRenderLayer.TRANSLUCENT, tile);
+            this.pluggable = new PluggableKey(BCRenderLayer.TRANSLUCENT, tile);
             hash = Objects.hash(translucent, pluggable);
         }
 

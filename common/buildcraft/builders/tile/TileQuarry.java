@@ -6,6 +6,7 @@
 
 package buildcraft.builders.tile;
 
+import buildcraft.lib.debug.IDetachedRenderer;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -27,28 +28,29 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing.Axis;
-import net.minecraft.util.ITickable;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.IWorldEventListener;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Direction.Axis;
+import buildcraft.lib.tile.ITickable;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.phys.Vec3;
+import buildcraft.lib.world.WorldEventListeners;
+import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
 
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.EnumPipePart;
@@ -95,8 +97,8 @@ import buildcraft.core.tile.TileMarkerVolume;
 public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable, IChunkLoadingTile {
     public static final boolean DEBUG_QUARRY = BCDebugging.shouldDebugLog("builders.quarry");
     private static final long MAX_POWER_PER_TICK = 512 * MjAPI.MJ;
-    private static final ResourceLocation ADVANCEMENT_COMPLETE
-        = new ResourceLocation("buildcraftbuilders:diggy_diggy_hole");
+    private static final Identifier ADVANCEMENT_COMPLETE
+        = Identifier.parse("buildcraftbuilders:diggy_diggy_hole");
 
     private final MjBattery battery = new MjBattery(24000 * MjAPI.MJ);
     public final Box frameBox = new Box();
@@ -112,20 +114,20 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     );
     private final Set<BlockPos> framePlaceFramePoses = new HashSet<>();
     public Task currentTask = null;
-    public Vec3d drillPos;
-    public Vec3d clientDrillPos;
-    public Vec3d prevClientDrillPos;
+    public Vec3 drillPos;
+    public Vec3 clientDrillPos;
+    public Vec3 prevClientDrillPos;
     private long debugPowerRate = 0;
     private double blockPercentSoFar;
     private double moveDistanceSoFar;
 
-    private List<AxisAlignedBB> collisionBoxes = ImmutableList.of();
-    private Vec3d collisionDrillPos;
+    private List<AABB> collisionBoxes = ImmutableList.of();
+    private Vec3 collisionDrillPos;
 
-    private final IWorldEventListener worldEventListener = new WorldEventListenerAdapter() {
+    private final WorldEventListenerAdapter worldEventListener = new WorldEventListenerAdapter() {
         @Override
         public void notifyBlockUpdate(
-            World w, BlockPos updatePos, IBlockState oldState, IBlockState newState, int flags
+            Level w, BlockPos updatePos, BlockState oldState, BlockState newState, int flags
         ) {
             w.profiler.startSection("bc_quarry_listener");
             if (frameBox.isInitialized() && miningBox.isInitialized()) {
@@ -189,9 +191,9 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         openSet.add(getPos());
 
         // Hold on to the array of orders, as we shuffle it on each iteration
-        EnumFacing[] order = EnumFacing.values();
+        Direction[] order = Direction.values();
         // Also hold on to it as a list, so that we don't have to re-create it all the time
-        List<EnumFacing> orderAsList = Arrays.asList(order);
+        List<Direction> orderAsList = Arrays.asList(order);
 
         // This is technically higher than the number of iterations needed as
         // most of the iterations will add more than one edge block.
@@ -200,7 +202,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         do {
             for (BlockPos p : openSet) {
                 Collections.shuffle(orderAsList);
-                for (EnumFacing face : order) {
+                for (Direction face : order) {
                     BlockPos next = p.offset(face);
                     // Each iteration we add the *next* positions, rather than the current position
                     // Then we can just add the quarries position once (which isn't part of the frame)
@@ -268,14 +270,14 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     }
 
     @Override
-    public void onPlacedBy(EntityLivingBase placer, ItemStack stack) {
+    public void onPlacedBy(LivingEntity placer, ItemStack stack) {
         super.onPlacedBy(placer, stack);
-        if (placer.world.isRemote) {
+        if (placer.level().isClientSide()) {
             return;
         }
-        EnumFacing facing = world.getBlockState(pos).getValue(BlockBCBase_Neptune.PROP_FACING);
+        Direction facing = world.getBlockState(pos).getValue(BlockBCBase_Neptune.PROP_FACING);
         BlockPos areaPos = pos.offset(facing.getOpposite());
-        TileEntity tile = world.getTileEntity(areaPos);
+        BlockEntity tile = world.getBlockEntity(areaPos);
         BlockPos min = null, max = null;
         if (tile instanceof IAreaProvider) {
             IAreaProvider provider = (IAreaProvider) tile;
@@ -388,7 +390,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     }
 
     private boolean canMoveThrough(BlockPos blockPos) {
-        if (world.isAirBlock(blockPos)) {
+        if (world.isEmptyBlock(blockPos)) {
             return true;
         }
         Fluid fluid = BlockUtil.getFluidWithFlowing(world, blockPos);
@@ -405,7 +407,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     }
 
     private boolean canIgnoreInFrameBox(BlockPos blockPos) {
-        return !world.isAirBlock(blockPos) && BlockUtil.getFluidWithFlowing(world, blockPos) == null;
+        return !world.isEmptyBlock(blockPos) && BlockUtil.getFluidWithFlowing(world, blockPos) == null;
     }
 
     private void check(BlockPos blockPos) {
@@ -434,7 +436,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
 
     @Override
     public void onLoad() {
-        if (!world.isRemote) {
+        if (!world.isClientSide()) {
             updatePoses();
         }
     }
@@ -443,8 +445,8 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     public void validate() {
         super.validate();
         BCBuildersEventDist.INSTANCE.validateQuarry(this);
-        if (!world.isRemote) {
-            world.addEventListener(worldEventListener);
+        if (!world.isClientSide()) {
+            WorldEventListeners.add(world, worldEventListener);
         }
     }
 
@@ -452,8 +454,8 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     public void invalidate() {
         super.invalidate();
         BCBuildersEventDist.INSTANCE.invalidateQuarry(this);
-        if (!world.isRemote) {
-            world.removeEventListener(worldEventListener);
+        if (!world.isClientSide()) {
+            WorldEventListeners.remove(world, worldEventListener);
             ChunkLoaderManager.releaseChunksFor(this);
         }
     }
@@ -471,8 +473,8 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
             return null;
         }
         Set<ChunkPos> chunkPoses = new HashSet<>();
-        ChunkPos minChunkPos = new ChunkPos(frameBox.min());
-        ChunkPos maxChunkPos = new ChunkPos(frameBox.max());
+        ChunkPos minChunkPos = ChunkPos.containing(frameBox.min());
+        ChunkPos maxChunkPos = ChunkPos.containing(frameBox.max());
         for (int x = minChunkPos.x; x <= maxChunkPos.x; x++) {
             for (int z = minChunkPos.z; z <= maxChunkPos.z; z++) {
                 chunkPoses.add(new ChunkPos(x, z));
@@ -489,7 +491,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         firstChecked = false;
         frameBreakBlockPoses.clear();
         framePlaceFramePoses.clear();
-        IBlockState state = world.getBlockState(pos);
+        BlockState state = world.getBlockState(pos);
         if (state.getBlock() == BCBuildersBlocks.quarry && frameBox.isInitialized()) {
             List<BlockPos> blocksInArea = frameBox.getBlocksInArea();
             blocksInArea.sort(BlockUtil.uniqueBlockPosComparator(Comparator.comparingDouble(pos::distanceSq)));
@@ -507,7 +509,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
             collisionDrillPos = null;
         }
 
-        if (world.isRemote) {
+        if (world.isClientSide()) {
             prevClientDrillPos = clientDrillPos;
             clientDrillPos = drillPos;
             if (currentTask != null) {
@@ -617,7 +619,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
                         break;
                     }
                 }
-                drillPos = new Vec3d(miningBox.closestInsideTo(pos));
+                drillPos = new Vec3(miningBox.closestInsideTo(pos));
             }
 
             if (boxIterator != null && boxIterator.hasNext()) {
@@ -633,8 +635,8 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
                 if (boxIterator.hasNext()) {
                     boolean found = false;
 
-                    if (drillPos.squareDistanceTo(new Vec3d(boxIterator.getCurrent())) >= 1) {
-                        currentTask = new TaskMoveDrill(drillPos, new Vec3d(boxIterator.getCurrent()));
+                    if (drillPos.distanceToSqr(new Vec3(boxIterator.getCurrent())) >= 1) {
+                        currentTask = new TaskMoveDrill(drillPos, new Vec3(boxIterator.getCurrent()));
                         found = true;
                     } else if (canMine(boxIterator.getCurrent())) {
                         currentTask = new TaskBreakBlock(boxIterator.getCurrent());
@@ -644,7 +646,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
                     if (found) {
                         sendUpdate = true;
                     } else {
-                        AxisAlignedBB box = miningBox.getBoundingBox();
+                        AABB box = miningBox.getBoundingBox();
                         if (box.maxX - box.minX == 63 && box.maxZ - box.minZ == 63) {
                             AdvancementUtil.unlockAdvancement(getOwner().getId(), ADVANCEMENT_COMPLETE);
                         }
@@ -658,10 +660,10 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         }
     }
 
-    public List<AxisAlignedBB> getCollisionBoxes() {
+    public List<AABB> getCollisionBoxes() {
         if (drillPos != null && drillPos != collisionDrillPos && frameBox.isInitialized()) {
-            Vec3d max = VecUtil.convertCenter(frameBox.max());
-            Vec3d min = VecUtil.replaceValue(VecUtil.convertCenter(frameBox.min()), Axis.Y, max.y);
+            Vec3 max = VecUtil.convertCenter(frameBox.max());
+            Vec3 min = VecUtil.replaceValue(VecUtil.convertCenter(frameBox.min()), Axis.Y, max.y);
             collisionBoxes = ImmutableList.of(
                 BoundingBoxUtil.makeFrom(
                     VecUtil.replaceValue(min, Axis.X, drillPos.x + 0.5), VecUtil.replaceValue(
@@ -672,7 +674,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
                         max, Axis.Z, drillPos.z + 0.5
                     ), 0.25
                 ), BoundingBoxUtil.makeFrom(
-                    drillPos.addVector(0.5, 0, 0.5), VecUtil.replaceValue(drillPos, Axis.Y, max.y).addVector(
+                    drillPos.add(0.5, 0, 0.5), VecUtil.replaceValue(drillPos, Axis.Y, max.y).add(
                         0.5, 0, 0.5
                     ), 0.25
                 )
@@ -683,45 +685,45 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public CompoundTag writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
-        nbt.setTag("box", miningBox.writeToNBT());
-        nbt.setTag("frame", frameBox.writeToNBT());
+        nbt.put("box", miningBox.writeToNBT());
+        nbt.put("frame", frameBox.writeToNBT());
         if (boxIterator != null) {
-            nbt.setTag("boxIterator", boxIterator.writeToNbt());
+            nbt.put("boxIterator", boxIterator.writeToNbt());
         }
-        nbt.setTag("battery", battery.serializeNBT());
+        nbt.put("battery", battery.serializeNBT());
         if (currentTask != null) {
-            nbt.setByte(
+            nbt.putByte(
                 "currentTaskId", (byte) Arrays.stream(EnumTaskType.values()).filter(
                     type -> type.clazz == currentTask.getClass()
                 ).findFirst().orElseThrow(IllegalStateException::new).ordinal()
             );
-            nbt.setTag("currentTaskData", currentTask.serializeNBT());
+            nbt.put("currentTaskData", currentTask.serializeNBT());
         }
         if (drillPos != null) {
-            nbt.setTag("drillPos", NBTUtilBC.writeVec3d(drillPos));
+            nbt.put("drillPos", NBTUtilBC.writeVec3d(drillPos));
         }
-        nbt.setBoolean("firstChecked", firstChecked);
+        nbt.putBoolean("firstChecked", firstChecked);
         return nbt;
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         super.readFromNBT(nbt);
-        miningBox.initialize(nbt.getCompoundTag("box"));
-        frameBox.initialize(nbt.getCompoundTag("frame"));
-        boxIterator = BoxIterator.readFromNbt(nbt.getCompoundTag("boxIterator"));
-        battery.deserializeNBT(nbt.getCompoundTag("battery"));
-        if (nbt.hasKey("currentTask")) {
-            currentTask = EnumTaskType.values()[(int) nbt.getByte("currentTaskId")].supplier.apply(this);
-            currentTask.readFromNBT(nbt.getCompoundTag("currentTaskData"));
+        miningBox.initialize(nbt.getCompoundOrEmpty("box"));
+        frameBox.initialize(nbt.getCompoundOrEmpty("frame"));
+        boxIterator = BoxIterator.readFromNbt(nbt.getCompoundOrEmpty("boxIterator"));
+        battery.deserializeNBT(nbt.getCompoundOrEmpty("battery"));
+        if (nbt.contains("currentTask")) {
+            currentTask = EnumTaskType.values()[(int) nbt.getByteOr("currentTaskId", (byte) 0)].supplier.apply(this);
+            currentTask.readFromNBT(nbt.getCompoundOrEmpty("currentTaskData"));
         } else {
             currentTask = null;
         }
-        drillPos = NBTUtilBC.readVec3d(nbt.getTag("drillPos"));
-        firstChecked = nbt.getBoolean("firstChecked");
-        if (drillPos != null && drillPos.squareDistanceTo(new Vec3d(getPos())) > 1024 * 1024) {
+        drillPos = NBTUtilBC.readVec3d(nbt.get("drillPos"));
+        firstChecked = nbt.getBooleanOr("firstChecked", false);
+        if (drillPos != null && drillPos.distanceToSqr(new Vec3(getPos())) > 1024 * 1024) {
             drillPos = null;
         }
 
@@ -729,8 +731,8 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         boolean isValid = false;
         if (frameBox.isInitialized() && miningBox.isInitialized()) {
             isValid = true;
-            EnumFacing validFace = null;
-            for (EnumFacing face : EnumFacing.values()) {
+            Direction validFace = null;
+            for (Direction face : Direction.values()) {
                 if (face.getAxis() == Axis.Y) continue;
                 // We can't read the blockstate yet so instead we'll have to try all possible faces
                 if (frameBox.isOnEdge(getPos().offset(face))) {
@@ -776,9 +778,9 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     }
 
     @Override
-    public void writePayload(int id, PacketBufferBC buffer, Side side) {
+    public void writePayload(int id, PacketBufferBC buffer, LogicalSide side) {
         super.writePayload(id, buffer, side);
-        if (side == Side.SERVER) {
+        if (side == LogicalSide.SERVER) {
             if (id == NET_RENDER_DATA) {
                 frameBox.writeData(buffer);
                 miningBox.writeData(buffer);
@@ -801,9 +803,9 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     }
 
     @Override
-    public void readPayload(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+    public void readPayload(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         super.readPayload(id, buffer, side, ctx);
-        if (side == Side.CLIENT) {
+        if (side == LogicalSide.CLIENT) {
             if (id == NET_RENDER_DATA) {
                 frameBox.readData(buffer);
                 miningBox.readData(buffer);
@@ -831,7 +833,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     }
 
     @Override
-    public void getDebugInfo(List<String> left, List<String> right, EnumFacing side) {
+    public void getDebugInfo(List<String> left, List<String> right, Direction side) {
         left.add("battery = " + battery.getDebugString());
         left.add("rate = " + LocaleUtil.localizeMjFlow(debugPowerRate));
         left.add("frameBox");
@@ -862,20 +864,20 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
 
     @Nonnull
     @Override
-    @SideOnly(Side.CLIENT)
-    public AxisAlignedBB getRenderBoundingBox() {
+    @OnlyIn(Dist.CLIENT)
+    public AABB getRenderBoundingBox() {
         return BoundingBoxUtil.makeFrom(pos, miningBox);
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public double getMaxRenderDistanceSquared() {
         return Double.MAX_VALUE;
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     @Override
-    public DetachedRenderer.IDetachedRenderer getDebugRenderer() {
+    public IDetachedRenderer getDebugRenderer() {
         return new AdvDebuggerQuarry(this);
     }
 
@@ -898,14 +900,14 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         public long clientPower;
         public long prevClientPower;
 
-        NBTTagCompound serializeNBT() {
-            NBTTagCompound nbt = new NBTTagCompound();
-            nbt.setLong("power", power);
+        CompoundTag serializeNBT() {
+            CompoundTag nbt = new CompoundTag();
+            nbt.putLong("power", power);
             return nbt;
         }
 
-        void readFromNBT(NBTTagCompound nbt) {
-            power = nbt.getLong("power");
+        void readFromNBT(CompoundTag nbt) {
+            power = nbt.getLongOr("power", 0L);
             if (power < 0) {
                 power = 0;
             }
@@ -952,7 +954,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     }
 
     public class TaskBreakBlock extends Task {
-        public BlockPos breakPos = BlockPos.ORIGIN;
+        public BlockPos breakPos = BlockPos.ZERO;
 
         TaskBreakBlock() {}
 
@@ -961,16 +963,16 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         }
 
         @Override
-        NBTTagCompound serializeNBT() {
-            NBTTagCompound nbt = super.serializeNBT();
-            nbt.setTag("breakPos", NBTUtilBC.writeBlockPos(breakPos));
+        CompoundTag serializeNBT() {
+            CompoundTag nbt = super.serializeNBT();
+            nbt.put("breakPos", NBTUtilBC.writeBlockPos(breakPos));
             return nbt;
         }
 
         @Override
-        void readFromNBT(NBTTagCompound nbt) {
+        void readFromNBT(CompoundTag nbt) {
             super.readFromNBT(nbt);
-            breakPos = NBTUtilBC.readBlockPos(nbt.getTag("breakPos"));
+            breakPos = NBTUtilBC.readBlockPos(nbt.get("breakPos"));
             if (breakPos == null) {
                 // We failed to read, abort
                 currentTask = null;
@@ -1013,7 +1015,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         @Override
         protected boolean onReceivePower(long added, long target) {
             blockPercentSoFar += added / (double) target;
-            if (!world.isAirBlock(breakPos)) {
+            if (!world.isEmptyBlock(breakPos)) {
                 world.sendBlockBreakProgress(breakPos.hashCode(), breakPos, (int) (power * 9 / getTarget()));
                 return false;
             } else {
@@ -1029,7 +1031,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
             }
             world.sendBlockBreakProgress(breakPos.hashCode(), breakPos, -1);
             Optional<List<ItemStack>> stacks = BlockUtil.breakBlockAndGetDrops(
-                (WorldServer) world, breakPos, new ItemStack(Items.DIAMOND_PICKAXE), getOwner(), true
+                (ServerLevel) world, breakPos, new ItemStack(Items.DIAMOND_PICKAXE), getOwner(), true
             );
             if (stacks.isPresent()) {
                 // The drill pos will be null if we are making the frame: this is when we want to destroy the block, not
@@ -1054,7 +1056,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     }
 
     public class TaskAddFrame extends Task {
-        public BlockPos framePos = BlockPos.ORIGIN;
+        public BlockPos framePos = BlockPos.ZERO;
 
         TaskAddFrame() {}
 
@@ -1063,16 +1065,16 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         }
 
         @Override
-        NBTTagCompound serializeNBT() {
-            NBTTagCompound nbt = super.serializeNBT();
-            nbt.setTag("framePos", NBTUtilBC.writeBlockPos(framePos));
+        CompoundTag serializeNBT() {
+            CompoundTag nbt = super.serializeNBT();
+            nbt.put("framePos", NBTUtilBC.writeBlockPos(framePos));
             return nbt;
         }
 
         @Override
-        void readFromNBT(NBTTagCompound nbt) {
+        void readFromNBT(CompoundTag nbt) {
             super.readFromNBT(nbt);
-            framePos = NBTUtilBC.readBlockPos(nbt.getTag("framePos"));
+            framePos = NBTUtilBC.readBlockPos(nbt.get("framePos"));
             if (framePos == null) {
                 // We failed to read, abort
                 currentTask = null;
@@ -1106,7 +1108,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
             if (canIgnoreInFrameBox(framePos)) {
                 return false;
             }
-            world.setBlockState(framePos, BCBuildersBlocks.frame.getDefaultState());
+            world.setBlockAndUpdate(framePos, BCBuildersBlocks.frame.defaultBlockState());
             return true;
         }
 
@@ -1122,29 +1124,29 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     }
 
     private class TaskMoveDrill extends Task {
-        public Vec3d from = Vec3d.ZERO;
-        public Vec3d to = Vec3d.ZERO;
+        public Vec3 from = Vec3.ZERO;
+        public Vec3 to = Vec3.ZERO;
 
         TaskMoveDrill() {}
 
-        TaskMoveDrill(Vec3d from, Vec3d to) {
+        TaskMoveDrill(Vec3 from, Vec3 to) {
             this.from = from;
             this.to = to;
         }
 
         @Override
-        NBTTagCompound serializeNBT() {
-            NBTTagCompound nbt = super.serializeNBT();
-            nbt.setTag("from", NBTUtilBC.writeVec3d(from));
-            nbt.setTag("to", NBTUtilBC.writeVec3d(to));
+        CompoundTag serializeNBT() {
+            CompoundTag nbt = super.serializeNBT();
+            nbt.put("from", NBTUtilBC.writeVec3d(from));
+            nbt.put("to", NBTUtilBC.writeVec3d(to));
             return nbt;
         }
 
         @Override
-        void readFromNBT(NBTTagCompound nbt) {
+        void readFromNBT(CompoundTag nbt) {
             super.readFromNBT(nbt);
-            from = NBTUtilBC.readVec3d(nbt.getTag("from"));
-            to = NBTUtilBC.readVec3d(nbt.getTag("to"));
+            from = NBTUtilBC.readVec3d(nbt.get("from"));
+            to = NBTUtilBC.readVec3d(nbt.get("to"));
             if (from == null || to == null) {
                 // We failed to read. Abort.
                 currentTask = null;
@@ -1189,7 +1191,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         @Override
         protected boolean onReceivePower(long added, long target) {
             moveDistanceSoFar += added / (double) MjAPI.MJ;
-            // Vec3d oldDrillPos = drillPos;
+            // Vec3 oldDrillPos = drillPos;
             drillPos = from.scale(1 - power / (double) target).add(to.scale(power / (double) target));
             // moveEntities(oldDrillPos);
             return false;
@@ -1198,7 +1200,7 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         @Override
         protected boolean finish(long added, long target) {
             moveDistanceSoFar += added / (double) MjAPI.MJ;
-            // Vec3d oldDrillPos = drillPos;
+            // Vec3 oldDrillPos = drillPos;
             drillPos = to;
             // moveEntities(oldDrillPos);
             return true;

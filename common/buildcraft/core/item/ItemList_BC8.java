@@ -8,13 +8,10 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import gnu.trove.map.hash.TIntObjectHashMap;
-
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import buildcraft.api.core.ActionResult;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.resources.Identifier;
@@ -38,34 +35,21 @@ import buildcraft.core.BCCoreGuis;
 
 public class ItemList_BC8 extends ItemBC_Neptune implements IList {
     private static final Identifier ADVANCEMENT = Identifier.parse("buildcraftcore:list");
-    public ItemList_BC8(String id) {
-        super(id);
-        setMaxStackSize(1);
+    public ItemList_BC8(Item.Properties properties, String id) {
+        super(properties.stacksTo(1), id);
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(Level world, Player player, InteractionHand hand) {
+    public InteractionResult use(Level world, Player player, InteractionHand hand) {
         AdvancementUtil.unlockAdvancement(player, ADVANCEMENT);
         BCCoreGuis.LIST.openGUI(player);
-        return new ActionResult<>(InteractionResult.SUCCESS, player.getItemInHand(hand));
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
-        addVariant(variants, 0, "clean");
-        addVariant(variants, 1, "used");
-    }
-
-    @Override
-    public int getMetadata(ItemStack stack) {
-        return ListHandler.hasItems(StackUtil.asNonNull(stack)) ? 1 : 0;
+        return InteractionResult.SUCCESS;
     }
 
     @Override
     @OnlyIn(Dist.CLIENT)
     public void addInformation(ItemStack stack, Level world, List<String> tooltip, TooltipFlag flag) {
-        String name = getName(StackUtil.asNonNull(stack));
+        String name = getLabel(StackUtil.asNonNull(stack));
         if (StringUtil.isNullOrEmpty(name)) return;
         tooltip.add(ChatFormatting.ITALIC + name);
     }
@@ -73,13 +57,13 @@ public class ItemList_BC8 extends ItemBC_Neptune implements IList {
     // IList
 
     @Override
-    public String getName(@Nonnull ItemStack stack) {
-        return NBTUtilBC.getItemData(stack).getString("label");
+    public String getLabel(@Nonnull ItemStack stack) {
+        return NBTUtilBC.getItemData(stack).getStringOr("label", "");
     }
 
     @Override
-    public boolean setName(@Nonnull ItemStack stack, String name) {
-        NBTUtilBC.getItemData(stack).putString("label", name);
+    public boolean setLabel(@Nonnull ItemStack stack, String name) {
+        NBTUtilBC.updateItemData(stack, nbt -> nbt.putString("label", name));
         return true;
     }
 

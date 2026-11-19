@@ -11,15 +11,15 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.block.model.ItemOverrideList;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
+import buildcraft.api.core.BCRenderLayer;
+import net.minecraft.core.Direction;
 
 import net.minecraftforge.client.MinecraftForgeClient;
 import net.minecraftforge.common.property.IExtendedBlockState;
@@ -35,7 +35,7 @@ public enum ModelPipe implements IBakedModel {
     INSTANCE;
 
     @Override
-    public List<BakedQuad> getQuads(IBlockState state, EnumFacing side, long rand) {
+    public List<BakedQuad> getQuads(BlockState state, Direction side, long rand) {
         if (side != null) {
             return ImmutableList.of();
         }
@@ -49,16 +49,16 @@ public enum ModelPipe implements IBakedModel {
             }
         }
 
-        BlockRenderLayer layer = MinecraftForgeClient.getRenderLayer();
+        BCRenderLayer layer = MinecraftForgeClient.getRenderLayer();
 
         if (tile == null || tile.getPipe() == null) {
-            if (layer == BlockRenderLayer.TRANSLUCENT) {
+            if (layer == BCRenderLayer.TRANSLUCENT) {
                 return ImmutableList.of();
             }
             return PipeModelCacheBase.cacheCutout.bake(new PipeBaseCutoutKey(PipeModelKey.DEFAULT_KEY));
         }
 
-        if (layer == BlockRenderLayer.TRANSLUCENT) {
+        if (layer == BCRenderLayer.TRANSLUCENT) {
             PipeAllTranslucentKey realKey = new PipeAllTranslucentKey(tile);
             return PipeModelCacheAll.cacheTranslucent.bake(realKey);
         } else {

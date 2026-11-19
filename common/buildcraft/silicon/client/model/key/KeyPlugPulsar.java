@@ -6,13 +6,13 @@
 
 package buildcraft.silicon.client.model.key;
 
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
+import buildcraft.api.core.BCRenderLayer;
+import net.minecraft.core.Direction;
 
 import buildcraft.api.transport.pluggable.PluggableModelKey;
 
 public class KeyPlugPulsar extends PluggableModelKey {
-    public KeyPlugPulsar(EnumFacing side) {
-        super(BlockRenderLayer.CUTOUT, side);
+    public KeyPlugPulsar(Direction side) {
+        super(BCRenderLayer.CUTOUT, side);
     }
 }

@@ -10,22 +10,37 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
+import net.minecraft.server.level.ParticleStatus;
+
+import net.neoforged.fml.loading.FMLEnvironment;
 
 public enum ParticleCountMultiplier implements IParticlePositionPipe {
     MINIMAL(2),
     DECREASED(7),
     ALL(13);
 
+    /** @return The multiplier for the client's particle setting, or {@link #MINIMAL} anywhere else (a dedicated server
+     *         has no particle setting, and must never touch the client classes behind it). */
     public static ParticleCountMultiplier getForOption() {
-        Options gs = Minecraft.getInstance().options;
-        int count = gs.particleSetting % 3;
-        if (count == 0) {
-            return ALL;
-        } else if (count == 1) {
-            return DECREASED;
+        if (!FMLEnvironment.getDist().isClient()) {
+            return MINIMAL;
         }
-        return MINIMAL;
+        return ClientOption.get();
+    }
+
+    /** Only loaded on the client, by {@link #getForOption()}. */
+    private static final class ClientOption {
+        static ParticleCountMultiplier get() {
+            ParticleStatus status = Minecraft.getInstance().options.particles().get();
+            switch (status) {
+                case ALL:
+                    return ALL;
+                case DECREASED:
+                    return DECREASED;
+                default:
+                    return MINIMAL;
+            }
+        }
     }
 
     public static IParticlePositionPipe getOptionProvider() {

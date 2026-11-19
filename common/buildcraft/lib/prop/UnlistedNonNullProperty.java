@@ -6,32 +6,24 @@
 
 package buildcraft.lib.prop;
 
-import net.minecraftforge.common.property.IUnlistedProperty;
+import java.util.Objects;
 
-public class UnlistedNonNullProperty<V> implements IUnlistedProperty<V> {
+import net.neoforged.neoforge.model.data.ModelProperty;
+
+/** A model data property that never holds null (1.12.2's unlisted block state property; 26.3 models read these from
+ * {@link net.neoforged.neoforge.model.data.ModelData}). */
+public class UnlistedNonNullProperty<V> extends ModelProperty<V> {
     public final String name;
 
     public UnlistedNonNullProperty(String name) {
+        super(Objects::nonNull);
         this.name = name;
     }
 
-    @Override
     public String getName() {
         return name;
     }
 
-    @Override
-    public boolean isValid(V value) {
-        return value != null;
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public Class getType() {
-        return Object.class;
-    }
-
-    @Override
     public String valueToString(V value) {
         return value.toString();
     }

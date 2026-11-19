@@ -22,12 +22,18 @@ public class ChunkUtil {
         return getChunk(world, pos.x(), pos.z(), force);
     }
 
+    /** @return true if the given chunk is still the loaded chunk at its position (1.12.2's Chunk.isLoaded()). */
+    public static boolean isLoaded(LevelChunk chunk) {
+        Level world = chunk.getLevel();
+        return world.getChunkSource().getChunkNow(chunk.getPos().x(), chunk.getPos().z()) == chunk;
+    }
+
     public static LevelChunk getChunk(Level world, int x, int z, boolean force) {
         LevelChunk chunk = lastChunk.get();
 
         if (chunk != null) {
-            if (chunk.isLoaded()) {
-                if (chunk.getWorld() == world && chunk.x == x && chunk.z == z) {
+            if (isLoaded(chunk)) {
+                if (chunk.getLevel() == world && chunk.getPos().x() == x && chunk.getPos().z() == z) {
                     return chunk;
                 }
             } else {
@@ -36,9 +42,9 @@ public class ChunkUtil {
         }
 
         if (force) {
-            chunk = world.getChunkProvider().provideChunk(x, z);
+            chunk = world.getChunk(x, z);
         } else {
-            chunk = world.getChunkProvider().getLoadedChunk(x, z);
+            chunk = world.getChunkSource().getChunkNow(x, z);
         }
 
         if (chunk != null) {

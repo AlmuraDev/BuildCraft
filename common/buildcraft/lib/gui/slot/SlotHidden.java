@@ -11,23 +11,23 @@ import net.minecraft.world.inventory.Slot;
 
 public class SlotHidden extends Slot {
 
-    private int saveX;
-    private int saveY;
+    private boolean hidden = false;
 
     public SlotHidden(Container inv, int index, int x, int y) {
         super(inv, index, x, y);
-
-        saveX = x;
-        saveY = y;
     }
 
+    // 26.3 slot positions are final, so hiding switches the slot off instead of moving it away.
     public void show() {
-        xPos = saveX;
-        yPos = saveY;
+        hidden = false;
     }
 
     public void hide() {
-        xPos = 9999;
-        yPos = 9999;
+        hidden = true;
+    }
+
+    @Override
+    public boolean isActive() {
+        return !hidden;
     }
 }

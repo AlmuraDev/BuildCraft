@@ -6,7 +6,7 @@
 
 package buildcraft.builders;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.filler.FillerManager;
 import buildcraft.api.template.TemplateApi;
@@ -22,7 +22,7 @@ public class BCBuildersRegistries {
         TemplateApi.templateRegistry = TemplateRegistry.INSTANCE;
         FillerManager.registry = FillerRegistry.INSTANCE;
 
-        AddonsRegistry.INSTANCE.register(new ResourceLocation("buildcraftbuilders:filler_planner"),
+        AddonsRegistry.INSTANCE.register(Identifier.parse("buildcraftbuilders:filler_planner"),
             AddonFillerPlanner.class);
     }
 

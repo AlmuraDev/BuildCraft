@@ -6,14 +6,14 @@
 
 package buildcraft.silicon.recipe;
 
-import net.minecraft.inventory.InventoryCrafting;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.World;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
 
-import net.minecraftforge.common.ForgeHooks;
+import net.neoforged.neoforge.common.CommonHooks;
 
 import buildcraft.api.facades.FacadeAPI;
 
@@ -28,7 +28,7 @@ import buildcraft.silicon.plug.FacadeInstance;
 import buildcraft.silicon.plug.FacadeStateManager;
 import buildcraft.transport.BCTransport;
 
-public enum FacadeSwapRecipe implements IRecipe, IRecipeViewable.IViewableGrid {
+public enum FacadeSwapRecipe implements Recipe, IRecipeViewable.IViewableGrid {
     INSTANCE;
 
     private static final int TIME_GAP = 500;
@@ -62,14 +62,14 @@ public enum FacadeSwapRecipe implements IRecipe, IRecipeViewable.IViewableGrid {
     }
 
     @Override
-    public boolean matches(InventoryCrafting inv, World world) {
+    public boolean matches(CraftingContainer inv, Level world) {
         return !getCraftingResult(inv).isEmpty();
     }
 
     @Override
-    public ItemStack getCraftingResult(InventoryCrafting inv) {
+    public ItemStack getCraftingResult(CraftingContainer inv) {
         ItemStack stackIn = StackUtil.EMPTY;
-        for (int s = 0; s < inv.getSizeInventory(); s++) {
+        for (int s = 0; s < inv.getContainerSize(); s++) {
             ItemStack stack = inv.getStackInSlot(s);
             if (!stack.isEmpty()) {
                 if (stackIn.isEmpty()) {
@@ -93,8 +93,8 @@ public enum FacadeSwapRecipe implements IRecipe, IRecipeViewable.IViewableGrid {
     }
 
     @Override
-    public NonNullList<ItemStack> getRemainingItems(InventoryCrafting inv) {
-        return ForgeHooks.defaultRecipeGetRemainingItems(inv);
+    public NonNullList<ItemStack> getRemainingItems(CraftingContainer inv) {
+        return CommonHooks.defaultRecipeGetRemainingItems(inv);
     }
 
     @Override
@@ -129,18 +129,18 @@ public enum FacadeSwapRecipe implements IRecipe, IRecipeViewable.IViewableGrid {
     }
 
     @Override
-    public IRecipe setRegistryName(ResourceLocation name) {
+    public Recipe setRegistryName(Identifier name) {
         return this;
     }
 
     @Override
-    public ResourceLocation getRegistryName() {
-        return new ResourceLocation(BCTransport.MODID, "facade_swap");
+    public Identifier getRegistryName() {
+        return Identifier.fromNamespaceAndPath(BCTransport.MODID, "facade_swap");
     }
 
     @Override
-    public Class<IRecipe> getRegistryType() {
-        return IRecipe.class;
+    public Class<Recipe> getRegistryType() {
+        return Recipe.class;
     }
 
     @Override

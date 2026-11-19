@@ -11,7 +11,6 @@ import java.util.Queue;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import javax.vecmath.Point2i;
 
 import net.minecraft.core.BlockPos;
 
@@ -157,21 +156,22 @@ public class DrawingUtil {
 
 
     public static void fill(boolean[][] data, int startX, int startY, int width, int height) {
-        Queue<Point2i> queue = new ArrayDeque<>();
-        queue.add(new Point2i(startX, startY));
+        Queue<int[]> queue = new ArrayDeque<>();
+        queue.add(new int[] { startX, startY });
         while (!queue.isEmpty()) {
-            Point2i point = queue.poll();
-            if (point.x < 0 || point.y < 0 || point.x >= width || point.y >= height) {
+            int[] p = queue.poll();
+            int px = p[0], py = p[1];
+            if (px < 0 || py < 0 || px >= width || py >= height) {
                 continue;
             }
-            if (data[point.x][point.y]) {
+            if (data[px][py]) {
                 continue;
             }
-            data[point.x][point.y] = true;
-            queue.add(new Point2i(point.x - 1, point.y));
-            queue.add(new Point2i(point.x + 1, point.y));
-            queue.add(new Point2i(point.x, point.y - 1));
-            queue.add(new Point2i(point.x, point.y + 1));
+            data[px][py] = true;
+            queue.add(new int[] { px - 1, py });
+            queue.add(new int[] { px + 1, py });
+            queue.add(new int[] { px, py - 1 });
+            queue.add(new int[] { px, py + 1 });
         }
     }
 }

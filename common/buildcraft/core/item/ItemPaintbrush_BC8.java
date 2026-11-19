@@ -5,67 +5,72 @@
 package buildcraft.core.item;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import gnu.trove.map.hash.TIntObjectHashMap;
-
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.core.NonNullList;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
 import buildcraft.api.blocks.CustomPaintHelper;
 
-import buildcraft.lib.client.render.font.SpecialColourFontRenderer;
 import buildcraft.lib.item.ItemBC_Neptune;
 import buildcraft.lib.misc.ColourUtil;
+import buildcraft.lib.misc.NBTUtilBC;
 import buildcraft.lib.misc.ParticleUtil;
 import buildcraft.lib.misc.SoundUtil;
 import buildcraft.lib.misc.StackUtil;
 import buildcraft.lib.misc.VecUtil;
 
+/** The paintbrush. Its colour is the "buildcraftcore:paint_colour" component (1.12.2 used the damage value: 0 for clean,
+ * colour + 1 otherwise) and its uses are kept in its data as on 1.12.2. */
 public class ItemPaintbrush_BC8 extends ItemBC_Neptune {
     private static final String DAMAGE = "damage";
     private static final int MAX_USES = 64;
 
-    public ItemPaintbrush_BC8(String id) {
-        super(id);
-        setMaxStackSize(1);
-        setHasSubtypes(true);
+    /** Registered by core as "buildcraftcore:paint_colour". */
+    public static final DataComponentType<DyeColor> COLOUR = DataComponentType.<DyeColor> builder()
+        .persistent(DyeColor.CODEC)
+        .networkSynchronized(DyeColor.STREAM_CODEC)
+        .build();
+
+    public ItemPaintbrush_BC8(Item.Properties properties, String id) {
+        super(properties.stacksTo(1), id);
     }
 
     @Override
-    protected void addSubItems(CreativeTabs tab, NonNullList<ItemStack> subItems) {
-        for (int i = 0; i < 17; i++) {
-            subItems.add(new ItemStack(this, 1, i));
-        }
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
-        addVariant(variants, 0, "clean");
+    public void addSubItems(NonNullList<ItemStack> subItems) {
+        subItems.add(new ItemStack(this));
         for (DyeColor colour : DyeColor.values()) {
-            addVariant(variants, colour.getMetadata() + 1, colour.getName());
+            subItems.add(new Brush(colour).save());
         }
     }
 
     @Override
-    public InteractionResult onItemUse(Player player, Level world, BlockPos pos, InteractionHand hand, Direction facing, float hitX, float hitY, float hitZ) {
+    public InteractionResult useOn(UseOnContext context) {
+        Player player = context.getPlayer();
+        Level world = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        InteractionHand hand = context.getHand();
+        Direction facing = context.getClickedFace();
+        float hitX = (float) (context.getClickLocation().x - pos.getX());
+        float hitY = (float) (context.getClickLocation().y - pos.getY());
+        float hitZ = (float) (context.getClickLocation().z - pos.getZ());
+        if (player == null) {
+            return InteractionResult.PASS;
+        }
         ItemStack stack = StackUtil.asNonNull(player.getItemInHand(hand));
         Brush brush = new Brush(stack);
         Vec3 hitPos = VecUtil.add(new Vec3(hitX, hitY, hitZ), pos);
@@ -86,56 +91,36 @@ public class ItemPaintbrush_BC8 extends ItemBC_Neptune {
     }
 
     @Override
-    public String getItemStackDisplayName(ItemStack stack) {
+    public Component getName(ItemStack stack) {
         Brush brush = getBrushFromStack(stack);
-        String colourComponent = "";
-        if (brush.colour != null) {
-            colourComponent = ColourUtil.getTextFullTooltipSpecial(brush.colour) + " ";
+        Component name = super.getName(stack);
+        if (brush.colour == null) {
+            return name;
         }
-        return colourComponent + super.getItemStackDisplayName(stack);
+        return Component.literal(ColourUtil.getTextFullTooltip(brush.colour) + " ").append(name);
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
-    public Font getFontRenderer(ItemStack stack) {
-        return SpecialColourFontRenderer.INSTANCE;
-    }
-
-    @Override
-    public int getDamage(ItemStack stack) {
-        Brush brush = new Brush(stack);
-        return MAX_USES - brush.usesLeft;
-    }
-
-    @Override
-    public void setDamage(ItemStack stack, int damage) {
-        // Explicitly disallow this- some core use cases mistake this for metadata and fail
-    }
-
-    @Override
-    public boolean isDamaged(ItemStack stack) {
+    public boolean isBarVisible(ItemStack stack) {
         Brush brush = new Brush(stack);
         return brush.colour != null && brush.usesLeft < MAX_USES;
     }
 
     @Override
-    public boolean showDurabilityBar(ItemStack stack) {
-        return isDamaged(stack);
-    }
-
-    @Override
-    public double getDurabilityForDisplay(ItemStack stack) {
+    public int getBarWidth(ItemStack stack) {
         Brush brush = new Brush(stack);
-        return 1 - (brush.usesLeft / (double) MAX_USES);
+        return Mth.clamp(Math.round(13.0F * brush.usesLeft / MAX_USES), 0, 13);
     }
 
     @Override
-    public int getMetadata(ItemStack stack) {
-        return super.getDamage(stack);
+    public int getBarColor(ItemStack stack) {
+        Brush brush = new Brush(stack);
+        return Mth.hsvToRgb(Math.max(0.0F, brush.usesLeft / (float) MAX_USES) / 3.0F, 1.0F, 1.0F);
     }
 
     /** Delegate class for handling */
     public class Brush {
+        @Nullable
         public DyeColor colour;
         public int usesLeft;
 
@@ -145,15 +130,9 @@ public class ItemPaintbrush_BC8 extends ItemBC_Neptune {
         }
 
         public Brush(ItemStack stack) {
-            int meta = stack.getDamageValue();
-            if (meta > 0 && meta <= 16) {
-                colour = DyeColor.byMetadata(meta - 1);
-                CompoundTag nbt = stack.getTagCompound();
-                if (nbt == null) {
-                    usesLeft = MAX_USES;
-                } else {
-                    usesLeft = MAX_USES - nbt.getByteOr(DAMAGE, (byte) 0);
-                }
+            colour = stack.get(COLOUR);
+            if (colour != null) {
+                usesLeft = MAX_USES - NBTUtilBC.getItemData(stack).getByteOr(DAMAGE, (byte) 0);
             } else {
                 usesLeft = 0;
             }
@@ -164,25 +143,24 @@ public class ItemPaintbrush_BC8 extends ItemBC_Neptune {
             return save(StackUtil.EMPTY);
         }
 
+        /** @return A new stack if the existing one couldn't hold this brush, or empty if it was changed in place. */
         @Nonnull
         public ItemStack save(@Nonnull ItemStack existing) {
-            ItemStack stack = existing;
-            if (existing.isEmpty() || existing.getDamageValue() != getMeta()) {
-                stack = new ItemStack(ItemPaintbrush_BC8.this, 1, getMeta());
+            ItemStack stack = existing.isEmpty() ? new ItemStack(ItemPaintbrush_BC8.this) : existing;
+            DyeColor savedColour = usesLeft <= 0 ? null : colour;
+            if (savedColour == null) {
+                stack.remove(COLOUR);
+            } else {
+                stack.set(COLOUR, savedColour);
             }
-            if (usesLeft != MAX_USES && colour != null) {
-                CompoundTag nbt = stack.getTagCompound();
-                if (nbt == null) {
-                    nbt = new CompoundTag();
-                    stack.setTagCompound(nbt);
+            NBTUtilBC.updateItemData(stack, nbt -> {
+                if (usesLeft != MAX_USES && savedColour != null) {
+                    nbt.putByte(DAMAGE, (byte) (MAX_USES - usesLeft));
+                } else {
+                    nbt.remove(DAMAGE);
                 }
-                nbt.putByte(DAMAGE, (byte) (MAX_USES - usesLeft));
-            }
+            });
             return stack == existing ? StackUtil.EMPTY : stack;
-        }
-
-        public int getMeta() {
-            return (usesLeft <= 0 || colour == null) ? 0 : colour.getMetadata() + 1;
         }
 
         public boolean useOnBlock(Level world, BlockPos pos, BlockState state, Vec3 hitPos, Direction side, Player player) {

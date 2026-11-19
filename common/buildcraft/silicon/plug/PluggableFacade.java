@@ -9,22 +9,22 @@ package buildcraft.silicon.plug;
 import javax.annotation.Nullable;
 
 import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.color.BlockColors;
-import net.minecraft.entity.Entity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.world.Explosion;
+import net.minecraft.client.color.block.BlockColors;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.FriendlyByteBuf;
+import buildcraft.api.core.BCRenderLayer;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.level.Explosion;
 
-import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.BCModules;
 import buildcraft.api.facades.FacadeType;
@@ -44,7 +44,7 @@ import buildcraft.transport.client.model.key.KeyPlugBlocker;
 
 public class PluggableFacade extends PipePluggable implements IFacade {
 
-    private static final AxisAlignedBB[] BOXES = new AxisAlignedBB[6];
+    private static final AABB[] BOXES = new AABB[6];
 
     static {
         double ll = 0 / 16.0;
@@ -55,12 +55,12 @@ public class PluggableFacade extends PipePluggable implements IFacade {
         double min = 0 / 16.0;
         double max = 16 / 16.0;
 
-        BOXES[EnumFacing.DOWN.getIndex()] = new AxisAlignedBB(min, ll, min, max, lu, max);
-        BOXES[EnumFacing.UP.getIndex()] = new AxisAlignedBB(min, ul, min, max, uu, max);
-        BOXES[EnumFacing.NORTH.getIndex()] = new AxisAlignedBB(min, min, ll, max, max, lu);
-        BOXES[EnumFacing.SOUTH.getIndex()] = new AxisAlignedBB(min, min, ul, max, max, uu);
-        BOXES[EnumFacing.WEST.getIndex()] = new AxisAlignedBB(ll, min, min, lu, max, max);
-        BOXES[EnumFacing.EAST.getIndex()] = new AxisAlignedBB(ul, min, min, uu, max, max);
+        BOXES[Direction.DOWN.getIndex()] = new AABB(min, ll, min, max, lu, max);
+        BOXES[Direction.UP.getIndex()] = new AABB(min, ul, min, max, uu, max);
+        BOXES[Direction.NORTH.getIndex()] = new AABB(min, min, ll, max, max, lu);
+        BOXES[Direction.SOUTH.getIndex()] = new AABB(min, min, ul, max, max, uu);
+        BOXES[Direction.WEST.getIndex()] = new AABB(ll, min, min, lu, max, max);
+        BOXES[Direction.EAST.getIndex()] = new AABB(ul, min, min, uu, max, max);
     }
 
     public static final int SIZE = 2;
@@ -69,61 +69,61 @@ public class PluggableFacade extends PipePluggable implements IFacade {
     public final BlockFaceShape blockFaceShape;
     public int activeState;
 
-    public PluggableFacade(PluggableDefinition definition, IPipeHolder holder, EnumFacing side, FacadeInstance states) {
+    public PluggableFacade(PluggableDefinition definition, IPipeHolder holder, Direction side, FacadeInstance states) {
         super(definition, holder, side);
         this.states = states;
         isSideSolid = states.areAllStatesSolid(side);
         blockFaceShape = states.getBlockFaceShape(side);
     }
 
-    public PluggableFacade(PluggableDefinition def, IPipeHolder holder, EnumFacing side, NBTTagCompound nbt) {
+    public PluggableFacade(PluggableDefinition def, IPipeHolder holder, Direction side, CompoundTag nbt) {
         super(def, holder, side);
-        if (nbt.hasKey("states") && !nbt.hasKey("facade")) {
-            NBTTagList tagStates = nbt.getTagList("states", Constants.NBT.TAG_COMPOUND);
-            if (tagStates.tagCount() > 0) {
-                boolean isHollow = tagStates.getCompoundTagAt(0).getBoolean("isHollow");
-                NBTTagCompound tagFacade = new NBTTagCompound();
-                tagFacade.setTag("states", tagStates);
-                tagFacade.setBoolean("isHollow", isHollow);
-                nbt.setTag("facade", tagFacade);
+        if (nbt.contains("states") && !nbt.contains("facade")) {
+            ListTag tagStates = nbt.getListOrEmpty("states");
+            if (tagStates.size() > 0) {
+                boolean isHollow = tagStates.getCompoundOrEmpty(0).getBooleanOr("isHollow", false);
+                CompoundTag tagFacade = new CompoundTag();
+                tagFacade.put("states", tagStates);
+                tagFacade.putBoolean("isHollow", isHollow);
+                nbt.put("facade", tagFacade);
             }
         }
-        this.states = FacadeInstance.readFromNbt(nbt.getCompoundTag("facade"));
-        activeState = MathUtil.clamp(nbt.getInteger("activeState"), 0, states.phasedStates.length - 1);
+        this.states = FacadeInstance.readFromNbt(nbt.getCompoundOrEmpty("facade"));
+        activeState = MathUtil.clamp(nbt.getIntOr("activeState", 0), 0, states.phasedStates.length - 1);
         isSideSolid = states.areAllStatesSolid(side);
         blockFaceShape = states.getBlockFaceShape(side);
     }
 
     @Override
-    public NBTTagCompound writeToNbt() {
-        NBTTagCompound nbt = super.writeToNbt();
-        nbt.setTag("facade", states.writeToNbt());
-        nbt.setInteger("activeState", activeState);
+    public CompoundTag writeToNbt() {
+        CompoundTag nbt = super.writeToNbt();
+        nbt.put("facade", states.writeToNbt());
+        nbt.putInt("activeState", activeState);
         return nbt;
     }
 
     // Networking
 
-    public PluggableFacade(PluggableDefinition def, IPipeHolder holder, EnumFacing side, PacketBuffer buffer) {
+    public PluggableFacade(PluggableDefinition def, IPipeHolder holder, Direction side, FriendlyByteBuf buffer) {
         super(def, holder, side);
         PacketBufferBC buf = PacketBufferBC.asPacketBufferBc(buffer);
         states = FacadeInstance.readFromBuffer(buf);
         isSideSolid = buf.readBoolean();
-        blockFaceShape = buf.readEnumValue(BlockFaceShape.class);
+        blockFaceShape = buf.readEnum(BlockFaceShape.class);
     }
 
     @Override
-    public void writeCreationPayload(PacketBuffer buffer) {
+    public void writeCreationPayload(FriendlyByteBuf buffer) {
         PacketBufferBC buf = PacketBufferBC.asPacketBufferBc(buffer);
         states.writeToBuffer(buf);
         buf.writeBoolean(isSideSolid);
-        buf.writeEnumValue(blockFaceShape);
+        buf.writeEnum(blockFaceShape);
     }
 
     // Pluggable methods
 
     @Override
-    public AxisAlignedBB getBoundingBox() {
+    public AABB getBoundingBox() {
         return BOXES[side.getIndex()];
     }
 
@@ -158,27 +158,27 @@ public class PluggableFacade extends PipePluggable implements IFacade {
     }
 
     @Override
-    public PluggableModelKey getModelRenderKey(BlockRenderLayer layer) {
+    public PluggableModelKey getModelRenderKey(BCRenderLayer layer) {
         if (states.type == FacadeType.Basic) {
             FacadePhasedState facadeState = states.phasedStates[activeState];
-            IBlockState blockState = facadeState.stateInfo.state;
-            BlockRenderLayer targetLayer = blockState.getBlock().getBlockLayer();
-            if (targetLayer == BlockRenderLayer.TRANSLUCENT) {
+            BlockState blockState = facadeState.stateInfo.state;
+            BCRenderLayer targetLayer = blockState.getBlock().getBlockLayer();
+            if (targetLayer == BCRenderLayer.TRANSLUCENT) {
                 if (layer != targetLayer) {
                     return null;
                 }
-            } else if (layer == BlockRenderLayer.TRANSLUCENT) {
+            } else if (layer == BCRenderLayer.TRANSLUCENT) {
                 return null;
             }
             return new KeyPlugFacade(layer, side, blockState, isHollow());
-        } else if (layer == BlockRenderLayer.CUTOUT && BCModules.TRANSPORT.isLoaded()) {
+        } else if (layer == BCRenderLayer.CUTOUT && BCModules.TRANSPORT.isLoaded()) {
             return KeyPlugBlocker.create(side);
         }
         return null;
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public int getBlockColor(int tintIndex) {
         FacadePhasedState state = states.phasedStates[activeState];
         BlockColors colours = Minecraft.getMinecraft().getBlockColors();

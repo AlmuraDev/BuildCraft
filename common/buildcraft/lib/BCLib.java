@@ -89,6 +89,7 @@ public class BCLib {
         BuildCraftObjectCaches.fmlPreInit();
 
         NeoForge.EVENT_BUS.register(BCLibEventDist.class);
+        NeoForge.EVENT_BUS.register(buildcraft.lib.world.WorldEventListeners.class);
         NeoForge.EVENT_BUS.addListener(BCLib::registerCommands);
 
         modBus.addListener(MessageManager::onRegisterPayloads);

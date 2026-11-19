@@ -6,7 +6,7 @@
 
 package buildcraft.energy.generation;
 
-import net.minecraft.world.biome.Biome;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.biome.BiomeDesert;
 
 import net.minecraftforge.fml.common.registry.GameRegistry;

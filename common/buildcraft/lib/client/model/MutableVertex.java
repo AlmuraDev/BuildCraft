@@ -6,14 +6,10 @@
 
 package buildcraft.lib.client.model;
 
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Point2f;
-import javax.vecmath.Point3f;
-import javax.vecmath.Point4f;
-import javax.vecmath.Tuple2f;
-import javax.vecmath.Tuple3f;
-import javax.vecmath.Tuple4f;
-import javax.vecmath.Vector3f;
+import org.joml.Matrix4f;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
@@ -218,7 +214,7 @@ public class MutableVertex {
 
     // Mutating
 
-    public MutableVertex positionv(Tuple3f vec) {
+    public MutableVertex positionv(Vector3f vec) {
         return positionf(vec.x, vec.y, vec.z);
     }
 
@@ -233,15 +229,15 @@ public class MutableVertex {
         return this;
     }
 
-    public Point3f positionvf() {
-        return new Point3f(position_x, position_y, position_z);
+    public Vector3f positionvf() {
+        return new Vector3f(position_x, position_y, position_z);
     }
 
     /** Sets the current normal for this vertex based off the given vector.<br>
      * Note: This calls {@link #normalf(float, float, float)} internally, so refer to that for more warnings.
      * 
      * @see #normalf(float, float, float) */
-    public MutableVertex normalv(Tuple3f vec) {
+    public MutableVertex normalv(Vector3f vec) {
         return normalf(vec.x, vec.y, vec.z);
     }
 
@@ -280,7 +276,7 @@ public class MutableVertex {
         return as << offset;
     }
 
-    public MutableVertex colourv(Tuple4f vec) {
+    public MutableVertex colourv(Vector4f vec) {
         return colourf(vec.x, vec.y, vec.z, vec.w);
     }
 
@@ -300,8 +296,8 @@ public class MutableVertex {
         return this;
     }
 
-    public Point4f colourv() {
-        return new Point4f(colour_r / 255f, colour_g / 255f, colour_b / 255f, colour_a / 255f);
+    public Vector4f colourv() {
+        return new Vector4f(colour_r / 255f, colour_g / 255f, colour_b / 255f, colour_a / 255f);
     }
 
     public int colourRGBA() {
@@ -354,7 +350,7 @@ public class MutableVertex {
         return this;
     }
 
-    public MutableVertex texv(Tuple2f vec) {
+    public MutableVertex texv(Vector2f vec) {
         return texf(vec.x, vec.y);
     }
 
@@ -364,11 +360,11 @@ public class MutableVertex {
         return this;
     }
 
-    public Point2f tex() {
-        return new Point2f(tex_u, tex_v);
+    public Vector2f tex() {
+        return new Vector2f(tex_u, tex_v);
     }
 
-    public MutableVertex lightv(Tuple2f vec) {
+    public MutableVertex lightv(Vector2f vec) {
         return lightf(vec.x, vec.y);
     }
 
@@ -390,8 +386,8 @@ public class MutableVertex {
         return lighti(Math.max(block, light_block), Math.max(sky, light_sky));
     }
 
-    public Point2f lightvf() {
-        return new Point2f(light_block * 15f, light_sky * 15f);
+    public Vector2f lightvf() {
+        return new Vector2f(light_block * 15f, light_sky * 15f);
     }
 
     public int lightc() {
@@ -403,7 +399,7 @@ public class MutableVertex {
     }
 
     public MutableVertex transform(Matrix4f matrix) {
-        Point3f point = positionvf();
+        Vector3f point = positionvf();
         matrix.transform(point);
         positionv(point);
 

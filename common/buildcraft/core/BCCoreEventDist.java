@@ -6,11 +6,12 @@
 
 package buildcraft.core;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
-import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
 import buildcraft.lib.misc.MessageUtil;
 import buildcraft.lib.net.MessageManager;
@@ -23,24 +24,24 @@ public enum BCCoreEventDist {
     INSTANCE;
 
     @SubscribeEvent
-    public void onWorldTick(TickEvent.WorldTickEvent event) {
-        if (event.world != null && !event.world.isClientSide() && event.world.getMinecraftServer() != null) {
-            WorldSavedDataVolumeBoxes.get(event.world).tick();
+    public void onWorldTick(LevelTickEvent.Post event) {
+        if (event.getLevel() instanceof ServerLevel level) {
+            WorldSavedDataVolumeBoxes.get(level).tick();
         }
     }
 
     @SubscribeEvent
-    public void onEntityJoinWorld(EntityJoinWorldEvent event) {
-        if (event.getEntity() instanceof ServerPlayer) {
+    public void onEntityJoinWorld(EntityJoinLevelEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
             // Delay sending join messages to player as it makes it work when in single-player
             MessageUtil.doDelayedServer(() ->
                 MessageManager.sendTo(
-                    new MessageVolumeBoxes(WorldSavedDataVolumeBoxes.get(event.getEntity().world).volumeBoxes),
-                    (ServerPlayer) event.getEntity()
+                    new MessageVolumeBoxes(WorldSavedDataVolumeBoxes.get(player.level()).volumeBoxes),
+                    player
                 )
             );
-            WorldSavedDataVolumeBoxes.get(((ServerPlayer) event.getEntity()).world).volumeBoxes.stream()
-                .filter(volumeBox -> volumeBox.isPausedEditingBy((ServerPlayer) event.getEntity()))
+            WorldSavedDataVolumeBoxes.get(player.level()).volumeBoxes.stream()
+                .filter(volumeBox -> volumeBox.isPausedEditingBy(player))
                 .forEach(VolumeBox::resumeEditing);
         }
     }

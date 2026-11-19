@@ -24,7 +24,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.biome.Biome;
 
 import net.neoforged.neoforge.capabilities.BlockCapability;
-import net.minecraftforge.energy.CapabilityEnergy;
+import buildcraft.lib.misc.CapUtil;
 import buildcraft.api.transfer.IEnergyStorage;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
@@ -166,7 +166,7 @@ public abstract class TileEngineBase_BC8 extends TileBC_Neptune implements ITick
                     // makeTileCache();
                     sendNetworkUpdate(NET_RENDER_DATA);
                     redrawBlock();
-                    world.notifyNeighborsRespectDebug(getPos(), getBlockType(), true);
+                    world.updateNeighborsAt(getPos(), getBlockState().getBlock());
                     return InteractionResult.SUCCESS;
                 }
                 return InteractionResult.FAIL;
@@ -207,13 +207,13 @@ public abstract class TileEngineBase_BC8 extends TileBC_Neptune implements ITick
 
     protected Biome getBiome() {
         // TODO: Cache this!
-        return world.getBiome(getPos());
+        return world.getBiome(getPos()).value();
     }
 
     /** @return The heat of the current biome, in celsius. */
     protected float getBiomeHeat() {
         Biome biome = getBiome();
-        float temp = biome.getTemperature(getPos());
+        float temp = biome.getBaseTemperature();
         return Math.max(0, Math.min(30, temp * 15f));
     }
 
@@ -282,7 +282,7 @@ public abstract class TileEngineBase_BC8 extends TileBC_Neptune implements ITick
     @Override
     public void onNeighbourBlockChanged(Block block, BlockPos nehighbour) {
         super.onNeighbourBlockChanged(block, nehighbour);
-        isRedstonePowered = world.isBlockIndirectlyGettingPowered(getPos()) > 0;
+        isRedstonePowered = world.getBestNeighborSignal(getPos()) > 0;
     }
 
     @Override
@@ -528,11 +528,11 @@ public abstract class TileEngineBase_BC8 extends TileBC_Neptune implements ITick
     @Deprecated
     public IMjReceiver getReceiverToPower(BlockEntity tile, Direction side) {
         if (tile == null) return null;
-        IMjReceiver rec = tile.getCapability(MjAPI.CAP_RECEIVER, side.getOpposite());
+        IMjReceiver rec = CapUtil.getCapability(tile, MjAPI.CAP_RECEIVER, side.getOpposite());
         if (rec != null && rec.canConnect(mjConnector) && mjConnector.canConnect(rec)) {
             return rec;
         } else if (couldPowerRf()) {
-            IEnergyStorage rf = tile.getCapability(CapabilityEnergy.ENERGY, side.getOpposite());
+            IEnergyStorage rf = CapUtil.getCapability(tile, CapUtil.CAP_RF, side.getOpposite());
             return MjToRfAutoConvertor.createReceiver(rf);
         } else {
             return null;
@@ -656,9 +656,4 @@ public abstract class TileEngineBase_BC8 extends TileBC_Neptune implements ITick
         clientModelData.addDebugInfo(left);
     }
 
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public boolean hasFastRenderer() {
-        return true;
-    }
 }

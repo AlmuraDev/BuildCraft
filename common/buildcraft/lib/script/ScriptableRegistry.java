@@ -32,7 +32,8 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.resources.Identifier;
 
 import net.neoforged.fml.ModList;
-import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforgespi.language.IModFileInfo;
 
 import buildcraft.api.core.BCLog;
 import buildcraft.api.registry.IReloadableRegistryManager;
@@ -112,8 +113,8 @@ public class ScriptableRegistry<E> extends SimpleReloadableRegistry<E> implement
         List<FileSystem> openFileSystems = new ArrayList<>();
         Map<File, Path> loadedFiles = new HashMap<>();
         List<Path> jarRoots = new ArrayList<>();
-        for (ModContainer container : ModList.get().getActiveModList()) {
-            File source = container.getSource();
+        for (IModFileInfo modFile : ModList.get().getModFiles()) {
+            File source = modFile.getFile().getFilePath().toFile();
             if (!source.exists()) {
                 continue;
             }
@@ -133,7 +134,7 @@ public class ScriptableRegistry<E> extends SimpleReloadableRegistry<E> implement
             }
         }
 
-        File baseFile = new File(ModList.get().getConfigDir(), "buildcraft/scripts");
+        File baseFile = new File(FMLPaths.CONFIGDIR.get().toFile(), "buildcraft/scripts");
         if (!baseFile.isDirectory()) {
             baseFile.mkdirs();
         }
@@ -336,7 +337,7 @@ public class ScriptableRegistry<E> extends SimpleReloadableRegistry<E> implement
     private void loadReloadable(Identifier name, Gson gson, JsonObject json) throws JsonSyntaxException {
         String type = "";
         if (json.has("type")) {
-            type = GsonHelper.getString(json, "type");
+            type = GsonHelper.getAsString(json, "type");
         }
         IEntryDeserializer<? extends E> deserializer = getCustomDeserializers().get(type);
         if (deserializer != null) {

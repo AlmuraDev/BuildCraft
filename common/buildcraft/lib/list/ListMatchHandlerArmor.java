@@ -14,7 +14,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 
-import net.minecraftforge.common.DimensionManager;
 
 import buildcraft.api.core.BuildCraftAPI;
 import buildcraft.api.lists.ListMatchHandler;
@@ -23,20 +22,11 @@ import buildcraft.lib.BCLibProxy;
 
 public class ListMatchHandlerArmor extends ListMatchHandler {
     private static EnumSet<EquipmentSlot> getArmorTypes(ItemStack stack) {
-        Player player = BCLibProxy.getProxy().getClientPlayer();
-        if (player == null) {
-            player = BuildCraftAPI.fakePlayerProvider.getBuildCraftPlayer(DimensionManager.getWorld(0));
-        }
         EnumSet<EquipmentSlot> types = EnumSet.noneOf(EquipmentSlot.class);
-
-        for (EquipmentSlot e : EquipmentSlot.values()) {
-            if (e.getSlotType() == EquipmentSlot.Type.ARMOR) {
-                if (stack.getItem().isValidArmor(stack, e, player)) {
-                    types.add(e);
-                }
-            }
+        net.minecraft.world.item.equipment.Equippable equippable = stack.get(net.minecraft.core.component.DataComponents.EQUIPPABLE);
+        if (equippable != null && equippable.slot().getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+            types.add(equippable.slot());
         }
-
         return types;
     }
 

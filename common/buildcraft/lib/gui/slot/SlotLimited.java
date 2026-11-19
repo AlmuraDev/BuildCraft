@@ -18,7 +18,7 @@ public class SlotLimited extends SlotBase {
     }
 
     @Override
-    public int getSlotStackLimit() {
+    public int getMaxStackSize() {
         return limit;
     }
 }

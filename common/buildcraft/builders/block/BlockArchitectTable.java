@@ -7,13 +7,13 @@ package buildcraft.builders.block;
 import java.util.List;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 import buildcraft.api.properties.BuildCraftProperties;
 
@@ -25,48 +25,48 @@ import buildcraft.builders.BCBuildersGuis;
 import buildcraft.builders.tile.TileArchitectTable;
 
 public class BlockArchitectTable extends BlockBCTile_Neptune implements IBlockWithFacing {
-    public static final IProperty<Boolean> PROP_VALID = BuildCraftProperties.VALID;
+    public static final Property<Boolean> PROP_VALID = BuildCraftProperties.VALID;
 
     private static final int META_VALID_INDEX = 4;
 
     public BlockArchitectTable(Material material, String id) {
         super(material, id);
-        setDefaultState(getDefaultState().withProperty(PROP_VALID, Boolean.TRUE));
+        setDefaultState(getDefaultState().setValue(PROP_VALID, Boolean.TRUE));
     }
 
     @Override
-    protected void addProperties(List<IProperty<?>> properties) {
+    protected void addProperties(List<Property<?>> properties) {
         super.addProperties(properties);
         properties.add(PROP_VALID);
     }
 
     @Override
-    public IBlockState getStateFromMeta(int meta) {
-        IBlockState state = super.getStateFromMeta(meta);
-        state = state.withProperty(PROP_VALID, (meta & META_VALID_INDEX) == 0);
+    public BlockState getStateFromMeta(int meta) {
+        BlockState state = super.getStateFromMeta(meta);
+        state = state.setValue(PROP_VALID, (meta & META_VALID_INDEX) == 0);
         return state;
     }
 
     @Override
-    public int getMetaFromState(IBlockState state) {
+    public int getMetaFromState(BlockState state) {
         return super.getMetaFromState(state) | (state.getValue(PROP_VALID) ? 0 : META_VALID_INDEX);
     }
 
     @Override
-    public TileBC_Neptune createTileEntity(World world, IBlockState state) {
+    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
         return new TileArchitectTable();
     }
 
     @Override
-    public boolean onBlockActivated(World world, BlockPos pos, IBlockState state, EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY, float hitZ) {
-        if (!world.isRemote) {
+    public boolean onBlockActivated(Level world, BlockPos pos, BlockState state, Player player, InteractionHand hand, Direction side, float hitX, float hitY, float hitZ) {
+        if (!world.isClientSide()) {
             BCBuildersGuis.ARCHITECT.openGUI(player, pos);
         }
         return true;
     }
 
     @Override
-    public boolean canBeRotated(World world, BlockPos pos, IBlockState state) {
+    public boolean canBeRotated(Level world, BlockPos pos, BlockState state) {
         return false;
     }
 }

@@ -16,7 +16,7 @@ import net.minecraft.world.level.Level;
 
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.ModList;
-import net.minecraftforge.fml.common.LoaderState;
+import net.minecraft.resources.ResourceKey;
 import net.neoforged.fml.ModContainer;
 
 import buildcraft.api.core.BCDebugging;
@@ -28,17 +28,14 @@ public abstract class MarkerCache<S extends MarkerSubCache<?>> {
 
     public final String name;
 
-    private final Map<Integer, S> cacheClient = new ConcurrentHashMap<>();
-    private final Map<Integer, S> cacheServer = new ConcurrentHashMap<>();
+    private final Map<ResourceKey<Level>, S> cacheClient = new ConcurrentHashMap<>();
+    private final Map<ResourceKey<Level>, S> cacheServer = new ConcurrentHashMap<>();
 
     public MarkerCache(String name) {
         this.name = name;
     }
 
     public static void registerCache(MarkerCache<?> cache) {
-        if (ModList.get().hasReachedState(LoaderState.POSTINITIALIZATION)) {
-            throw new IllegalStateException("Registered too late!");
-        }
         ModContainer mod = ModLoadingContext.get().getActiveContainer();
         if (mod == null) {
             throw new IllegalStateException("Tried to register a cache without an active mod!");
@@ -74,16 +71,16 @@ public abstract class MarkerCache<S extends MarkerSubCache<?>> {
     }
 
     private void onWorldUnloadImpl(Level world) {
-        Map<Integer, S> cache = world.isClientSide() ? cacheClient : cacheServer;
-        Integer key = world.provider.getDimension();
+        Map<ResourceKey<Level>, S> cache = world.isClientSide() ? cacheClient : cacheServer;
+        ResourceKey<Level> key = world.dimension();
         cache.remove(key);
     }
 
     protected abstract S createSubCache(Level world);
 
     public S getSubCache(Level world) {
-        Map<Integer, S> cache = world.isClientSide() ? cacheClient : cacheServer;
-        Integer key = world.provider.getDimension();
+        Map<ResourceKey<Level>, S> cache = world.isClientSide() ? cacheClient : cacheServer;
+        ResourceKey<Level> key = world.dimension();
         return cache.computeIfAbsent(key, k -> createSubCache(world));
     }
 }

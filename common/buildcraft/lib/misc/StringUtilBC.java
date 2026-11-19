@@ -6,6 +6,7 @@
 
 package buildcraft.lib.misc;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -63,9 +64,9 @@ public final class StringUtilBC {
                 char after = string.charAt(i);
                 ChatFormatting colour = null;
                 if (after >= '0' & after <= '9') {
-                    colour = ChatFormatting.fromColorIndex(after - '0');
+                    colour = ChatFormatting.getByCode(after);
                 } else if (after >= 'a' & after <= 'f') {
-                    colour = ChatFormatting.fromColorIndex(after - 'a' + 10);
+                    colour = ChatFormatting.getByCode(after);
                 }
                 if (colour == null) {
                     out.append(c);
@@ -98,7 +99,7 @@ public final class StringUtilBC {
         if (fluid == null) {
             return "null";
         }
-        return fluid.getAmount() + "mb " + fluid.getFluid().getName();
+        return fluid.getAmount() + "mb " + net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid.getFluid());
     }
 
     // Displaying objects

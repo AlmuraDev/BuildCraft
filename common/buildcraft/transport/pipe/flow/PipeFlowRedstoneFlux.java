@@ -15,19 +15,19 @@ import java.util.function.ToIntFunction;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing.AxisDirection;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Direction.AxisDirection;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.energy.CapabilityEnergy;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.fml.relauncher.Side;
+import net.neoforged.neoforge.capabilities.BlockCapability;
+import buildcraft.lib.misc.CapUtil;
+import buildcraft.api.transfer.IEnergyStorage;
+import net.neoforged.fml.LogicalSide;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.mj.MjAPI;
@@ -47,8 +47,8 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
     private static final int DEFAULT_MAX_POWER = 100;
     public static final int NET_POWER_AMOUNTS = 2;
 
-    public Vec3d clientDisplayFlowCentre = VecUtil.VEC_HALF;
-    public Vec3d clientDisplayFlowCentreLast = VecUtil.VEC_HALF;
+    public Vec3 clientDisplayFlowCentre = VecUtil.VEC_HALF;
+    public Vec3 clientDisplayFlowCentreLast = VecUtil.VEC_HALF;
     public long clientLastDisplayTime = 0;
 
     private int maxPower = -1;
@@ -57,68 +57,68 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
     private long currentWorldTime;
 
     private boolean isReceiver = false;
-    private final EnumMap<EnumFacing, Section> sections;
+    private final EnumMap<Direction, Section> sections;
 
     public PipeFlowRedstoneFlux(IPipe pipe) {
         super(pipe);
-        sections = new EnumMap<>(EnumFacing.class);
-        for (EnumFacing face : EnumFacing.VALUES) {
+        sections = new EnumMap<>(Direction.class);
+        for (Direction face : Direction.values()) {
             sections.put(face, new Section(face));
         }
     }
 
-    public PipeFlowRedstoneFlux(IPipe pipe, NBTTagCompound nbt) {
+    public PipeFlowRedstoneFlux(IPipe pipe, CompoundTag nbt) {
         super(pipe, nbt);
-        isReceiver = nbt.getBoolean("isReceiver");
-        sections = new EnumMap<>(EnumFacing.class);
-        for (EnumFacing face : EnumFacing.VALUES) {
+        isReceiver = nbt.getBooleanOr("isReceiver", false);
+        sections = new EnumMap<>(Direction.class);
+        for (Direction face : Direction.values()) {
             sections.put(face, new Section(face));
         }
     }
 
     @Override
-    public NBTTagCompound writeToNbt() {
-        NBTTagCompound nbt = super.writeToNbt();
-        nbt.setBoolean("isReceiver", isReceiver);
+    public CompoundTag writeToNbt() {
+        CompoundTag nbt = super.writeToNbt();
+        nbt.putBoolean("isReceiver", isReceiver);
         return nbt;
     }
 
     @Override
-    public void writePayload(int id, PacketBuffer buffer, Side side) {
+    public void writePayload(int id, FriendlyByteBuf buffer, LogicalSide side) {
         super.writePayload(id, buffer, side);
-        if (side == Side.SERVER) {
+        if (side == LogicalSide.SERVER) {
             if (id == NET_POWER_AMOUNTS || id == NET_ID_FULL_STATE) {
-                for (EnumFacing face : EnumFacing.VALUES) {
+                for (Direction face : Direction.values()) {
                     Section s = sections.get(face);
                     buffer.writeInt(s.displayPower);
-                    buffer.writeEnumValue(s.displayFlow);
+                    buffer.writeEnum(s.displayFlow);
                 }
             }
         }
     }
 
     @Override
-    public void readPayload(int id, PacketBuffer buffer, Side side) throws IOException {
+    public void readPayload(int id, FriendlyByteBuf buffer, LogicalSide side) throws IOException {
         super.readPayload(id, buffer, side);
-        if (side == Side.CLIENT) {
+        if (side == LogicalSide.CLIENT) {
             if (id == NET_POWER_AMOUNTS || id == NET_ID_FULL_STATE) {
-                for (EnumFacing face : EnumFacing.VALUES) {
+                for (Direction face : Direction.values()) {
                     Section s = sections.get(face);
                     s.displayPower = buffer.readInt();
-                    s.displayFlow = buffer.readEnumValue(EnumFlow.class);
+                    s.displayFlow = buffer.readEnum(EnumFlow.class);
                 }
             }
         }
     }
 
     @Override
-    public boolean canConnect(EnumFacing face, PipeFlow other) {
+    public boolean canConnect(Direction face, PipeFlow other) {
         return other instanceof PipeFlowRedstoneFlux;
     }
 
     @Override
-    public boolean canConnect(EnumFacing face, TileEntity oTile) {
-        return oTile.hasCapability(CapabilityEnergy.ENERGY, face.getOpposite());
+    public boolean canConnect(Direction face, BlockEntity oTile) {
+        return oTile.hasCapability(CapUtil.CAP_RF, face.getOpposite());
     }
 
     @Override
@@ -137,15 +137,15 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
     }
 
     @Override
-    public int tryExtractPower(int maxExtracted, EnumFacing from) {
+    public int tryExtractPower(int maxExtracted, Direction from) {
         if (!isReceiver || disabled) {
             return 0;
         }
-        TileEntity tile = pipe.getConnectedTile(from);
+        BlockEntity tile = pipe.getConnectedTile(from);
         if (tile == null) {
             return 0;
         }
-        IEnergyStorage storage = tile.getCapability(CapabilityEnergy.ENERGY, from.getOpposite());
+        IEnergyStorage storage = tile.getCapability(CapUtil.CAP_RF, from.getOpposite());
         if (storage == null) {
             return 0;
         }
@@ -155,28 +155,28 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
     }
 
     @Override
-    public boolean onFlowActivate(EntityPlayer player, RayTraceResult trace, float hitX, float hitY, float hitZ,
+    public boolean onFlowActivate(Player player, HitResult trace, float hitX, float hitY, float hitZ,
         EnumPipePart part) {
         return super.onFlowActivate(player, trace, hitX, hitY, hitZ, part);
     }
 
-    public Section getSection(EnumFacing side) {
+    public Section getSection(Direction side) {
         return sections.get(side);
     }
 
     @Override
-    public <T> T getCapability(@Nonnull Capability<T> capability, EnumFacing facing) {
+    public <T> T getCapability(@Nonnull BlockCapability<T, Direction> capability, Direction facing) {
         if (facing == null) {
             return null;
-        } else if (capability == CapabilityEnergy.ENERGY) {
-            return isReceiver ? CapabilityEnergy.ENERGY.cast(sections.get(facing)) : null;
+        } else if (capability == CapUtil.CAP_RF) {
+            return isReceiver ? CapUtil.CAP_RF.cast(sections.get(facing)) : null;
         } else {
             return null;
         }
     }
 
     @Override
-    public void getDebugInfo(List<String> left, List<String> right, EnumFacing side) {
+    public void getDebugInfo(List<String> left, List<String> right, Direction side) {
         left.add("maxPower = " + maxPower);
         left.add("isReceiver = " + isReceiver);
         left.add(
@@ -191,7 +191,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
 
     private String arrayToString(ToIntFunction<Section> getter) {
         long[] arr = new long[6];
-        for (EnumFacing face : EnumFacing.VALUES) {
+        for (Direction face : Direction.values()) {
             arr[face.ordinal()] = getter.applyAsInt(sections.get(face));
         }
         return Arrays.toString(arr);
@@ -202,12 +202,12 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
         if (maxPower == -1) {
             reconfigure();
         }
-        if (pipe.getHolder().getPipeWorld().isRemote) {
+        if (pipe.getHolder().getPipeWorld().isClientSide()) {
             clientDisplayFlowCentreLast = clientDisplayFlowCentre;
-            for (EnumFacing face : EnumFacing.VALUES) {
+            for (Direction face : Direction.values()) {
                 Section s = sections.get(face);
                 s.clientDisplayFlowLast = s.clientDisplayFlow;
-                double diff = s.displayFlow.value * 2.4 * face.getAxisDirection().getOffset();
+                double diff = s.displayFlow.value * 2.4 * face.getAxisDirection().getStep();
                 s.clientDisplayFlow += 16 + diff;
                 s.clientDisplayFlow %= 16;
 
@@ -222,7 +222,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
         EnumFlow[] lastFlows = new EnumFlow[6];
         int[] lastDisplayPower = new int[6];
 
-        for (EnumFacing face : EnumFacing.VALUES) {
+        for (Direction face : Direction.values()) {
             Section s = sections.get(face);
             int i = face.ordinal();
             lastFlows[i] = s.displayFlow;
@@ -233,11 +233,11 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
 
         init();
 
-        for (EnumFacing face : EnumFacing.VALUES) {
+        for (Direction face : Direction.values()) {
             Section s = sections.get(face);
             if (s.internalPower > 0) {
                 int totalPowerQuery = 0;
-                for (EnumFacing face2 : EnumFacing.VALUES) {
+                for (Direction face2 : Direction.values()) {
                     if (face != face2) {
                         totalPowerQuery += sections.get(face2).powerQuery;
                     }
@@ -251,7 +251,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
 
                 if (totalPowerQuery > 0) {
                     int unusedPowerQuery = totalPowerQuery;
-                    for (EnumFacing face2 : EnumFacing.VALUES) {
+                    for (Direction face2 : Direction.values()) {
                         if (face == face2 && !returnPower) {
                             continue;
                         }
@@ -269,7 +269,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
                                 leftover = oFlow.sections.get(face2.getOpposite()).receivePowerInternal(watts);
                             } else {
                                 IEnergyStorage receiver = pipe.getHolder().getCapabilityFromPipe(
-                                    face2, CapabilityEnergy.ENERGY
+                                    face2, CapUtil.CAP_RF
                                 );
                                 if (receiver != null && receiver.canReceive()) {
                                     int accepted = receiver.receiveEnergy(watts, false);
@@ -299,11 +299,11 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
         }
 
         // Compute the tiles requesting power that are not power pipes
-        for (EnumFacing face : EnumFacing.VALUES) {
+        for (Direction face : Direction.values()) {
             if (pipe.getConnectedType(face) != ConnectedType.TILE) {
                 continue;
             }
-            IEnergyStorage recv = pipe.getHolder().getCapabilityFromPipe(face, CapabilityEnergy.ENERGY);
+            IEnergyStorage recv = pipe.getHolder().getCapabilityFromPipe(face, CapUtil.CAP_RF);
             if (recv != null && recv.canReceive()) {
                 int requested = recv.getMaxEnergyStored() - recv.getEnergyStored();
                 if (requested > 0) {
@@ -314,12 +314,12 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
 
         // Sum the amount of power requested on each side
         int[] transferQueryTemp = new int[6];
-        for (EnumFacing face : EnumFacing.VALUES) {
+        for (Direction face : Direction.values()) {
             if (!pipe.isConnected(face)) {
                 continue;
             }
             int query = 0;
-            for (EnumFacing face2 : EnumFacing.VALUES) {
+            for (Direction face2 : Direction.values()) {
                 if (face != face2) {
                     query += sections.get(face2).powerQuery;
                 }
@@ -328,7 +328,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
         }
 
         // Transfer requested power to neighbouring pipes
-        for (EnumFacing face : EnumFacing.VALUES) {
+        for (Direction face : Direction.values()) {
             if (disabled) {
                 continue;
             }
@@ -344,7 +344,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
         }
         // Networking
         boolean didChange = false;
-        for (EnumFacing face : EnumFacing.VALUES) {
+        for (Direction face : Direction.values()) {
             Section s = sections.get(face);
             int i = face.ordinal();
             if (lastFlows[i] != s.displayFlow || lastDisplayPower[i] != s.displayPower) {
@@ -361,7 +361,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
     }
 
     private void step() {
-        long now = pipe.getHolder().getPipeWorld().getTotalWorldTime();
+        long now = pipe.getHolder().getPipeWorld().getGameTime();
         if (currentWorldTime != now) {
             currentWorldTime = now;
             sections.values().forEach(Section::step);
@@ -372,7 +372,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
         // TODO: use this for initialising the tile cache
     }
 
-    private void requestPower(EnumFacing from, int amount) {
+    private void requestPower(Direction from, int amount) {
         step();
 
         Section s = sections.get(from);
@@ -384,9 +384,9 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
         s.nextPowerQuery = Math.min(s.nextPowerQuery, maxPower);
     }
 
-    public int getPowerRequested(@Nullable EnumFacing side) {
+    public int getPowerRequested(@Nullable Direction side) {
         int req = 0;
-        for (EnumFacing face : EnumFacing.VALUES) {
+        for (Direction face : Direction.values()) {
             if (side == null || face != side) {
                 req += sections.get(face).powerQuery;
             }
@@ -406,7 +406,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
     }
 
     public class Section implements IEnergyStorage {
-        public final EnumFacing side;
+        public final Direction side;
 
         public final AverageInt clientDisplayAverage = new AverageInt(10);
         public double clientDisplayFlow, clientDisplayFlowLast;
@@ -424,7 +424,7 @@ public class PipeFlowRedstoneFlux extends PipeFlow implements IFlowRedstoneFlux,
         /** Debugging fields */
         int debugPowerInput, debugPowerOutput, debugPowerOffered;
 
-        public Section(EnumFacing side) {
+        public Section(Direction side) {
             this.side = side;
             clientDisplayFlow = (side.getAxisDirection() == AxisDirection.POSITIVE ? 7 : 1) / 8.0;
         }

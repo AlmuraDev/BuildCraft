@@ -80,7 +80,7 @@ public class MessageUtil {
             // Only players the chunk has already been sent to: the others will get the chunk, which brings the tile's full
             // state, and an update sent before it would reach them before the tile exists and be dropped ("Dropped message
             // ... (found null)"). NeoForge's chunk tracking skips chunks still waiting to be sent, as 1.12.2 needed a check for.
-            MessageManager.sendToPlayersTrackingChunk(message, server, new ChunkPos(pos));
+            MessageManager.sendToPlayersTrackingChunk(message, server, ChunkPos.containing(pos));
         }
     }
 

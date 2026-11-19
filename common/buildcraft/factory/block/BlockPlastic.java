@@ -5,12 +5,12 @@
 package buildcraft.factory.block;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.block.state.BlockStateContainer;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.NonNullList;
 
 import buildcraft.api.properties.BuildCraftProperties;
 
@@ -23,24 +23,24 @@ public class BlockPlastic extends BlockBCBase_Neptune {
     }
 
     @Override
-    protected BlockStateContainer createBlockState() {
-        return new BlockStateContainer(this, BuildCraftProperties.BLOCK_COLOR);
+    protected StateDefinition createBlockState() {
+        return new StateDefinition(this, BuildCraftProperties.BLOCK_COLOR);
     }
 
     @Override
-    public int getMetaFromState(IBlockState state) {
-        EnumDyeColor colour = state.getValue(BuildCraftProperties.BLOCK_COLOR);
+    public int getMetaFromState(BlockState state) {
+        DyeColor colour = state.getValue(BuildCraftProperties.BLOCK_COLOR);
         return colour.getMetadata();
     }
 
     @Override
-    public IBlockState getStateFromMeta(int meta) {
-        return getDefaultState().withProperty(BuildCraftProperties.BLOCK_COLOR, EnumDyeColor.byMetadata(meta));
+    public BlockState getStateFromMeta(int meta) {
+        return getDefaultState().setValue(BuildCraftProperties.BLOCK_COLOR, DyeColor.byMetadata(meta));
     }
 
     @Override
     public void getSubBlocks(CreativeTabs tab, NonNullList<ItemStack> list) {
-        for (EnumDyeColor dye : EnumDyeColor.values()) {
+        for (DyeColor dye : DyeColor.values()) {
             list.add(new ItemStack(this, 1, dye.getMetadata()));
         }
     }

@@ -20,7 +20,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.ChatFormatting;
 
 import buildcraft.lib.BCLibConfig;
-import buildcraft.lib.client.render.font.SpecialColourFontRenderer;
 
 public class ColourUtil {
     public static final char MINECRAFT_FORMAT_CHAR;
@@ -90,7 +89,7 @@ public class ColourUtil {
 
         COLOUR_TO_FORMAT[DyeColor.BLACK.ordinal()] = ChatFormatting.BLACK;
         COLOUR_TO_FORMAT[DyeColor.GRAY.ordinal()] = ChatFormatting.DARK_GRAY;
-        COLOUR_TO_FORMAT[DyeColor.SILVER.ordinal()] = ChatFormatting.GRAY;
+        COLOUR_TO_FORMAT[DyeColor.LIGHT_GRAY.ordinal()] = ChatFormatting.GRAY;
         COLOUR_TO_FORMAT[DyeColor.WHITE.ordinal()] = ChatFormatting.WHITE;
 
         COLOUR_TO_FORMAT[DyeColor.RED.ordinal()] = ChatFormatting.DARK_RED;
@@ -152,19 +151,19 @@ public class ColourUtil {
     }
 
     public static String getDyeName(DyeColor colour) {
-        return DYES[colour.getDyeDamage()];
+        return DYES[(15 - colour.getId())];
     }
 
     public static String getName(DyeColor colour) {
-        return NAMES[colour.getDyeDamage()];
+        return NAMES[(15 - colour.getId())];
     }
 
     public static int getDarkHex(DyeColor colour) {
-        return DARK_HEX[colour.getDyeDamage()];
+        return DARK_HEX[(15 - colour.getId())];
     }
 
     public static int getLightHex(DyeColor colour) {
-        return LIGHT_HEX[colour.getDyeDamage()];
+        return LIGHT_HEX[(15 - colour.getId())];
     }
 
     public static int getColourForSide(Direction face) {
@@ -189,14 +188,14 @@ public class ColourUtil {
     }
 
     /** Similar to {@link #getTextFullTooltip(DyeColor)}, but outputs a string specifically designed for
-     * {@link SpecialColourFontRenderer}. MUST be the first string used! */
+     * SpecialColourFontRenderer (client). MUST be the first string used! */
     public static String getTextFullTooltipSpecial(DyeColor colour) {
         if (colour == DyeColor.BLACK || colour == DyeColor.BLUE) {
             return getTextFullTooltip(colour);
         }
         if (BCLibConfig.useColouredLabels) {
             ChatFormatting formatColour = convertColourToTextFormat(colour);
-            return COLOUR_SPECIAL_START + Integer.toHexString(colour.getMetadata())//
+            return COLOUR_SPECIAL_START + Integer.toHexString(colour.getId())//
                 + getTextFormatForBlack(formatColour) + LocaleUtil.localizeColour(colour) + ChatFormatting.RESET;
         }
         return LocaleUtil.localizeColour(colour);
@@ -218,7 +217,7 @@ public class ColourUtil {
     /** Returns a {@link ChatFormatting} colour that will display correctly on a black background, so it won't use any
      * of the darker colours (as they will be difficult to see). */
     public static ChatFormatting getTextFormatForBlack(ChatFormatting in) {
-        if (in.isColor()) {
+        if (in.ordinal() < 16) {
             if (BCLibConfig.useHighContrastLabelColours) {
                 return REPLACE_FOR_BLACK_HIGH_CONTRAST[in.ordinal()];
             } else {
@@ -232,7 +231,7 @@ public class ColourUtil {
     /** Returns a {@link ChatFormatting} colour that will display correctly on a white background, so it won't use any
      * of the lighter colours (as they will be difficult to see). */
     public static ChatFormatting getTextFormatForWhite(ChatFormatting in) {
-        if (in.isColor()) {
+        if (in.ordinal() < 16) {
             if (BCLibConfig.useHighContrastLabelColours) {
                 return REPLACE_FOR_WHITE_HIGH_CONTRAST[in.ordinal()];
             } else {

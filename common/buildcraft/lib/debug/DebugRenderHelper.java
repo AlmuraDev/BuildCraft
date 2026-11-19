@@ -6,8 +6,7 @@
 
 package buildcraft.lib.debug;
 
-import javax.vecmath.Point3f;
-import javax.vecmath.Tuple3f;
+import org.joml.Vector3f;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.world.entity.player.Player;
@@ -22,7 +21,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.ModelUtil;
 import buildcraft.lib.client.model.MutableQuad;
-import buildcraft.lib.client.render.DetachedRenderer.IDetachedRenderer;
+import buildcraft.lib.debug.IDetachedRenderer;
 
 @OnlyIn(Dist.CLIENT)
 public enum DebugRenderHelper implements IDetachedRenderer {
@@ -32,8 +31,8 @@ public enum DebugRenderHelper implements IDetachedRenderer {
 
     static {
         smallCuboid = new MutableQuad[6];
-        Tuple3f center = new Point3f(0.5f, 0.5f, 0.5f);
-        Tuple3f radius = new Point3f(0.25f, 0.25f, 0.25f);
+        Vector3f center = new Vector3f(0.5f, 0.5f, 0.5f);
+        Vector3f radius = new Vector3f(0.25f, 0.25f, 0.25f);
 
         for (Direction face : Direction.values()) {
             MutableQuad quad = ModelUtil.createFace(face, center, radius, null);
@@ -63,12 +62,12 @@ public enum DebugRenderHelper implements IDetachedRenderer {
         for (Direction face : Direction.values()) {
             MutableQuad quad = ModelUtil.createFace(
                 face,
-                new Point3f(
+                new Vector3f(
                     (float) aabb.getCenter().x,
                     (float) aabb.getCenter().y,
                     (float) aabb.getCenter().z
                 ),
-                new Point3f(
+                new Vector3f(
                     (float) (aabb.maxX - aabb.minX) / 2,
                     (float) (aabb.maxY - aabb.minY) / 2,
                     (float) (aabb.maxZ - aabb.minZ) / 2

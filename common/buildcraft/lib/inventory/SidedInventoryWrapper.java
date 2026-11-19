@@ -33,7 +33,7 @@ public final class SidedInventoryWrapper extends AbstractInvItemTransactor {
     @Override
     protected ItemStack insert(int externalSlot, @Nonnull ItemStack stack, boolean simulate) {
         int sidedSlot = slots[externalSlot];
-        if (sided.canInsertItem(sidedSlot, stack, face)) {
+        if (sided.canPlaceItemThroughFace(sidedSlot, stack, face)) {
             // Delegate to the normal inserter - its just easier.
             return normal.insert(sidedSlot, stack, simulate);
         }
@@ -45,7 +45,7 @@ public final class SidedInventoryWrapper extends AbstractInvItemTransactor {
     protected ItemStack extract(int externalSlot, IStackFilter filter, int min, int max, boolean simulate) {
         int sidedSlot = slots[externalSlot];
         ItemStack current = sided.getItem(sidedSlot);
-        if (sided.canExtractItem(sidedSlot, current, face)) {
+        if (sided.canTakeItemThroughFace(sidedSlot, current, face)) {
             // Delegate to the normal inserter - its just easier.
             return normal.extract(sidedSlot, filter, min, max, simulate);
         }

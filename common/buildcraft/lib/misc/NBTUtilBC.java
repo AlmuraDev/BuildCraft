@@ -166,6 +166,48 @@ public final class NBTUtilBC {
         return nbt;
     }
 
+    /** 1.12.2's NBTUtil.createPosTag layout: {X, Y, Z}. */
+    public static CompoundTag writeLegacyPosTag(BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putInt("X", pos.getX());
+        nbt.putInt("Y", pos.getY());
+        nbt.putInt("Z", pos.getZ());
+        return nbt;
+    }
+
+    /** Reads 1.12.2's NBTUtil.createPosTag layout: {X, Y, Z}. */
+    public static BlockPos readLegacyPosTag(CompoundTag nbt) {
+        return new BlockPos(nbt.getIntOr("X", 0), nbt.getIntOr("Y", 0), nbt.getIntOr("Z", 0));
+    }
+
+    /** 1.12.2's NBTUtil.createUUIDTag layout: {M, L}. */
+    public static CompoundTag writeLegacyUUIDTag(java.util.UUID id) {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putLong("M", id.getMostSignificantBits());
+        nbt.putLong("L", id.getLeastSignificantBits());
+        return nbt;
+    }
+
+    /** Reads 1.12.2's NBTUtil.createUUIDTag layout: {M, L}. */
+    public static java.util.UUID readLegacyUUIDTag(CompoundTag nbt) {
+        return new java.util.UUID(nbt.getLongOr("M", 0), nbt.getLongOr("L", 0));
+    }
+
+    /** 1.12.2's NBTTagCompound.setUniqueId: two longs, key + "Most" and key + "Least". */
+    public static void putLegacyUniqueId(CompoundTag nbt, String key, java.util.UUID id) {
+        nbt.putLong(key + "Most", id.getMostSignificantBits());
+        nbt.putLong(key + "Least", id.getLeastSignificantBits());
+    }
+
+    /** Reads 1.12.2's NBTTagCompound.setUniqueId layout, or null if it isn't there. */
+    @Nullable
+    public static java.util.UUID getLegacyUniqueId(CompoundTag nbt, String key) {
+        if (!nbt.contains(key + "Most") || !nbt.contains(key + "Least")) {
+            return null;
+        }
+        return new java.util.UUID(nbt.getLongOr(key + "Most", 0), nbt.getLongOr(key + "Least", 0));
+    }
+
     @Nullable
     public static BlockPos readBlockPos(Tag base) {
         if (base == null) {
@@ -173,7 +215,7 @@ public final class NBTUtilBC {
         }
         switch (base.getId()) {
             case Tag.TAG_INT_ARRAY: {
-                int[] array = ((IntArrayTag) base).getIntArray();
+                int[] array = ((IntArrayTag) base).getAsIntArray();
                 if (array.length == 3){
                     return new BlockPos(array[0], array[1], array[2]);
                 }
@@ -192,6 +234,8 @@ public final class NBTUtilBC {
                     int y = nbt.getIntOr("y", 0);
                     int z = nbt.getIntOr("z", 0);
                     pos = new BlockPos(x, y, z);
+                } else if (nbt.contains("X")) {
+                    pos = readLegacyPosTag(nbt);
                 } else if (nbt.contains("pos")) {
                     return readBlockPos(nbt.get("pos"));
                 } else {
@@ -221,7 +265,7 @@ public final class NBTUtilBC {
     }
 
     public static Vec3 readVec3d(ListTag list) {
-        return new Vec3(list.getDoubleOr(0), list.getDoubleOr(1), list.getDoubleOr(2));
+        return new Vec3(list.getDoubleOr(0, 0), list.getDoubleOr(1, 0), list.getDoubleOr(2, 0));
     }
 
     private static final String NULL_ENUM_STRING = "_NULL";
@@ -274,7 +318,7 @@ public final class NBTUtilBC {
         if (tag instanceof ListTag) {
             ListTag list = (ListTag) tag;
             for (int i = 0; i < list.size() && i < intendedLength; i++) {
-                arr[i] = list.getDoubleOr(i);
+                arr[i] = list.getDoubleOr(i, 0);
             }
         }
         return arr;
@@ -326,7 +370,7 @@ public final class NBTUtilBC {
 
     public static ListTag writeCompoundList(Stream<CompoundTag> stream) {
         ListTag list = new ListTag();
-        stream.forEach(list::appendTag);
+        stream.forEach(list::add);
         return list;
     }
 
@@ -337,12 +381,12 @@ public final class NBTUtilBC {
         if (!(list instanceof ListTag)) {
             throw new IllegalArgumentException();
         }
-        return IntStream.range(0, ((ListTag) list).size()).mapToObj(((ListTag) list)::getCompoundTagAt);
+        return IntStream.range(0, ((ListTag) list).size()).mapToObj(((ListTag) list)::getCompoundOrEmpty);
     }
 
     public static ListTag writeStringList(Stream<String> stream) {
         ListTag list = new ListTag();
-        stream.map(StringTag::new).forEach(list::appendTag);
+        stream.map(StringTag::valueOf).forEach(list::add);
         return list;
     }
 
@@ -353,6 +397,6 @@ public final class NBTUtilBC {
         if (!(list instanceof ListTag)) {
             throw new IllegalArgumentException();
         }
-        return IntStream.range(0, ((ListTag) list).size()).mapToObj(((ListTag) list)::getStringTagAt);
+        return IntStream.range(0, ((ListTag) list).size()).mapToObj(i -> ((ListTag) list).getStringOr(i, ""));
     }
 }

@@ -6,6 +6,7 @@
 
 package buildcraft.lib.misc;
 
+import buildcraft.lib.misc.NBTUtilBC;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
@@ -26,8 +27,8 @@ public class StackNbtMatcher implements StackMatchingPredicate {
 
     @Override
     public boolean isMatching(@Nonnull ItemStack base, @Nonnull ItemStack comparison) {
-        CompoundTag baseNBT = base.getTagCompound();
-        CompoundTag comparisonNBT = comparison.getTagCompound();
+        CompoundTag baseNBT = NBTUtilBC.getItemData(base);
+        CompoundTag comparisonNBT = NBTUtilBC.getItemData(comparison);
 
         for (String key : keys) {
             Tag baseValue = baseNBT != null ? baseNBT.get(key) : null;

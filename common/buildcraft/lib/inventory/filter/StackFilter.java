@@ -26,7 +26,8 @@ public enum StackFilter implements IStackFilter {
     FUEL {
         @Override
         public boolean matches(@Nonnull ItemStack stack) {
-            return AbstractFurnaceBlockEntity.getItemBurnTime(stack) > 0;
+            // Fuels are items with the cooking fuel component on 26.3
+            return stack.has(net.minecraft.core.component.DataComponents.COOKING_FUEL);
         }
     };
 

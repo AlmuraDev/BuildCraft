@@ -6,6 +6,8 @@
 
 package buildcraft.core.item;
 
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.core.Direction;
@@ -19,12 +21,17 @@ import buildcraft.core.marker.volume.VolumeBox;
 import buildcraft.core.marker.volume.WorldSavedDataVolumeBoxes;
 
 public class ItemVolumeBox extends ItemBC_Neptune {
-    public ItemVolumeBox(String id) {
-        super(id);
+    public ItemVolumeBox(Item.Properties properties, String id) {
+        super(properties, id);
     }
 
     @Override
-    public InteractionResult onItemUse(Player player, Level world, BlockPos pos, InteractionHand hand, Direction facing, float hitX, float hitY, float hitZ) {
+    public InteractionResult useOn(UseOnContext context) {
+        Player player = context.getPlayer();
+        Level world = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        InteractionHand hand = context.getHand();
+        Direction facing = context.getClickedFace();
         if (world.isClientSide()) {
             return InteractionResult.PASS;
         }
@@ -36,7 +43,7 @@ public class ItemVolumeBox extends ItemBC_Neptune {
 
         if (current == null) {
             volumeBoxes.addVolumeBox(offset);
-            volumeBoxes.setChanged();
+            volumeBoxes.markDirtyAndSync();
             return InteractionResult.SUCCESS;
         }
 

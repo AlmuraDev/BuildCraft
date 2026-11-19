@@ -28,14 +28,14 @@ import com.google.gson.reflect.TypeToken;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.BlockPos;
 
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.ModContainer;
 
 import buildcraft.lib.BCLib;
 import buildcraft.lib.misc.BlockUtil;
@@ -63,7 +63,7 @@ public class RulesLoader {
     @SuppressWarnings("WeakerAccess")
     public static final Set<String> READ_DOMAINS = new HashSet<>();
     @SuppressWarnings("ConstantConditions")
-    private static final LoadingCache<Pair<IBlockState, NBTTagCompound>, Set<JsonRule>>
+    private static final LoadingCache<Pair<BlockState, CompoundTag>, Set<JsonRule>>
         BLOCK_RULES_CACHE = CacheBuilder.newBuilder()
         .expireAfterAccess(5, TimeUnit.MINUTES)
         .build(CacheLoader.from(pair -> getBlockRulesInternal(pair.getLeft(), pair.getRight())));
@@ -71,7 +71,7 @@ public class RulesLoader {
     public static void loadAll() {
         RULES.clear();
         READ_DOMAINS.clear();
-        for (ModContainer modContainer : Loader.instance().getModList()) {
+        for (ModContainer modContainer : ModList.get().getModList()) {
             String domain = modContainer.getModId();
             if (!READ_DOMAINS.contains(domain)) {
                 String base = "assets/" + domain + "/compat/buildcraft/builders/";
@@ -124,7 +124,7 @@ public class RulesLoader {
         }
     }
 
-    private static Set<JsonRule> getBlockRulesInternal(IBlockState blockState, NBTTagCompound tileNbt) {
+    private static Set<JsonRule> getBlockRulesInternal(BlockState blockState, CompoundTag tileNbt) {
         return RulesLoader.RULES.stream()
             .filter(rule -> rule.selectors != null)
             .filter(rule ->
@@ -162,7 +162,7 @@ public class RulesLoader {
                                             )
                                     );
                             },
-                            tileNbt == null ? new NBTTagCompound() : tileNbt
+                            tileNbt == null ? new CompoundTag() : tileNbt
                         )
                     )
             )
@@ -170,12 +170,12 @@ public class RulesLoader {
     }
 
     @SuppressWarnings("WeakerAccess")
-    public static Set<JsonRule> getRules(IBlockState blockState, NBTTagCompound tileNbt) {
+    public static Set<JsonRule> getRules(BlockState blockState, CompoundTag tileNbt) {
         return BLOCK_RULES_CACHE.getUnchecked(Pair.of(blockState, tileNbt));
     }
 
     @SuppressWarnings("WeakerAccess")
-    public static Set<JsonRule> getRules(ResourceLocation entityId, NBTTagCompound tileNbt) {
+    public static Set<JsonRule> getRules(Identifier entityId, CompoundTag tileNbt) {
         // noinspection ConstantConditions
         return RulesLoader.RULES.stream()
             .filter(rule -> rule.selectors != null)

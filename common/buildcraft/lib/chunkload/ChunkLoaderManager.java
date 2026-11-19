@@ -9,30 +9,44 @@ package buildcraft.lib.chunkload;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import net.minecraft.world.level.block.entity.BlockEntity;
+import it.unimi.dsi.fastutil.longs.LongSet;
+
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
-import net.minecraftforge.common.ForgeChunkManager;
-
-import buildcraft.api.core.BCLog;
+import net.neoforged.neoforge.common.world.chunk.RegisterTicketControllersEvent;
+import net.neoforged.neoforge.common.world.chunk.TicketController;
+import net.neoforged.neoforge.common.world.chunk.TicketHelper;
+import net.neoforged.neoforge.common.world.chunk.TicketSet;
 
 import buildcraft.lib.BCLib;
 import buildcraft.lib.BCLibConfig;
-import buildcraft.lib.misc.NBTUtilBC;
 import buildcraft.lib.misc.data.WorldPos;
 
+/** Keeps chunks loaded for BuildCraft tiles that want it (quarries, builders...), through NeoForge's ticket controller.
+ * Tickets are owned by the tile's position and saved by NeoForge; when a world loads, tickets of tiles that are gone
+ * or may no longer load chunks are dropped. */
 public class ChunkLoaderManager {
-    private static final Map<WorldPos, ForgeChunkManager.Ticket> TICKETS = new HashMap<>();
+    public static final TicketController CONTROLLER = new TicketController(
+        Identifier.fromNamespaceAndPath(BCLib.MODID, "chunk_loader"), ChunkLoaderManager::validateTickets);
+
+    /** The chunks each tile currently holds loaded. */
+    private static final Map<WorldPos, Set<ChunkPos>> FORCED = new HashMap<>();
+
+    /** Must be on buildcraftlib's mod event bus. */
+    public static void onRegisterTicketControllers(RegisterTicketControllersEvent event) {
+        event.register(CONTROLLER);
+    }
 
     /**
-     * This should be called in {@link BlockEntity#validate()}, if a tile entity might be able to load. A check is
-     * performed to see if the config allows it
+     * This should be called when a tile entity that might be able to load chunks is loaded, or changes what it wants
+     * loaded. A check is performed to see if the config allows it.
      */
     public static <T extends BlockEntity & IChunkLoadingTile> void loadChunksForTile(T tile) {
         if (!canLoadFor(tile)) {
@@ -43,34 +57,34 @@ public class ChunkLoaderManager {
     }
 
     public static <T extends BlockEntity & IChunkLoadingTile> void releaseChunksFor(T tile) {
-        ForgeChunkManager.releaseTicket(TICKETS.remove(new WorldPos(tile)));
+        if (!(tile.getLevel() instanceof ServerLevel level)) {
+            return;
+        }
+        Set<ChunkPos> forced = FORCED.remove(new WorldPos(tile));
+        if (forced != null) {
+            for (ChunkPos pos : forced) {
+                CONTROLLER.forceChunk(level, tile.getBlockPos(), pos.x(), pos.z(), false, true);
+            }
+        }
     }
 
     private static <T extends BlockEntity & IChunkLoadingTile> void updateChunksFor(T tile) {
-        WorldPos wPos = new WorldPos(tile);
-        ForgeChunkManager.Ticket ticket = TICKETS.get(wPos);
-        if (ticket == null) {
-            ticket = ForgeChunkManager.requestTicket(
-                BCLib.INSTANCE,
-                tile.getWorld(),
-                ForgeChunkManager.Type.NORMAL
-            );
-            if (ticket == null) {
-                BCLog.logger.warn("[lib.chunkloading] Failed to chunkload " + tile.getClass().getName() + " at " + tile.getPos());
-                return;
-            }
-            ticket.getModData().put("location", NBTUtilBC.writeBlockPos(tile.getPos()));
-            TICKETS.put(wPos, ticket);
+        if (!(tile.getLevel() instanceof ServerLevel level)) {
+            return;
         }
+        WorldPos wPos = new WorldPos(tile);
+        Set<ChunkPos> forced = FORCED.computeIfAbsent(wPos, k -> new HashSet<>());
         Set<ChunkPos> chunks = getChunksToLoad(tile);
-        for (ChunkPos pos : ticket.getChunkList()) {
+        BlockPos owner = tile.getBlockPos();
+        for (ChunkPos pos : new HashSet<>(forced)) {
             if (!chunks.contains(pos)) {
-                ForgeChunkManager.unforceChunk(ticket, pos);
+                CONTROLLER.forceChunk(level, owner, pos.x(), pos.z(), false, true);
+                forced.remove(pos);
             }
         }
         for (ChunkPos pos : chunks) {
-            if (!ticket.getChunkList().contains(pos)) {
-                ForgeChunkManager.forceChunk(ticket, pos);
+            if (forced.add(pos)) {
+                CONTROLLER.forceChunk(level, owner, pos.x(), pos.z(), true, true);
             }
         }
     }
@@ -78,34 +92,22 @@ public class ChunkLoaderManager {
     public static <T extends BlockEntity & IChunkLoadingTile> Set<ChunkPos> getChunksToLoad(T tile) {
         Set<ChunkPos> chunksToLoad = tile.getChunksToLoad();
         Set<ChunkPos> chunkPoses = new HashSet<>(chunksToLoad != null ? chunksToLoad : Collections.emptyList());
-        chunkPoses.add(new ChunkPos(tile.getPos()));
+        chunkPoses.add(ChunkPos.containing(tile.getBlockPos()));
         return chunkPoses;
     }
 
-    public static void rebindTickets(List<ForgeChunkManager.Ticket> tickets, Level world) {
-        TICKETS.clear();
-        if (BCLibConfig.chunkLoadingLevel != BCLibConfig.ChunkLoaderLevel.NONE) {
-            for (ForgeChunkManager.Ticket ticket : tickets) {
-                BlockPos pos = NBTUtilBC.readBlockPos(ticket.getModData().getTag("location"));
-                if (pos == null) {
-                    ForgeChunkManager.releaseTicket(ticket);
-                    continue;
-                }
-                WorldPos wPos = new WorldPos(world, pos);
-                if (TICKETS.containsKey(wPos)) {
-                    ForgeChunkManager.releaseTicket(ticket);
-                    continue;
-                }
-                BlockEntity tile = world.getBlockEntity(pos);
-                if (tile == null || !(tile instanceof IChunkLoadingTile) || !canLoadFor((IChunkLoadingTile) tile)) {
-                    TICKETS.remove(wPos);
-                    ForgeChunkManager.releaseTicket(ticket);
-                    continue;
-                }
-                TICKETS.put(wPos, ticket);
-                for (ChunkPos chunkPos : getChunksToLoad((BlockEntity & IChunkLoadingTile) tile)) {
-                    ForgeChunkManager.forceChunk(ticket, chunkPos);
-                }
+    /** Called by NeoForge when a world loads, with the tickets it saved. */
+    private static void validateTickets(ServerLevel level, TicketHelper helper) {
+        for (Map.Entry<BlockPos, TicketSet> entry : new HashMap<>(helper.getBlockTickets()).entrySet()) {
+            BlockPos pos = entry.getKey();
+            if (BCLibConfig.chunkLoadingLevel == BCLibConfig.ChunkLoaderLevel.NONE) {
+                helper.removeAllTickets(pos);
+                continue;
+            }
+            Set<ChunkPos> forced = FORCED.computeIfAbsent(new WorldPos(level, pos), k -> new HashSet<>());
+            for (boolean ticking : new boolean[] { true, false }) {
+                LongSet chunks = entry.getValue().getChunks(ticking);
+                chunks.forEach((long chunk) -> forced.add(ChunkPos.unpack(chunk)));
             }
         }
     }

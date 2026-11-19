@@ -7,11 +7,17 @@
 package buildcraft.lib.inventory;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.entity.projectile.EntityArrow;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
+import net.minecraft.world.level.block.entity.BlockEntity;
+
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.minecraft.world.Container;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.item.ItemStack;
@@ -22,6 +28,7 @@ import net.minecraft.world.level.Level;
 
 import buildcraft.api.core.ICapabilityProvider;
 import buildcraft.api.transfer.IItemHandler;
+import buildcraft.api.transfer.NeoTransfer;
 
 import buildcraft.api.core.IStackFilter;
 import buildcraft.api.inventory.IItemTransactor;
@@ -61,6 +68,38 @@ public class ItemTransactorHelper {
         return new ItemHandlerWrapper(handler);
     }
 
+    /** Gets the transactor of any tile: BuildCraft tiles directly, others through NeoForge's item handler (or their
+     * vanilla container). */
+    @Nonnull
+    public static IItemTransactor getTransactor(@Nullable BlockEntity tile, Direction face) {
+        if (tile == null) {
+            return NoSpaceTransactor.INSTANCE;
+        }
+        if (tile instanceof ICapabilityProvider provider) {
+            return getTransactor(provider, face);
+        }
+        IItemHandler handler = CapUtil.getCapability(tile, CapUtil.CAP_ITEMS, face);
+        if (handler != null) {
+            return new ItemHandlerWrapper(handler);
+        }
+        if (tile instanceof WorldlyContainer) {
+            return new SidedInventoryWrapper((WorldlyContainer) tile, face);
+        }
+        if (tile instanceof Container) {
+            return new InventoryWrapper((Container) tile);
+        }
+        return NoSpaceTransactor.INSTANCE;
+    }
+
+    @Nonnull
+    public static IInjectable getInjectable(@Nullable BlockEntity tile, Direction face) {
+        if (tile == null) {
+            return NoSpaceInjectable.INSTANCE;
+        }
+        IInjectable injectable = CapUtil.getCapability(tile, PipeApi.CAP_INJECTABLE, face);
+        return injectable == null ? NoSpaceInjectable.INSTANCE : injectable;
+    }
+
     @Nonnull
     public static IItemTransactor getTransactor(Inventory inventory) {
         if (inventory == null) {
@@ -71,13 +110,13 @@ public class ItemTransactorHelper {
 
     @Nonnull
     public static IItemTransactor getTransactorForEntity(Entity entity, Direction face) {
-        IItemTransactor transactor = getTransactor(entity, face);
-        if (transactor != NoSpaceTransactor.INSTANCE) {
-            return transactor;
+        ResourceHandler<ItemResource> neo = entity.getCapability(Capabilities.Item.ENTITY_AUTOMATION, face);
+        if (neo != null) {
+            return new ItemHandlerWrapper(NeoTransfer.fromNeoItems(neo));
         } else if (entity instanceof ItemEntity) {
             return new TransactorEntityItem((ItemEntity) entity);
-        } else if (entity instanceof EntityArrow) {
-            return new TransactorEntityArrow((EntityArrow) entity);
+        } else if (entity instanceof AbstractArrow) {
+            return new TransactorEntityArrow((AbstractArrow) entity);
         } else {
             return NoSpaceTransactor.INSTANCE;
         }

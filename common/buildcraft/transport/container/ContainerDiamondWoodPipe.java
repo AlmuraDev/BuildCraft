@@ -8,10 +8,10 @@ package buildcraft.transport.container;
 
 import java.io.IOException;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.world.entity.player.Player;
 
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
 
 import buildcraft.api.transport.pipe.IPipeHolder.PipeMessageReceiver;
 
@@ -28,7 +28,7 @@ public class ContainerDiamondWoodPipe extends ContainerPipe {
     private final PipeBehaviourWoodDiamond behaviour;
     private final ItemHandlerSimple filterInv;
 
-    public ContainerDiamondWoodPipe(EntityPlayer player, PipeBehaviourWoodDiamond behaviour) {
+    public ContainerDiamondWoodPipe(Player player, PipeBehaviourWoodDiamond behaviour) {
         super(player, behaviour.pipe.getHolder());
         this.behaviour = behaviour;
         this.filterInv = behaviour.filters;
@@ -42,20 +42,20 @@ public class ContainerDiamondWoodPipe extends ContainerPipe {
     }
 
     @Override
-    public void onContainerClosed(EntityPlayer player) {
+    public void onContainerClosed(Player player) {
         super.onContainerClosed(player);
         behaviour.pipe.getHolder().onPlayerClose(player);
     }
 
     public void sendNewFilterMode(FilterMode newFilterMode) {
-        this.sendMessage(NET_DATA, (buffer) -> buffer.writeEnumValue(newFilterMode));
+        this.sendMessage(NET_DATA, (buffer) -> buffer.writeEnum(newFilterMode));
     }
 
     @Override
-    public void readMessage(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+    public void readMessage(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         super.readMessage(id, buffer, side, ctx);
-        if (side == Side.SERVER) {
-            behaviour.filterMode = buffer.readEnumValue(FilterMode.class);
+        if (side == LogicalSide.SERVER) {
+            behaviour.filterMode = buffer.readEnum(FilterMode.class);
             behaviour.pipe.getHolder().scheduleNetworkUpdate(PipeMessageReceiver.BEHAVIOUR);
         }
     }

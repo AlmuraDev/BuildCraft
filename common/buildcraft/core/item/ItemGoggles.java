@@ -6,46 +6,14 @@
 
 package buildcraft.core.item;
 
-import javax.annotation.Nonnull;
-
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.item.ItemArmor;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.item.Item;
 
-import net.minecraftforge.common.ISpecialArmor;
+import buildcraft.lib.item.ItemBC_Neptune;
 
-import buildcraft.lib.item.IItemBuildCraft;
-
-public class ItemGoggles extends ItemArmor implements IItemBuildCraft, ISpecialArmor {
-    private static final ArmorProperties HELMET_PROPERTIES = new ArmorProperties(0, 0, 0);
-    private final String id;
-
-    public ItemGoggles(String id) {
-        super(ArmorMaterial.CHAIN, 0, EquipmentSlot.HEAD);
-        this.id = id;
-        init();
-    }
-
-    @Override
-    public String id() {
-        return id;
-    }
-
-    @Override
-    public ArmorProperties getProperties(LivingEntity player, @Nonnull ItemStack armor, DamageSource source, double damage, int slot) {
-        return HELMET_PROPERTIES;
-    }
-
-    @Override
-    public int getArmorDisplay(Player player, @Nonnull ItemStack armor, int slot) {
-        return 0;
-    }
-
-    @Override
-    public void damageArmor(LivingEntity entity, @Nonnull ItemStack stack, DamageSource source, int damage, int slot) {
-        // Invulnerable goggles
+/** Goggles worn on the head that give no armour and never wear out (dev only). */
+public class ItemGoggles extends ItemBC_Neptune {
+    public ItemGoggles(Item.Properties properties, String id) {
+        super(properties.equippable(EquipmentSlot.HEAD).stacksTo(1), id);
     }
 }

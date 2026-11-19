@@ -11,13 +11,10 @@ import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
-import net.minecraft.resources.Identifier;
 
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
@@ -37,23 +34,8 @@ import buildcraft.lib.misc.StackUtil;
 @Deprecated
 public class StatementParameterDirection implements IStatementParameter {
 
-    @OnlyIn(Dist.CLIENT)
-    private static TextureAtlasSprite[] sprites;
-
     @Nullable
     private Direction direction = null;
-
-    @OnlyIn(Dist.CLIENT)
-    public void registerIcons(TextureMap map) {
-        sprites = new TextureAtlasSprite[] {
-            map.registerSprite(Identifier.parse("buildcraftcore:triggers/trigger_dir_down")),
-            map.registerSprite(Identifier.parse("buildcraftcore:triggers/trigger_dir_up")),
-            map.registerSprite(Identifier.parse("buildcraftcore:triggers/trigger_dir_north")),
-            map.registerSprite(Identifier.parse("buildcraftcore:triggers/trigger_dir_south")),
-            map.registerSprite(Identifier.parse("buildcraftcore:triggers/trigger_dir_west")),
-            map.registerSprite(Identifier.parse("buildcraftcore:triggers/trigger_dir_east"))
-        };
-    }
 
     public StatementParameterDirection() {
 

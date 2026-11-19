@@ -21,14 +21,15 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Property;
 
 import buildcraft.api.properties.BuildCraftProperties;
 
 
 public class BlockBCBase_Neptune extends Block {
-    public static final Property<Direction> PROP_FACING = BuildCraftProperties.BLOCK_FACING;
-    public static final Property<Direction> BLOCK_FACING_6 = BuildCraftProperties.BLOCK_FACING_6;
+    public static final EnumProperty<Direction> PROP_FACING = BuildCraftProperties.BLOCK_FACING;
+    public static final EnumProperty<Direction> BLOCK_FACING_6 = BuildCraftProperties.BLOCK_FACING_6;
 
     public final String id;
 

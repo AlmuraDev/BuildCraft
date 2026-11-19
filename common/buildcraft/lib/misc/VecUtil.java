@@ -7,8 +7,7 @@
 package buildcraft.lib.misc;
 
 import javax.annotation.Nonnull;
-import javax.vecmath.Tuple3f;
-import javax.vecmath.Vector3f;
+import org.joml.Vector3f;
 
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
@@ -42,7 +41,7 @@ public class VecUtil {
 
     public static Direction getFacing(Axis axis, boolean positive) {
         AxisDirection dir = positive ? AxisDirection.POSITIVE : AxisDirection.NEGATIVE;
-        return Direction.getFacingFromAxis(dir, axis);
+        return Direction.fromAxisAndDirection(axis, dir);
     }
 
     public static BlockPos absolute(BlockPos val) {
@@ -117,14 +116,14 @@ public class VecUtil {
     }
 
     public static BlockPos convertFloor(Vec3 vec) {
-        return new BlockPos(Math.floor(vec.x), Math.floor(vec.y), Math.floor(vec.z));
+        return BlockPos.containing(Math.floor(vec.x), Math.floor(vec.y), Math.floor(vec.z));
     }
 
     public static BlockPos convertCeiling(Vec3 vec) {
-        return new BlockPos(Math.ceil(vec.x), Math.ceil(vec.y), Math.ceil(vec.z));
+        return BlockPos.containing(Math.ceil(vec.x), Math.ceil(vec.y), Math.ceil(vec.z));
     }
 
-    public static Tuple3f convertFloat(Vec3 vec) {
+    public static Vector3f convertFloat(Vec3 vec) {
         return new Vector3f((float) vec.x, (float) vec.y, (float) vec.z);
     }
 

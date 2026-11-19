@@ -6,25 +6,31 @@
 
 package buildcraft.core.item;
 
-import gnu.trove.map.hash.TIntObjectHashMap;
+import net.minecraft.core.NonNullList;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import buildcraft.api.enums.EnumSpring;
 
 import buildcraft.lib.item.ItemBlockBCMulti;
 
 import buildcraft.core.block.BlockSpring;
 
+/** The springs' item: its stacks carry the spring type (water, oil) in their block state. */
 public class ItemBlockSpring extends ItemBlockBCMulti {
     private static final String[] NAMES = { "water", "oil" };
 
-    public ItemBlockSpring(BlockSpring block) {
-        super(block, NAMES);
+    private final BlockSpring spring;
+
+    public ItemBlockSpring(BlockSpring block, Item.Properties properties) {
+        super(block, properties, stack -> NAMES[getStateValue(stack, block, BlockSpring.SPRING_TYPE).ordinal()]);
+        this.spring = block;
     }
 
     @Override
-    public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
-        for(int i = 0; i < NAMES.length; i++) {
-            addVariant(variants, i, "");
+    public void addSubItems(NonNullList<ItemStack> items) {
+        for (EnumSpring type : EnumSpring.VALUES) {
+            items.add(withStateValue(spring, BlockSpring.SPRING_TYPE, type));
         }
     }
 }

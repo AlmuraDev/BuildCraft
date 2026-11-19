@@ -15,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.util.text.TextComponentTranslation;
+import net.minecraft.network.chat.Component;
 
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
@@ -128,8 +128,8 @@ public class TileEngineCreative extends TileEngineBase_BC8 {
             if (!world.isClientSide()) {
                 currentOutputIndex++;
                 currentOutputIndex %= outputs.length;
-                player.sendStatusMessage(
-                    new TextComponentTranslation("chat.pipe.power.iron.mode", outputs[currentOutputIndex]), true);
+                player.sendOverlayMessage(
+                    Component.translatable("chat.pipe.power.iron.mode", outputs[currentOutputIndex]));
                 sendNetworkUpdate(NET_RENDER_DATA);
             }
             return true;

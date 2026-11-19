@@ -6,6 +6,8 @@
 
 package buildcraft.lib.misc;
 
+import buildcraft.lib.misc.NBTUtilBC;
+import buildcraft.api.core.NbtStacks;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,7 +28,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.NonNullList;
 
-import net.minecraftforge.oredict.OreDictionary;
 
 import buildcraft.api.items.IList;
 import buildcraft.api.recipes.IngredientStack;
@@ -34,6 +35,16 @@ import buildcraft.api.recipes.StackDefinition;
 
 /** Provides various utils for interacting with {@link ItemStack}, and multiples. */
 public class StackUtil {
+
+    /** Adds the stacks an item shows in creative (1.12.2's getSubItems): BuildCraft items list their own, others give one
+     * stack. */
+    public static void addSubItems(net.minecraft.world.item.Item item, NonNullList<ItemStack> list) {
+        if (item instanceof buildcraft.lib.item.IItemBuildCraft itemBC) {
+            itemBC.addSubItems(list);
+        } else if (item != net.minecraft.world.item.Items.AIR) {
+            list.add(new ItemStack(item));
+        }
+    }
 
     /** A non-null version of {@link ItemStack#EMPTY}. When the original field adds an @Nonnull annotation this should
      * be inlined. */
@@ -73,9 +84,7 @@ public class StackUtil {
         if (stack.isEmpty()) {
             return StackUtil.EMPTY;
         }
-        if (stack.getHasSubtypes()) {
-            stack = new ItemStack(stack.getItem(), 1, b.getMetaFromState(state));
-        }
+        // (1.12.2 also picked the item damage of the state: 26.3 has one item per block variant)
         return stack;
     }
 
@@ -113,7 +122,7 @@ public class StackUtil {
 
     /** Checks that passed stack meets stack definition requirements */
     public static boolean contains(@Nonnull IngredientStack ingredientStack, @Nonnull ItemStack stack) {
-        return !stack.isEmpty() && ingredientStack.ingredient.apply(stack) && stack.getCount() >= ingredientStack.count;
+        return !stack.isEmpty() && ingredientStack.ingredient.test(stack) && stack.getCount() >= ingredientStack.count;
     }
 
     /** Checks that passed stack definition acceptable for stack collection */
@@ -154,7 +163,7 @@ public class StackUtil {
     }
 
     public static boolean doesEitherStackMatch(@Nonnull ItemStack stackA, @Nonnull ItemStack stackB) {
-        return OreDictionary.itemMatches(stackA, stackB, false) || OreDictionary.itemMatches(stackB, stackA, false);
+        return ItemStack.isSameItem(stackA, stackB);
     }
 
     public static boolean canStacksOrListsMerge(@Nonnull ItemStack stack1, @Nonnull ItemStack stack2) {
@@ -223,34 +232,8 @@ public class StackUtil {
         }
 
         if (oreDictionary) {
-            int[] idBase = OreDictionary.getOreIDs(base);
-            if (idBase.length > 0) {
-                for (int id : idBase) {
-                    for (ItemStack itemstack : OreDictionary.getOres(OreDictionary.getOreName(id))) {
-                        if (comparison.getItem() == itemstack.getItem()
-                            && (itemstack.getDamageValue() == OreDictionary.WILDCARD_VALUE
-                                || comparison.getDamageValue() == itemstack.getDamageValue())) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
-    public static boolean isCraftingEquivalent(int[] oreIDs, ItemStack comparison) {
-        if (oreIDs.length > 0) {
-            for (int id : oreIDs) {
-                for (ItemStack itemstack : OreDictionary.getOres(OreDictionary.getOreName(id))) {
-                    if (comparison.getItem() == itemstack.getItem()
-                        && (itemstack.getDamageValue() == OreDictionary.WILDCARD_VALUE
-                            || comparison.getDamageValue() == itemstack.getDamageValue())) {
-                        return true;
-                    }
-                }
-            }
+            // 1.12.2 matched ore dictionary names: on 26.3, a shared material tag ("c:ingots/iron")
+            return base.typeHolder().tags().anyMatch(tag -> tag.location().getPath().indexOf('/') > 0 && comparison.is(tag));
         }
 
         return false;
@@ -308,16 +291,9 @@ public class StackUtil {
         if (base.getItem() != comparison.getItem()) {
             return false;
         }
-        if (matchDamage && base.getHasSubtypes()) {
-            if (!isWildcard(base) && !isWildcard(comparison)) {
-                if (base.getDamageValue() != comparison.getDamageValue()) {
-                    return false;
-                }
-            }
-        }
+        // (matchDamage compared 1.12.2's damage-based subtypes, which are separate items on 26.3)
         if (matchNBT) {
-            CompoundTag baseTag = base.getTagCompound();
-            if (baseTag != null && !baseTag.equals(comparison.getTagCompound())) {
+            if (!base.getComponentsPatch().isEmpty() && !ItemStack.isSameItemSameComponents(base, comparison)) {
                 return false;
             }
         } else {
@@ -358,7 +334,7 @@ public class StackUtil {
      * @param damage The damage to check
      * @return True if the damage does specify a wildcard, false if not. */
     public static boolean isWildcard(int damage) {
-        return damage == -1 || damage == OreDictionary.WILDCARD_VALUE;
+        return damage == -1 || damage == Short.MAX_VALUE;
     }
 
     /** @return An empty, nonnull list that cannot be modified (as it cannot be expanded and it has a size of 0) */
@@ -427,10 +403,10 @@ public class StackUtil {
         if (stack.isEmpty()) {
             return 0;
         }
-        if (!stack.hasTagCompound()) {
+        if (!NBTUtilBC.hasItemData(stack)) {
             return Objects.hash(stack.getItem(), stack.getDamageValue());
         }
-        return stack.serializeNBT().hashCode();
+        return NbtStacks.writeItemStack(stack).hashCode();
     }
 
     public static NonNullList<ItemStack> mergeSameItems(List<ItemStack> items) {

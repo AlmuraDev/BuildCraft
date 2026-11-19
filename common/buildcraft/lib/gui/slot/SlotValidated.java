@@ -17,7 +17,7 @@ public class SlotValidated extends Slot {
     }
 
     @Override
-    public boolean isItemValid(ItemStack itemStack) {
-        return inventory.canPlaceItem(this.getSlotIndex(), itemStack);
+    public boolean mayPlace(ItemStack itemStack) {
+        return container.canPlaceItem(this.getContainerSlot(), itemStack);
     }
 }

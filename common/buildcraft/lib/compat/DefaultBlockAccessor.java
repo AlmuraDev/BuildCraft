@@ -8,7 +8,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.chunk.LevelChunk.EnumCreateEntityType;
 
 import buildcraft.lib.misc.ChunkUtil;
 
@@ -35,7 +34,7 @@ public enum DefaultBlockAccessor implements ISoftBlockAccessor {
             if (chunk == null) {
                 return null;
             }
-            return chunk.getBlockEntity(pos, force ? EnumCreateEntityType.IMMEDIATE : EnumCreateEntityType.CHECK);
+            return chunk.getBlockEntity(pos, force ? LevelChunk.EntityCreationType.IMMEDIATE : LevelChunk.EntityCreationType.CHECK);
         }
     }
 

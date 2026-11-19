@@ -4,8 +4,9 @@
  * of the license located in http://www.mod-buildcraft.com/MMPL-1.0.txt */
 package buildcraft.builders.snapshot.pattern;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.filler.IFilledTemplate;
 import buildcraft.api.filler.IFillerPatternShape;
@@ -23,7 +24,7 @@ public class PatternStairs extends Pattern implements IFillerPatternShape {
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public SpriteHolder getSprite() {
         return BCBuildersSprites.FILLER_STAIRS;
     }
@@ -61,10 +62,10 @@ public class PatternStairs extends Pattern implements IFillerPatternShape {
         while (y != yEnd) {
             filledTemplate.setAreaXZ(fx, tx, y, fz, tz, true);
 
-            fx += xzDir.dir.getFrontOffsetX() > 0 ? 1 : 0;
-            fz += xzDir.dir.getFrontOffsetZ() > 0 ? 1 : 0;
-            tx += xzDir.dir.getFrontOffsetX() < 0 ? -1 : 0;
-            tz += xzDir.dir.getFrontOffsetZ() < 0 ? -1 : 0;
+            fx += xzDir.dir.getStepX() > 0 ? 1 : 0;
+            fz += xzDir.dir.getStepZ() > 0 ? 1 : 0;
+            tx += xzDir.dir.getStepX() < 0 ? -1 : 0;
+            tz += xzDir.dir.getStepZ() < 0 ? -1 : 0;
             y += yStep;
 
             if (fx > tx) break;

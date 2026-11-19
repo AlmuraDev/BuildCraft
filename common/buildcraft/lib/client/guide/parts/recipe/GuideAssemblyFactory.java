@@ -6,6 +6,7 @@
 
 package buildcraft.lib.client.guide.parts.recipe;
 
+import buildcraft.lib.misc.StackUtil;
 import java.util.Arrays;
 
 import net.minecraft.world.item.ItemStack;

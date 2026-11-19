@@ -6,6 +6,7 @@
 
 package buildcraft.lib.client.render;
 
+import buildcraft.lib.debug.IDetachedRenderer;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -62,10 +63,6 @@ public enum DetachedRenderer {
     }
 
     @FunctionalInterface
-    public interface IDetachedRenderer {
-        void render(Player player, float partialTicks);
-    }
-
     private final Map<RenderMatrixType, List<IDetachedRenderer>> renders = new EnumMap<>(RenderMatrixType.class);
 
     DetachedRenderer() {

@@ -5,6 +5,7 @@
  */
 package buildcraft.lib.tile.item;
 
+import buildcraft.api.core.NbtStacks;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -16,7 +17,6 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.core.NonNullList;
 import net.minecraft.ReportedException;
 
-import net.minecraftforge.common.util.Constants;
 import buildcraft.api.core.INBTSerializable;
 import buildcraft.api.transfer.IItemHandlerModifiable;
 
@@ -84,7 +84,7 @@ public class ItemHandlerSimple extends AbstractInvItemTransactor
         ListTag list = new ListTag();
         for (ItemStack stack : stacks) {
             CompoundTag itemNbt = new CompoundTag();
-            stack.writeToNBT(itemNbt);
+            itemNbt.merge(NbtStacks.writeItemStack(stack));
             list.add(itemNbt);
         }
         nbt.put("items", list);
@@ -95,7 +95,7 @@ public class ItemHandlerSimple extends AbstractInvItemTransactor
     public void deserializeNBT(CompoundTag nbt) {
         ListTag list = nbt.getListOrEmpty("items");
         for (int i = 0; i < list.size() && i < getSlots(); i++) {
-            setStackInternal(i, new ItemStack(list.getCompoundOrEmpty(i)));
+            setStackInternal(i, NbtStacks.readItemStack(list.getCompoundOrEmpty(i)));
         }
         for (int i = list.size(); i < getSlots(); i++) {
             setStackInternal(i, StackUtil.EMPTY);

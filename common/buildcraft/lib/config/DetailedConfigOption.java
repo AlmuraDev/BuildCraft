@@ -9,9 +9,6 @@ package buildcraft.lib.config;
 import java.util.HashSet;
 import java.util.Set;
 
-import net.minecraft.client.resources.IResourceManager;
-import net.minecraft.client.resources.IResourceManagerReloadListener;
-
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -142,15 +139,5 @@ public class DetailedConfigOption {
 
     public float getAsFloatCapped(float min, float max) {
         return Math.min(max, Math.max(min, getAsFloat()));
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public enum ReloadListener implements IResourceManagerReloadListener {
-        INSTANCE;
-
-        @Override
-        public void onResourceManagerReload(IResourceManager resourceManager) {
-            reloadAll();
-        }
     }
 }

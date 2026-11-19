@@ -14,10 +14,10 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.world.entity.player.Player;
 
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.statements.StatementManager;
@@ -50,7 +50,7 @@ public class ContainerGate extends ContainerPipe {
     public final GateContext<TriggerWrapper> possibleTriggersContext;
     public final GateContext<ActionWrapper> possibleActionsContext;
 
-    public ContainerGate(EntityPlayer player, GateLogic logic) {
+    public ContainerGate(Player player, GateLogic logic) {
         super(player, logic.getPipeHolder());
         this.gate = logic;
         gate.getPipeHolder().onPlayerOpen(player);
@@ -62,7 +62,7 @@ public class ContainerGate extends ContainerPipe {
         }
         slotHeight = s;
 
-        if (gate.getPipeHolder().getPipeWorld().isRemote) {
+        if (gate.getPipeHolder().getPipeWorld().isClientSide()) {
             possibleTriggers = new TreeSet<>();
             possibleActions = new TreeSet<>();
         } else {
@@ -84,7 +84,7 @@ public class ContainerGate extends ContainerPipe {
     }
 
     @Override
-    public void onContainerClosed(EntityPlayer player) {
+    public void onContainerClosed(Player player) {
         super.onContainerClosed(player);
         gate.getPipeHolder().onPlayerClose(player);
     }
@@ -117,8 +117,8 @@ public class ContainerGate extends ContainerPipe {
     }
 
     @Override
-    public void readMessage(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
-        if (side == Side.SERVER) {
+    public void readMessage(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
+        if (side == LogicalSide.SERVER) {
             if (id == ID_CONNECTION) {
                 int index = buffer.readUnsignedByte();
                 boolean to = buffer.readBoolean();
@@ -129,23 +129,23 @@ public class ContainerGate extends ContainerPipe {
             } else if (id == ID_VALID_STATEMENTS) {
                 sendMessage(ID_VALID_STATEMENTS);
             }
-        } else if (side == Side.CLIENT) {
+        } else if (side == LogicalSide.CLIENT) {
             if (id == ID_VALID_STATEMENTS) {
                 possibleTriggers.clear();
                 possibleActions.clear();
                 int numTriggers = buffer.readInt();
                 int numActions = buffer.readInt();
                 for (int i = 0; i < numTriggers; i++) {
-                    String tag = buffer.readString(256);
-                    EnumPipePart part = buffer.readEnumValue(EnumPipePart.class);
+                    String tag = buffer.readUtf(256);
+                    EnumPipePart part = buffer.readEnum(EnumPipePart.class);
                     TriggerWrapper wrapper = TriggerWrapper.wrap(StatementManager.statements.get(tag), part.face);
                     if (gate.isValidTrigger(wrapper)) {
                         possibleTriggers.add(wrapper);
                     }
                 }
                 for (int i = 0; i < numActions; i++) {
-                    String tag = buffer.readString(256);
-                    EnumPipePart part = buffer.readEnumValue(EnumPipePart.class);
+                    String tag = buffer.readUtf(256);
+                    EnumPipePart part = buffer.readEnum(EnumPipePart.class);
                     ActionWrapper wrapper = ActionWrapper.wrap(StatementManager.statements.get(tag), part.face);
                     if (gate.isValidAction(wrapper)) {
                         possibleActions.add(wrapper);
@@ -157,20 +157,20 @@ public class ContainerGate extends ContainerPipe {
     }
 
     @Override
-    public void writeMessage(int id, PacketBufferBC buffer, Side side) {
+    public void writeMessage(int id, PacketBufferBC buffer, LogicalSide side) {
         super.writeMessage(id, buffer, side);
-        if (side == Side.SERVER) {
+        if (side == LogicalSide.SERVER) {
             if (id == ID_VALID_STATEMENTS) {
                 buffer.writeInt(possibleTriggers.size());
                 buffer.writeInt(possibleActions.size());
                 for (TriggerWrapper wrapper : possibleTriggers) {
-                    buffer.writeString(wrapper.getUniqueTag());
-                    buffer.writeEnumValue(wrapper.sourcePart);
+                    buffer.writeUtf(wrapper.getUniqueTag());
+                    buffer.writeEnum(wrapper.sourcePart);
                 }
 
                 for (ActionWrapper wrapper : possibleActions) {
-                    buffer.writeString(wrapper.getUniqueTag());
-                    buffer.writeEnumValue(wrapper.sourcePart);
+                    buffer.writeUtf(wrapper.getUniqueTag());
+                    buffer.writeEnum(wrapper.sourcePart);
                 }
             }
         }

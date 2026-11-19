@@ -33,7 +33,7 @@ public class LaserBoxRenderer {
 
         makeLaserBox(box, type, center);
 
-        for (LaserData_BC8 data : box.laserData) {
+        for (LaserData_BC8 data : (LaserData_BC8[]) box.laserData) {
             LaserRenderer_BC8.renderLaserStatic(data);
         }
     }
@@ -45,7 +45,7 @@ public class LaserBoxRenderer {
 
         makeLaserBox(box, type, center);
 
-        for (LaserData_BC8 data : box.laserData) {
+        for (LaserData_BC8 data : (LaserData_BC8[]) box.laserData) {
             LaserRenderer_BC8.renderLaserDynamic(data, bb);
         }
     }

@@ -16,7 +16,7 @@ import javax.annotation.Nullable;
 
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.core.Direction;
-import net.minecraft.util.text.translation.I18n;
+import net.minecraft.locale.Language;
 
 import buildcraft.api.transfer.IFluidTank;
 
@@ -70,8 +70,8 @@ public class LocaleUtil {
      * @param key The key to localize
      * @return The localized key, or the input key if no localization was found. */
     public static String localize(String key) {
-        String localized = I18n.translateToLocal(key);
-        if (localized == key) {
+        String localized = Language.getInstance().getOrDefault(key);
+        if (localized.equals(key)) {
             if (DEBUG && failedStrings.add(localized)) {
                 BCLog.logger.warn("[lib.locale] Attempted to localize '" + key + "' but no localization existed!");
             }
@@ -87,8 +87,8 @@ public class LocaleUtil {
      * @param args The arguments to put into the localized key
      * @return The localized string. */
     public static String localize(String key, Object... args) {
-        String localized = I18n.translateToLocal(key);
-        if (localized == key) {
+        String localized = Language.getInstance().getOrDefault(key);
+        if (localized.equals(key)) {
             if (DEBUG && failedStrings.add(localized)) {
                 BCLog.logger.warn("[lib.locale] Attempted to localize '" + key + "' but no localization existed!");
             }
@@ -106,13 +106,13 @@ public class LocaleUtil {
      * @param key The key to check
      * @return True if the key could be localized, false if not. */
     public static boolean canLocalize(String key) {
-        return I18n.canTranslate(key);
+        return Language.getInstance().has(key);
     }
 
     /** @param colour The {@link DyeColor} to localize.
      * @return a localised name for the given colour. */
     public static String localizeColour(DyeColor colour) {
-        return localize("item.fireworksCharge." + colour.getDescriptionId());
+        return localize("color.minecraft." + colour.getName());
     }
 
     /** @param face The {@link Direction} to localize.

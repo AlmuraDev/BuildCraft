@@ -8,8 +8,7 @@ package buildcraft.lib.inventory;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.entity.projectile.EntityArrow.PickupStatus;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
 
 import buildcraft.api.core.IStackFilter;
@@ -20,22 +19,22 @@ import buildcraft.lib.misc.StackUtil;
 
 public class TransactorEntityArrow implements IItemExtractable {
 
-    private final EntityArrow entity;
+    private final AbstractArrow entity;
 
-    public TransactorEntityArrow(EntityArrow entity) {
+    public TransactorEntityArrow(AbstractArrow entity) {
         this.entity = entity;
     }
 
     @Nonnull
     @Override
     public ItemStack extract(IStackFilter filter, int min, int max, boolean simulate) {
-        if (entity.isDead || entity.pickupStatus != PickupStatus.ALLOWED || min > 1 || max < 1 || max < min) {
+        if (entity.isRemoved() || entity.pickup != AbstractArrow.Pickup.ALLOWED || min > 1 || max < 1 || max < min) {
             return StackUtil.EMPTY;
         }
 
         ItemStack stack = EntityUtil.getArrowStack(entity);
         if (!simulate) {
-            entity.setDead();
+            entity.discard();
         }
         return stack;
     }

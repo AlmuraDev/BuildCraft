@@ -7,43 +7,35 @@ package buildcraft.core;
 import java.io.File;
 import java.util.function.Consumer;
 
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.item.Item;
+import net.minecraft.core.registries.Registries;
 
-import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.oredict.OreDictionary;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.registries.DeferredRegister;
 
-import buildcraft.lib.BCLib;
 import buildcraft.lib.BCLibItems;
 import buildcraft.lib.marker.MarkerCache;
 import buildcraft.lib.registry.CreativeTabManager;
-import buildcraft.lib.registry.CreativeTabManager.CreativeTabBC;
+import buildcraft.lib.registry.RegistrationHelper;
 import buildcraft.lib.registry.TagManager;
 import buildcraft.lib.registry.TagManager.EnumTagType;
 import buildcraft.lib.registry.TagManager.TagEntry;
 
+import buildcraft.core.gen.WaterSpringFeature;
 import buildcraft.core.marker.PathCache;
 import buildcraft.core.marker.VolumeCache;
 
-//@formatter:off
-@Mod(
-    modid = BCCore.MODID,
-    name = "BuildCraft Core",
-    version = BCLib.VERSION,
-    updateJSON = "https://mod-buildcraft.com/version/versions.json",
-    dependencies = "required-after:buildcraftlib@[" + BCLib.VERSION + "]",
-    guiFactory = "buildcraft.core.client.ConfigGuiFactoryBC"
-)
-//@formatter:on
+/** BuildCraft Core. 1.12.2's pre-init happens in the constructor, init in common setup and post-init once loading
+ * completes. */
+@Mod(BCCore.MODID)
 public class BCCore {
     public static final String MODID = "buildcraftcore";
 
-    @Mod.Instance(MODID)
     public static BCCore INSTANCE = null;
 
     static {
@@ -51,56 +43,52 @@ public class BCCore {
         BCLibItems.enableDebugger();
     }
 
-    @Mod.EventHandler
-    public static void preInit(FMLPreInitializationEvent event) {
-        File cfgFolder = event.getModConfigurationDirectory();
-        cfgFolder = new File(cfgFolder, "buildcraft");
+    public BCCore(IEventBus modBus, ModContainer container) {
+        INSTANCE = this;
+
+        File cfgFolder = new File(FMLPaths.CONFIGDIR.get().toFile(), "buildcraft");
         BCCoreConfig.preInit(cfgFolder);
 
-        CreativeTabBC tab = CreativeTabManager.createTab("buildcraft.main");
+        CreativeTabManager.createTab("buildcraft.main");
+        CreativeTabManager.setItemStack("buildcraft.main",
+            () -> new net.minecraft.world.item.ItemStack(BCCoreItems.wrench));
+        CreativeTabManager.overrideTab("item.guide", "buildcraft.main");
+        CreativeTabManager.overrideTab("item.guide.note", "buildcraft.main");
+        CreativeTabManager.overrideTab("item.debugger", "buildcraft.main");
 
-        BCCoreBlocks.preInit();
-        BCCoreItems.preInit();
+        BCCoreBlocks.preInit(modBus);
+        BCCoreItems.preInit(modBus);
         BCCoreStatements.preInit();
-        BCCoreRecipes.fmlPreInit();
+
+        DeferredRegister<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.levelgen.feature.Feature>> features =
+            RegistrationHelper.createRegister(Registries.FEATURE_TYPE, MODID, modBus);
+        features.register("water_spring", () -> WaterSpringFeature.CODEC);
 
         BCCoreProxy.getProxy().fmlPreInit();
 
-        tab.setItem(BCCoreItems.wrench);
-
-        setItemTab(BCLibItems.guide, tab);
-        setItemTab(BCLibItems.guideNote, tab);
-        setItemTab(BCLibItems.debugger, tab);
-
-        NetworkRegistry.INSTANCE.registerGuiHandler(INSTANCE, BCCoreProxy.getProxy());
-
-        OreDictionary.registerOre("craftingTableWood", Blocks.CRAFTING_TABLE);
         NeoForge.EVENT_BUS.register(BCCoreEventDist.INSTANCE);
         BCCoreConfig.saveConfigs();
+
+        modBus.addListener(BCCore::init);
+        modBus.addListener(BCCore::postInit);
     }
 
-    private static void setItemTab(Item item, CreativeTabBC tab) {
-        if (item != null) {
-            item.setCreativeTab(tab);
-        }
+    private static void init(FMLCommonSetupEvent event) {
+        event.enqueueWork(() -> {
+            BCCoreConfig.saveConfigs();
+            BCCoreProxy.getProxy().fmlInit();
+
+            MarkerCache.registerCache(VolumeCache.INSTANCE);
+            MarkerCache.registerCache(PathCache.INSTANCE);
+        });
     }
 
-    @Mod.EventHandler
-    public static void init(FMLInitializationEvent event) {
-        BCCoreConfig.saveConfigs();
-        BCLibItems.guide.setCreativeTab(CreativeTabManager.getTab("buildcraft.main"));
-
-        BCCoreProxy.getProxy().fmlInit();
-
-        MarkerCache.registerCache(VolumeCache.INSTANCE);
-        MarkerCache.registerCache(PathCache.INSTANCE);
-    }
-
-    @Mod.EventHandler
-    public static void postInit(FMLPostInitializationEvent event) {
-        BCCoreConfig.saveConfigs();
-        BCCoreProxy.getProxy().fmlPostInit();
-        BCCoreConfig.postInit();
+    private static void postInit(FMLLoadCompleteEvent event) {
+        event.enqueueWork(() -> {
+            BCCoreConfig.saveConfigs();
+            BCCoreProxy.getProxy().fmlPostInit();
+            BCCoreConfig.postInit();
+        });
     }
 
     static {

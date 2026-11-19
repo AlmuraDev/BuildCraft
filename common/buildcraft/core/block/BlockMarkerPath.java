@@ -4,33 +4,28 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core.block;
 
-import net.minecraft.block.material.Material;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 import buildcraft.lib.block.BlockMarkerBase;
 import buildcraft.lib.misc.PermissionUtil;
-import buildcraft.lib.tile.TileBC_Neptune;
 
 import buildcraft.core.tile.TileMarkerPath;
 
 public class BlockMarkerPath extends BlockMarkerBase {
-    public BlockMarkerPath(Material material, String id) {
-        super(material, id);
+    public BlockMarkerPath(BlockBehaviour.Properties properties, String id) {
+        super(properties, id);
     }
 
     @Override
-    public TileBC_Neptune createTileEntity(Level worldIn, BlockState state) {
-        return new TileMarkerPath();
-    }
-
-    @Override
-    public boolean onBlockActivated(Level world, BlockPos pos, BlockState state, Player player, InteractionHand hand, Direction side, float hitX, float hitY, float hitZ) {
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player,
+        BlockHitResult hit) {
         if (!world.isClientSide()) {
             BlockEntity tile = world.getBlockEntity(pos);
             if (tile instanceof TileMarkerPath) {
@@ -40,6 +35,6 @@ public class BlockMarkerPath extends BlockMarkerBase {
                 }
             }
         }
-        return true;
+        return InteractionResult.SUCCESS;
     }
 }

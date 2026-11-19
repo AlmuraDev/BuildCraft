@@ -7,8 +7,8 @@
 package buildcraft.transport.gui;
 
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.transport.pipe.IFlowItems;
 
@@ -26,8 +26,8 @@ import buildcraft.transport.pipe.behaviour.PipeBehaviourWoodDiamond;
 import buildcraft.transport.pipe.behaviour.PipeBehaviourWoodDiamond.FilterMode;
 
 public class GuiDiamondWoodPipe extends GuiBC8<ContainerDiamondWoodPipe> implements IButtonClickEventListener {
-    private static final ResourceLocation TEXTURE = new ResourceLocation("buildcrafttransport:textures/gui/pipe_emerald.png");
-    private static final ResourceLocation TEXTURE_BUTTON = new ResourceLocation("buildcrafttransport:textures/gui/pipe_emerald_button.png");
+    private static final Identifier TEXTURE = Identifier.parse("buildcrafttransport:textures/gui/pipe_emerald.png");
+    private static final Identifier TEXTURE_BUTTON = Identifier.parse("buildcrafttransport:textures/gui/pipe_emerald_button.png");
     private static final int WHITE_LIST_BUTTON_ID = FilterMode.WHITE_LIST.ordinal();
     private static final int BLACK_LIST_BUTTON_ID = FilterMode.BLACK_LIST.ordinal();
     private static final int ROUND_ROBIN_BUTTON_ID = FilterMode.ROUND_ROBIN.ordinal();
@@ -42,7 +42,7 @@ public class GuiDiamondWoodPipe extends GuiBC8<ContainerDiamondWoodPipe> impleme
 
     private PipeBehaviourWoodDiamond pipe;
 
-    public GuiDiamondWoodPipe(EntityPlayer player, PipeBehaviourWoodDiamond pipe) {
+    public GuiDiamondWoodPipe(Player player, PipeBehaviourWoodDiamond pipe) {
         super(new ContainerDiamondWoodPipe(player, pipe));
 
         this.pipe = pipe;

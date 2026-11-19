@@ -44,7 +44,7 @@ public class BCEnergyBlocks {
             HELPER.registerTile(TileDynamoMJ.class, "tile.mj_dynamo");
         }
 
-        EnumSpring.OIL.liquidBlock = BCEnergyFluids.crudeOil[0].getBlock().getDefaultState();
+        EnumSpring.OIL.liquidBlock = BCEnergyFluids.crudeOil[0].getBlock().defaultBlockState();
         EnumSpring.OIL.tileConstructor = TileSpringOil::new;
 
         HELPER.registerTile(TileSpringOil.class, "tile.spring.oil");

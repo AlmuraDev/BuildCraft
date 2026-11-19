@@ -18,17 +18,12 @@ import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-import buildcraft.lib.client.render.laser.LaserData_BC8;
-import buildcraft.lib.client.render.laser.LaserRenderer_BC8;
 import buildcraft.lib.marker.MarkerConnection;
 import buildcraft.lib.marker.MarkerSubCache;
 import buildcraft.lib.misc.VecUtil;
 
-import buildcraft.core.client.BuildCraftLaserManager;
 
 public class PathConnection extends MarkerConnection<PathConnection> {
-    private static final double RENDER_SCALE = 1 / 16.05;
-    private static final Vec3 VEC_HALF = new Vec3(0.5, 0.5, 0.5);
     private final Deque<BlockPos> positions = new LinkedList<>();
     private boolean loop = false;
 
@@ -203,38 +198,5 @@ public class PathConnection extends MarkerConnection<PathConnection> {
         positions.clear();
         positions.addAll(list);
         subCache.refreshConnection(this);
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public void renderInWorld() {
-        BlockPos last = null;
-        for (BlockPos p : positions) {
-            if (last == null) {
-                last = p;
-            } else {
-                renderLaser(VecUtil.add(VEC_HALF, last), VecUtil.add(VEC_HALF, p));
-                last = p;
-            }
-        }
-        if (loop) {
-            BlockPos from = positions.getLast();
-            BlockPos to = positions.getFirst();
-            renderLaser(VecUtil.add(VEC_HALF, from), VecUtil.add(VEC_HALF, to));
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static void renderLaser(Vec3 from, Vec3 to) {
-        Vec3 one = offset(from, to);
-        Vec3 two = offset(to, from);
-        LaserData_BC8 data = new LaserData_BC8(BuildCraftLaserManager.MARKER_PATH_CONNECTED, one, two, RENDER_SCALE);
-        LaserRenderer_BC8.renderLaserStatic(data);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static Vec3 offset(Vec3 from, Vec3 to) {
-        Vec3 dir = to.subtract(from).normalize();
-        return from.add(VecUtil.scale(dir, 0.125));
     }
 }

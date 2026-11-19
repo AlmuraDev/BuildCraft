@@ -25,7 +25,7 @@ public class CachedChunk implements IChunkCache {
 
     @Override
     public LevelChunk getChunk(BlockPos pos) {
-        if (tile.isInvalid()) {
+        if (tile.isRemoved()) {
             cachedChunk = null;
             return null;
         }
@@ -36,7 +36,7 @@ public class CachedChunk implements IChunkCache {
         }
         if (cachedChunk != null) {
             LevelChunk c = cachedChunk.get();
-            if (c != null && c.isLoaded()) {
+            if (c != null && ChunkUtil.isLoaded(c)) {
                 return c;
             }
             cachedChunk = null;
@@ -47,7 +47,7 @@ public class CachedChunk implements IChunkCache {
             return null;
         }
         LevelChunk chunk = ChunkUtil.getChunk(world, pos, true);
-        if (chunk != null && chunk.getWorld() == world) {
+        if (chunk != null && chunk.getLevel() == world) {
             cachedChunk = new WeakReference<>(chunk);
             return chunk;
         }

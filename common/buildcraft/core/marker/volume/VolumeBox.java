@@ -20,7 +20,6 @@ import io.netty.buffer.Unpooled;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -51,20 +50,23 @@ public class VolumeBox {
     public VolumeBox(Level world, CompoundTag nbt) {
         if (world == null) throw new NullPointerException("world");
         this.world = world;
-        id = nbt.getUniqueId("id");
+        id = NBTUtilBC.getLegacyUniqueId(nbt, "id");
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
         box = new Box();
         box.initialize(nbt.getCompoundOrEmpty("box"));
-        player = nbt.contains("player") ? NbtUtils.getUUIDFromTag(nbt.getCompoundOrEmpty("player")) : null;
-        oldPlayer = nbt.contains("oldPlayer") ? NbtUtils.getUUIDFromTag(nbt.getCompoundOrEmpty("oldPlayer")) : null;
+        player = nbt.contains("player") ? NBTUtilBC.readLegacyUUIDTag(nbt.getCompoundOrEmpty("player")) : null;
+        oldPlayer = nbt.contains("oldPlayer") ? NBTUtilBC.readLegacyUUIDTag(nbt.getCompoundOrEmpty("oldPlayer")) : null;
         if (nbt.contains("held")) {
-            held = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("held"));
+            held = NBTUtilBC.readLegacyPosTag(nbt.getCompoundOrEmpty("held"));
         }
         dist = nbt.getDoubleOr("dist", 0D);
         if (nbt.contains("oldMin")) {
-            oldMin = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("oldMin"));
+            oldMin = NBTUtilBC.readLegacyPosTag(nbt.getCompoundOrEmpty("oldMin"));
         }
         if (nbt.contains("oldMax")) {
-            oldMax = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("oldMax"));
+            oldMax = NBTUtilBC.readLegacyPosTag(nbt.getCompoundOrEmpty("oldMax"));
         }
         NBTUtilBC.readCompoundList(nbt.get("addons")).forEach(addonsEntryTag -> {
             Class<? extends Addon> addonClass =
@@ -130,20 +132,20 @@ public class VolumeBox {
     }
 
     public void setPlayer(Player player) {
-        this.player = player.getGameProfile().getId();
+        this.player = player.getGameProfile().id();
     }
 
     public boolean isEditingBy(Player player) {
-        return player != null && Objects.equals(this.player, player.getGameProfile().getId());
+        return player != null && Objects.equals(this.player, player.getGameProfile().id());
     }
 
     public boolean isPausedEditingBy(Player player) {
-        return oldPlayer != null && Objects.equals(oldPlayer, player.getGameProfile().getId());
+        return oldPlayer != null && Objects.equals(oldPlayer, player.getGameProfile().id());
     }
 
     @SuppressWarnings("WeakerAccess")
     public Player getPlayer(Level world) {
-        return world.getPlayerEntityByUUID(player);
+        return player == null ? null : world.getPlayerByUUID(player);
     }
 
     public void setHeldDistOldMinOldMax(BlockPos held, double dist, BlockPos oldMin, BlockPos oldMax) {
@@ -169,23 +171,23 @@ public class VolumeBox {
 
     public CompoundTag writeToNBT() {
         CompoundTag nbt = new CompoundTag();
-        nbt.setUniqueId("id", id);
+        NBTUtilBC.putLegacyUniqueId(nbt, "id", id);
         nbt.put("box", this.box.writeToNBT());
         if (player != null) {
-            nbt.put("player", NbtUtils.createUUIDTag(player));
+            nbt.put("player", NBTUtilBC.writeLegacyUUIDTag(player));
         }
         if (oldPlayer != null) {
-            nbt.put("oldPlayer", NbtUtils.createUUIDTag(oldPlayer));
+            nbt.put("oldPlayer", NBTUtilBC.writeLegacyUUIDTag(oldPlayer));
         }
         if (held != null) {
-            nbt.put("held", NbtUtils.createPosTag(held));
+            nbt.put("held", NBTUtilBC.writeLegacyPosTag(held));
         }
         nbt.putDouble("dist", dist);
         if (oldMin != null) {
-            nbt.put("oldMin", NbtUtils.createPosTag(oldMin));
+            nbt.put("oldMin", NBTUtilBC.writeLegacyPosTag(oldMin));
         }
         if (oldMax != null) {
-            nbt.put("oldMax", NbtUtils.createPosTag(oldMax));
+            nbt.put("oldMax", NBTUtilBC.writeLegacyPosTag(oldMax));
         }
         nbt.put(
             "addons",

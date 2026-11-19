@@ -7,17 +7,18 @@ import javax.annotation.Nonnull;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumHand;
-import net.minecraft.world.World;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import buildcraft.api.core.ActionResult;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.Level;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.item.ItemBC_Neptune;
 import buildcraft.lib.misc.LocaleUtil;
@@ -33,15 +34,15 @@ public class ItemGateCopier extends ItemBC_Neptune {
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
         addVariant(variants, 0, "empty");
         addVariant(variants, 1, "full");
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
-    public void addInformation(ItemStack stack, World world, List<String> tooltip, ITooltipFlag flag) {
+    @OnlyIn(Dist.CLIENT)
+    public void addInformation(ItemStack stack, Level world, List<String> tooltip, TooltipFlag flag) {
         super.addInformation(stack, world, tooltip, flag);
         if (getMetadata(stack) != 0) {
             tooltip.add(LocaleUtil.localize("buildcraft.item.nonclean.usage"));
@@ -49,27 +50,27 @@ public class ItemGateCopier extends ItemBC_Neptune {
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand) {
-        ItemStack stack = player.getHeldItem(hand);
-        if (world.isRemote) {
-            return new ActionResult<>(EnumActionResult.PASS, stack);
+    public InteractionResult use(Level world, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (world.isClientSide()) {
+            return InteractionResult.PASS;
         }
         if (player.isSneaking()) {
             return clearData(StackUtil.asNonNull(stack));
         }
-        return new ActionResult<>(EnumActionResult.PASS, stack);
+        return InteractionResult.PASS;
     }
 
     private ActionResult<ItemStack> clearData(@Nonnull ItemStack stack) {
         if (getMetadata(stack) == 0) {
-            return new ActionResult<>(EnumActionResult.PASS, stack);
+            return InteractionResult.PASS;
         }
-        NBTTagCompound nbt = NBTUtilBC.getItemData(stack);
-        nbt.removeTag(NBT_DATA);
-        if (nbt.hasNoTags()) {
+        CompoundTag nbt = NBTUtilBC.getItemData(stack);
+        nbt.remove(NBT_DATA);
+        if (nbt.isEmpty()) {
             stack.setTagCompound(null);
         }
-        return new ActionResult<>(EnumActionResult.SUCCESS, stack);
+        return InteractionResult.SUCCESS;
     }
 
     @Override
@@ -77,11 +78,11 @@ public class ItemGateCopier extends ItemBC_Neptune {
         return getCopiedGateData(stack) != null ? 1 : 0;
     }
 
-    public static NBTTagCompound getCopiedGateData(ItemStack stack) {
+    public static CompoundTag getCopiedGateData(ItemStack stack) {
         return stack.getSubCompound(NBT_DATA);
     }
 
-    public static void setCopiedGateData(ItemStack stack, NBTTagCompound nbt) {
-        NBTUtilBC.getItemData(stack).setTag(NBT_DATA, nbt);
+    public static void setCopiedGateData(ItemStack stack, CompoundTag nbt) {
+        NBTUtilBC.getItemData(stack).put(NBT_DATA, nbt);
     }
 }

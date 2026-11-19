@@ -8,6 +8,7 @@ package buildcraft.core.marker.volume;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import net.minecraft.world.item.Item;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import buildcraft.api.core.ActionResult;
@@ -18,17 +19,17 @@ import net.minecraft.world.level.Level;
 import buildcraft.lib.item.ItemBC_Neptune;
 
 public abstract class ItemAddon extends ItemBC_Neptune {
-    public ItemAddon(String id) {
-        super(id);
+    public ItemAddon(Item.Properties properties, String id) {
+        super(properties, id);
     }
 
     public abstract Addon createAddon();
 
     @SuppressWarnings("NullableProblems")
     @Override
-    public ActionResult<ItemStack> onItemRightClick(Level world, Player player, InteractionHand hand) {
+    public InteractionResult use(Level world, Player player, InteractionHand hand) {
         if (world.isClientSide()) {
-            return new ActionResult<>(InteractionResult.PASS, player.getItemInHand(hand));
+            return InteractionResult.PASS;
         }
 
         WorldSavedDataVolumeBoxes volumeBoxes = WorldSavedDataVolumeBoxes.get(world);
@@ -45,12 +46,12 @@ public abstract class ItemAddon extends ItemBC_Neptune {
                     addon.volumeBox = volumeBox;
                     volumeBox.addons.put(slot, addon);
                     volumeBox.addons.get(slot).onAdded();
-                    volumeBoxes.setChanged();
-                    return new ActionResult<>(InteractionResult.SUCCESS, player.getItemInHand(hand));
+                    volumeBoxes.markDirtyAndSync();
+                    return InteractionResult.SUCCESS;
                 }
             }
         }
 
-        return new ActionResult<>(InteractionResult.PASS, player.getItemInHand(hand));
+        return InteractionResult.PASS;
     }
 }

@@ -13,16 +13,15 @@ import com.google.common.collect.ImmutableList;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import net.minecraft.world.item.Item;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import buildcraft.api.core.ActionResult;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.Level;
 
@@ -48,28 +47,28 @@ public class ItemMarkerConnector extends ItemBC_Neptune {
     private static final Identifier ADVANCEMENT_VOLUME_MARKER = Identifier.parse("buildcraftcore:markers");
     private static final Identifier ADVANCEMENT_PATH_MARKER = Identifier.parse("buildcraftcore:path_markers");
 
-    public ItemMarkerConnector(String id) {
-        super(id);
+    public ItemMarkerConnector(Item.Properties properties, String id) {
+        super(properties, id);
     }
 
     @SuppressWarnings("NullableProblems")
     @Override
-    public ActionResult<ItemStack> onItemRightClick(Level world, Player player, InteractionHand hand) {
+    public InteractionResult use(Level world, Player player, InteractionHand hand) {
         if (!world.isClientSide()) {
             for (MarkerCache<?> cache : MarkerCache.CACHES) {
                 if (interactCache(cache.getSubCache(world), player)) {
-                    player.swingArm(hand);
+                    player.swing(hand, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
                     break;
                 }
             }
         }
-        return new ActionResult<>(onItemRightClickVolumeBoxes(world, player), player.getItemInHand(hand));
+        return onItemRightClickVolumeBoxes(world, player);
     }
 
     private static <S extends MarkerSubCache<?>> boolean interactCache(S cache, Player player) {
         MarkerLineInteraction best = null;
-        Vec3 playerPos = player.getPositionVector().add(0, player.getEyeHeight(), 0);
-        Vec3 playerLook = player.getLookVec();
+        Vec3 playerPos = player.position().add(0, player.getEyeHeight(), 0);
+        Vec3 playerLook = player.getLookAngle();
         for (BlockPos marker : cache.getAllMarkers()) {
             ImmutableList<BlockPos> possibles = cache.getValidConnections(marker);
             for (BlockPos possible : possibles) {
@@ -97,8 +96,8 @@ public class ItemMarkerConnector extends ItemBC_Neptune {
         return new MarkerLineInteraction(
             a,
             b,
-            player.getPositionVector().add(0, player.getEyeHeight(), 0),
-            player.getLookVec()
+            player.position().add(0, player.getEyeHeight(), 0),
+            player.getLookAngle()
         ).didInteract();
     }
 
@@ -111,8 +110,8 @@ public class ItemMarkerConnector extends ItemBC_Neptune {
 
         VolumeBox currentEditing = volumeBoxes.getCurrentEditing(player);
 
-        Vec3 start = player.getPositionVector().add(0, player.getEyeHeight(), 0);
-        Vec3 end = start.add(player.getLookVec().scale(4));
+        Vec3 start = player.position().add(0, player.getEyeHeight(), 0);
+        Vec3 end = start.add(player.getLookAngle().scale(4));
 
         Pair<VolumeBox, EnumAddonSlot> selectingVolumeBoxAndSlot = EnumAddonSlot.getSelectingVolumeBoxAndSlot(
             player,
@@ -125,24 +124,24 @@ public class ItemMarkerConnector extends ItemBC_Neptune {
                 addonVolumeBox.getLockTargetsStream().noneMatch(target ->
                     target instanceof Lock.Target.TargetAddon && ((Lock.Target.TargetAddon) target).slot == addonSlot
                 )) {
-                if (player.isSneaking()) {
+                if (player.isShiftKeyDown()) {
                     addonVolumeBox.addons.get(addonSlot).onRemoved();
                     addonVolumeBox.addons.remove(addonSlot);
-                    volumeBoxes.setChanged();
+                    volumeBoxes.markDirtyAndSync();
                 } else {
                     addonVolumeBox.addons.get(addonSlot).onPlayerRightClick(player);
-                    volumeBoxes.setChanged();
+                    volumeBoxes.markDirtyAndSync();
                 }
             }
-        } else if (player.isSneaking()) {
+        } else if (player.isShiftKeyDown()) {
             if (currentEditing == null) {
                 for (Iterator<VolumeBox> iterator = volumeBoxes.volumeBoxes.iterator(); iterator.hasNext();) {
                     VolumeBox volumeBox = iterator.next();
-                    if (volumeBox.box.getBoundingBox().calculateIntercept(start, end) != null) {
+                    if (volumeBox.box.getBoundingBox().clip(start, end).isPresent()) {
                         if (volumeBox.getLockTargetsStream().noneMatch(Lock.Target.TargetResize.class::isInstance)) {
                             volumeBox.addons.values().forEach(Addon::onRemoved);
                             iterator.remove();
-                            volumeBoxes.setChanged();
+                            volumeBoxes.markDirtyAndSync();
                             return InteractionResult.SUCCESS;
                         } else {
                             return InteractionResult.FAIL;
@@ -151,7 +150,7 @@ public class ItemMarkerConnector extends ItemBC_Neptune {
                 }
             } else {
                 currentEditing.cancelEditing();
-                volumeBoxes.setChanged();
+                volumeBoxes.markDirtyAndSync();
                 return InteractionResult.SUCCESS;
             }
         } else {
@@ -169,9 +168,9 @@ public class ItemMarkerConnector extends ItemBC_Neptune {
                         .collect(Collectors.toList())
                     ) {
                     for (BlockPos p : PositionUtil.getCorners(volumeBox.box.min(), volumeBox.box.max())) {
-                        HitResult ray = new AABB(p).calculateIntercept(start, end);
-                        if (ray != null) {
-                            double dist = ray.hitVec.distanceTo(start);
+                        java.util.Optional<Vec3> ray = new AABB(p).clip(start, end);
+                        if (ray.isPresent()) {
+                            double dist = ray.get().distanceTo(start);
                             if (bestDist > dist) {
                                 bestDist = dist;
                                 bestVolumeBox = volumeBox;
@@ -203,12 +202,12 @@ public class ItemMarkerConnector extends ItemBC_Neptune {
                         bestVolumeBox.box.min(),
                         bestVolumeBox.box.max()
                     );
-                    volumeBoxes.setChanged();
+                    volumeBoxes.markDirtyAndSync();
                     return InteractionResult.SUCCESS;
                 }
             } else {
                 currentEditing.confirmEditing();
-                volumeBoxes.setChanged();
+                volumeBoxes.markDirtyAndSync();
                 return InteractionResult.SUCCESS;
             }
         }

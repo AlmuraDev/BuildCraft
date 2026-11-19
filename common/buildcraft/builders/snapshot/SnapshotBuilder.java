@@ -22,18 +22,18 @@ import javax.annotation.Nonnull;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTUtil;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.IWorldEventListener;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import buildcraft.lib.world.WorldEventListeners;
+import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
 
-import net.minecraftforge.common.util.INBTSerializable;
+import buildcraft.api.core.INBTSerializable;
 
 import buildcraft.api.mj.MjAPI;
 
@@ -44,7 +44,7 @@ import buildcraft.lib.misc.VecUtil;
 import buildcraft.lib.net.PacketBufferBC;
 import buildcraft.lib.world.WorldEventListenerAdapter;
 
-public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> implements INBTSerializable<NBTTagCompound> {
+public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> implements INBTSerializable<CompoundTag> {
     private static final int MAX_QUEUE_SIZE = 16;
     @SuppressWarnings("WeakerAccess")
     protected static final byte CHECK_RESULT_UNKNOWN = 0;
@@ -61,12 +61,12 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
     private static final long MAX_POWER_PER_TICK = 256 * MjAPI.MJ;
 
     protected final T tile;
-    private final IWorldEventListener worldEventListener = new WorldEventListenerAdapter() {
+    private final WorldEventListenerAdapter worldEventListener = new WorldEventListenerAdapter() {
         @Override
-        public void notifyBlockUpdate(@Nonnull World world,
+        public void notifyBlockUpdate(@Nonnull Level world,
                                       @Nonnull BlockPos pos,
-                                      @Nonnull IBlockState oldState,
-                                      @Nonnull IBlockState newState,
+                                      @Nonnull BlockState oldState,
+                                      @Nonnull BlockState newState,
                                       int flags) {
             if (tile.getBuilder() == SnapshotBuilder.this && getBuildingInfo() != null && getBuildingInfo().box.contains(pos)) {
                 if (check(pos)) {
@@ -90,8 +90,8 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
     private int[] placeOrder;
     private int[] checkOrder;
     private int currentCheckIndex;
-    public Vec3d robotPos = null;
-    public Vec3d prevRobotPos = null;
+    public Vec3 robotPos = null;
+    public Vec3 prevRobotPos = null;
     public int leftToBreak = 0;
     public int leftToPlace = 0;
 
@@ -103,14 +103,14 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
     protected abstract Snapshot.BuildingInfo getBuildingInfo();
 
     public void validate() {
-        if (!tile.getWorldBC().isRemote) {
-            tile.getWorldBC().addEventListener(worldEventListener);
+        if (!tile.getWorldBC().isClientSide()) {
+            WorldEventListeners.add(tile.getWorldBC(), worldEventListener);
         }
     }
 
     public void invalidate() {
-        if (!tile.getWorldBC().isRemote) {
-            tile.getWorldBC().removeEventListener(worldEventListener);
+        if (!tile.getWorldBC().isClientSide()) {
+            WorldEventListeners.remove(tile.getWorldBC(), worldEventListener);
         }
     }
 
@@ -157,13 +157,13 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
     /**
      * @return Pos where flying item should be rendered
      */
-    public Vec3d getPlaceTaskItemPos(PlaceTask placeTask) {
-        Vec3d height = new Vec3d(placeTask.pos.subtract(tile.getBuilderPos()));
+    public Vec3 getPlaceTaskItemPos(PlaceTask placeTask) {
+        Vec3 height = new Vec3(placeTask.pos.subtract(tile.getBuilderPos()));
         double progress = placeTask.power * 1D / placeTask.getTarget();
-        return new Vec3d(tile.getBuilderPos())
+        return new Vec3(tile.getBuilderPos())
             .add(height.scale(progress))
-            .add(new Vec3d(0, Math.sin(progress * Math.PI) * (Math.abs(height.y) + 1), 0))
-            .add(new Vec3d(0.5, 1, 0.5));
+            .add(new Vec3(0, Math.sin(progress * Math.PI) * (Math.abs(height.y) + 1), 0))
+            .add(new Vec3(0.5, 1, 0.5));
     }
 
     public void updateSnapshot() {
@@ -236,7 +236,7 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
      * @return true is building is finished, false otherwise
      */
     public boolean tick() {
-        if (tile.getWorldBC().isRemote) {
+        if (tile.getWorldBC().isClientSide()) {
             prevClientBreakTasks.clear();
             prevClientBreakTasks.addAll(clientBreakTasks);
             clientBreakTasks.clear();
@@ -247,13 +247,13 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
             clientPlaceTasks.addAll(placeTasks);
             prevRobotPos = robotPos;
             if (!breakTasks.isEmpty()) {
-                Vec3d newRobotPos = breakTasks.stream()
+                Vec3 newRobotPos = breakTasks.stream()
                     .map(breakTask -> breakTask.pos)
-                    .map(Vec3d::new)
+                    .map(Vec3::new)
                     .map(VecUtil.VEC_HALF::add)
-                    .reduce(Vec3d.ZERO, Vec3d::add)
+                    .reduce(Vec3.ZERO, Vec3::add)
                     .scale(1D / breakTasks.size());
-                newRobotPos = new Vec3d(
+                newRobotPos = new Vec3(
                     newRobotPos.x,
                     breakTasks.stream()
                         .map(breakTask -> breakTask.pos)
@@ -262,8 +262,8 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
                         .orElse(newRobotPos.y),
                     newRobotPos.z
                 );
-                newRobotPos = newRobotPos.add(new Vec3d(0, 3, 0));
-                Vec3d oldRobotPos = robotPos;
+                newRobotPos = newRobotPos.add(new Vec3(0, 3, 0));
+                Vec3 oldRobotPos = robotPos;
                 robotPos = newRobotPos;
                 if (oldRobotPos != null) {
                     robotPos = oldRobotPos.add(newRobotPos.subtract(oldRobotPos).scale(1 / 4D));
@@ -408,7 +408,7 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
                         -1
                     );
                     Optional<List<ItemStack>> stacks = BlockUtil.breakBlockAndGetDrops(
-                        (WorldServer) tile.getWorldBC(),
+                        (ServerLevel) tile.getWorldBC(),
                         breakTask.pos,
                         new ItemStack(Items.DIAMOND_PICKAXE),
                         tile.getOwner()
@@ -484,7 +484,7 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
         int i = posToIndex(blockPos);
         byte prev = checkResults[i];
         if (isAir(blockPos)) {
-            if (tile.getWorldBC().isAirBlock(blockPos)) {
+            if (tile.getWorldBC().isEmptyBlock(blockPos)) {
                 checkResults[i] = CHECK_RESULT_CORRECT;
             } else {
                 checkResults[i] = CHECK_RESULT_TO_BREAK;
@@ -523,24 +523,24 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
     }
 
     @Override
-    public NBTTagCompound serializeNBT() {
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setByteArray("checkResults", checkResults);
-        nbt.setTag("breakTasks", NBTUtilBC.writeCompoundList(breakTasks.stream().map(BreakTask::writeToNBT)));
-        nbt.setTag("placeTasks", NBTUtilBC.writeCompoundList(placeTasks.stream().map(PlaceTask::writeToNBT)));
-        nbt.setInteger("currentCheckIndex", currentCheckIndex);
+    public CompoundTag serializeNBT() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putByteArray("checkResults", checkResults);
+        nbt.put("breakTasks", NBTUtilBC.writeCompoundList(breakTasks.stream().map(BreakTask::writeToNBT)));
+        nbt.put("placeTasks", NBTUtilBC.writeCompoundList(placeTasks.stream().map(PlaceTask::writeToNBT)));
+        nbt.putInt("currentCheckIndex", currentCheckIndex);
         return nbt;
     }
 
     @Override
-    public void deserializeNBT(NBTTagCompound nbt) {
+    public void deserializeNBT(CompoundTag nbt) {
         updateSnapshot();
-        checkResults = nbt.getByteArray("checkResults");
+        checkResults = nbt.getByteArray("checkResults").orElse(new byte[0]);
         breakTasks.clear();
-        NBTUtilBC.readCompoundList(nbt.getTag("breakTasks")).map(BreakTask::new).forEach(breakTasks::add);
+        NBTUtilBC.readCompoundList(nbt.get("breakTasks")).map(BreakTask::new).forEach(breakTasks::add);
         placeTasks.clear();
-        NBTUtilBC.readCompoundList(nbt.getTag("placeTasks")).map(PlaceTask::new).forEach(placeTasks::add);
-        currentCheckIndex = nbt.getInteger("currentCheckIndex");
+        NBTUtilBC.readCompoundList(nbt.get("placeTasks")).map(PlaceTask::new).forEach(placeTasks::add);
+        currentCheckIndex = nbt.getIntOr("currentCheckIndex", 0);
     }
 
     public class BreakTask {
@@ -560,9 +560,9 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
         }
 
         @SuppressWarnings("WeakerAccess")
-        public BreakTask(NBTTagCompound nbt) {
-            pos = NBTUtil.getPosFromTag(nbt.getCompoundTag("pos"));
-            power = nbt.getLong("power");
+        public BreakTask(CompoundTag nbt) {
+            pos = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("pos"));
+            power = nbt.getLongOr("power", 0L);
         }
 
         @SuppressWarnings("WeakerAccess")
@@ -579,10 +579,10 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
             buffer.writeLong(power);
         }
 
-        public NBTTagCompound writeToNBT() {
-            NBTTagCompound nbt = new NBTTagCompound();
-            nbt.setTag("pos", NBTUtil.createPosTag(pos));
-            nbt.setLong("power", power);
+        public CompoundTag writeToNBT() {
+            CompoundTag nbt = new CompoundTag();
+            nbt.put("pos", NbtUtils.createPosTag(pos));
+            nbt.putLong("power", power);
             return nbt;
         }
     }
@@ -613,14 +613,14 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
         }
 
         @SuppressWarnings("WeakerAccess")
-        public PlaceTask(NBTTagCompound nbt) {
-            pos = NBTUtil.getPosFromTag(nbt.getCompoundTag("pos"));
+        public PlaceTask(CompoundTag nbt) {
+            pos = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("pos"));
             items = ImmutableList.copyOf(
-                NBTUtilBC.readCompoundList(nbt.getTag("items"))
+                NBTUtilBC.readCompoundList(nbt.get("items"))
                     .map(ItemStack::new)
                     .collect(Collectors.toList())
             );
-            power = nbt.getLong("power");
+            power = nbt.getLongOr("power", 0L);
         }
 
         public long getTarget() {
@@ -634,11 +634,11 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
             buffer.writeLong(power);
         }
 
-        public NBTTagCompound writeToNBT() {
-            NBTTagCompound nbt = new NBTTagCompound();
-            nbt.setTag("pos", NBTUtil.createPosTag(pos));
-            nbt.setTag("items", NBTUtilBC.writeCompoundList(items.stream().map(ItemStack::serializeNBT)));
-            nbt.setLong("power", power);
+        public CompoundTag writeToNBT() {
+            CompoundTag nbt = new CompoundTag();
+            nbt.put("pos", NbtUtils.createPosTag(pos));
+            nbt.put("items", NBTUtilBC.writeCompoundList(items.stream().map(ItemStack::serializeNBT)));
+            nbt.putLong("power", power);
             return nbt;
         }
     }

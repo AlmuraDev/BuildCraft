@@ -4,15 +4,17 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core.client;
 
+import buildcraft.core.marker.VolumeSubCache;
+import buildcraft.core.marker.PathSubCache;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Point3d;
-import javax.vecmath.Point3f;
+import org.joml.Matrix4f;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
 
 import org.lwjgl.opengl.GL11;
 
@@ -73,7 +75,7 @@ public class RenderTickListener {
             for (int i = 0; i < 5; i++) {
                 for (int j = 0; j < 2; j++) {
                     double[] from = upFace[i][j];
-                    Point3f point = new Point3f(new Point3d(from));
+                    Vector3f point = new Vector3f(new Vector3d(from));
                     matrix.transform(point);
                     Vec3 to = new Vec3(point.x, point.y, point.z);
                     arr[i][j] = to;
@@ -234,7 +236,9 @@ public class RenderTickListener {
                 start = start.add(VecUtil.scale(startToEnd, 0.125));
                 end = end.add(VecUtil.scale(endToStart, 0.125));
 
-                LaserType laserType = cache.getPossibleLaserType();
+                // The marker caches are common code, so the laser each one draws is picked here.
+                LaserType laserType = cache instanceof PathSubCache ? BuildCraftLaserManager.MARKER_PATH_POSSIBLE
+                    : cache instanceof VolumeSubCache ? BuildCraftLaserManager.MARKER_VOLUME_POSSIBLE : null;
                 if (laserType == null || isLookingAt(a, b, player)) {
                     laserType = BuildCraftLaserManager.MARKER_DEFAULT_POSSIBLE;
                 }

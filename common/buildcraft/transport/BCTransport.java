@@ -8,8 +8,8 @@ package buildcraft.transport;
 
 import java.util.function.Consumer;
 
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLInterModComms.IMCEvent;
 import net.minecraftforge.fml.common.event.FMLInterModComms.IMCMessage;
@@ -82,7 +82,7 @@ public class BCTransport {
 
         BCTransportProxy.getProxy().fmlPreInit();
 
-        MinecraftForge.EVENT_BUS.register(BCTransportEventDist.INSTANCE);
+        NeoForge.EVENT_BUS.register(BCTransportEventDist.INSTANCE);
     }
 
     @Mod.EventHandler

@@ -6,6 +6,8 @@
 
 package buildcraft.lib.net.cache;
 
+import buildcraft.api.core.NbtStacks;
+import buildcraft.lib.misc.NBTUtilBC;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -35,7 +37,7 @@ public class NetworkedItemStackCache extends NetworkedObjectCache<ItemStack> {
                 if (o == null || o.isEmpty()) {
                     return 0;
                 }
-                return Objects.hash(o.getItem(), o.getTagCompound());
+                return ItemStack.hashItemAndComponents(o);
             }
 
             @Override
@@ -59,24 +61,14 @@ public class NetworkedItemStackCache extends NetworkedObjectCache<ItemStack> {
             buffer.writeBoolean(false);
         } else {
             buffer.writeBoolean(true);
-            buffer.writeShort(Item.getIdFromItem(obj.getItem()));
-            buffer.writeShort(obj.getDamageValue());
-            CompoundTag tag = null;
-            if (obj.getItem().isDamageable() || obj.getItem().getShareTag()) {
-                tag = obj.getItem().getNBTShareTag(obj);
-            }
-            buffer.writeNbt(tag);
+            buffer.writeNbt(NbtStacks.writeItemStack(obj.copyWithCount(1)));
         }
     }
 
     @Override
     protected ItemStack readObject(PacketBufferBC buffer) throws IOException {
         if (buffer.readBoolean()) {
-            Item item = Item.getItemById(buffer.readUnsignedShort());
-            int meta = buffer.readShort();
-            ItemStack stack = new ItemStack(item, 1, meta);
-            stack.setTagCompound(buffer.readNbt());
-            return stack;
+            return NbtStacks.readItemStack(buffer.readNbt());
         } else {
             return ItemStack.EMPTY;
         }

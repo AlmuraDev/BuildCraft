@@ -8,14 +8,14 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntityFurnace;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
 
-import net.minecraftforge.items.IItemHandlerModifiable;
+import buildcraft.api.transfer.IItemHandlerModifiable;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.enums.EnumPowerStage;
@@ -61,19 +61,19 @@ public class TileEngineStone_BC8 extends TileEngineBase_BC8 {
     // TileEntity overrides
 
     @Override
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         super.readFromNBT(nbt);
-        burnTime = nbt.getInteger("burnTime");
-        totalBurnTime = nbt.getInteger("totalBurnTime");
-        esum = nbt.getLong("esum");
+        burnTime = nbt.getIntOr("burnTime", 0);
+        totalBurnTime = nbt.getIntOr("totalBurnTime", 0);
+        esum = nbt.getLongOr("esum", 0L);
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public CompoundTag writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
-        nbt.setInteger("burnTime", burnTime);
-        nbt.setInteger("totalBurnTime", totalBurnTime);
-        nbt.setLong("esum", esum);
+        nbt.putInt("burnTime", burnTime);
+        nbt.putInt("totalBurnTime", totalBurnTime);
+        nbt.putLong("esum", esum);
         return nbt;
     }
 
@@ -90,9 +90,9 @@ public class TileEngineStone_BC8 extends TileEngineBase_BC8 {
     // Engine overrides
 
     @Override
-    public boolean onActivated(EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY,
+    public boolean onActivated(Player player, InteractionHand hand, Direction side, float hitX, float hitY,
         float hitZ) {
-        if (!world.isRemote) {
+        if (!world.isClientSide()) {
             BCEnergyGuis.ENGINE_STONE.openGUI(player, getPos());
         }
         return true;
@@ -152,7 +152,7 @@ public class TileEngineStone_BC8 extends TileEngineBase_BC8 {
     }
 
     private static int getItemBurnTime(ItemStack itemstack) {
-        return TileEntityFurnace.getItemBurnTime(itemstack);
+        return AbstractFurnaceBlockEntity.getItemBurnTime(itemstack);
     }
 
     @Override
@@ -191,7 +191,7 @@ public class TileEngineStone_BC8 extends TileEngineBase_BC8 {
     }
 
     @Override
-    public void getDebugInfo(List<String> left, List<String> right, EnumFacing side) {
+    public void getDebugInfo(List<String> left, List<String> right, Direction side) {
         super.getDebugInfo(left, right, side);
         left.add("esum = " + MjAPI.formatMj(esum) + " M");
         long e = 3 * getMaxPower() / 8 - power;

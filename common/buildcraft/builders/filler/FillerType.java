@@ -1,6 +1,6 @@
 package buildcraft.builders.filler;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 
 import buildcraft.api.filler.FillerManager;
 import buildcraft.api.filler.IFillerPattern;
@@ -23,8 +23,8 @@ public class FillerType extends StatementType<IFillerPattern> {
     }
 
     @Override
-    public IFillerPattern readFromNbt(NBTTagCompound nbt) {
-        String kind = nbt.getString("kind");
+    public IFillerPattern readFromNbt(CompoundTag nbt) {
+        String kind = nbt.getStringOr("kind", "");
         IFillerPattern pattern = FillerManager.registry.getPattern(kind);
         if (pattern == null) {
             return defaultStatement;
@@ -33,15 +33,15 @@ public class FillerType extends StatementType<IFillerPattern> {
     }
 
     @Override
-    public NBTTagCompound writeToNbt(IFillerPattern slot) {
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setString("kind", slot.getUniqueTag());
+    public CompoundTag writeToNbt(IFillerPattern slot) {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putString("kind", slot.getUniqueTag());
         return nbt;
     }
 
     @Override
     public IFillerPattern readFromBuffer(PacketBufferBC buffer) {
-        String kind = buffer.readString();
+        String kind = buffer.readUtf();
         IFillerPattern pattern = FillerManager.registry.getPattern(kind);
         if (pattern == null) {
             return defaultStatement;
@@ -51,6 +51,6 @@ public class FillerType extends StatementType<IFillerPattern> {
 
     @Override
     public void writeToBuffer(PacketBufferBC buffer, IFillerPattern slot) {
-        buffer.writeString(slot.getUniqueTag());
+        buffer.writeUtf(slot.getUniqueTag());
     }
 }

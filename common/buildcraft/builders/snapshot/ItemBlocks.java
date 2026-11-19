@@ -12,17 +12,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemBlock;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.item.ItemBlockSpecial;
 
 public class ItemBlocks {
     private static final List<Item> LIST = new ArrayList<>();
 
     static {
-        StreamSupport.stream(Item.REGISTRY.spliterator(), false)
-            .filter(item -> item instanceof ItemBlock || item instanceof ItemBlockSpecial)
+        StreamSupport.stream(BuiltInRegistries.ITEM.spliterator(), false)
+            .filter(item -> item instanceof BlockItem || item instanceof ItemBlockSpecial)
             .forEach(ItemBlocks::add);
         add(
             Items.BED,

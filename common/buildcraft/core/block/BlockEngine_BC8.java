@@ -4,8 +4,8 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core.block;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 import buildcraft.api.enums.EnumEngineType;
 import buildcraft.api.properties.BuildCraftProperties;
@@ -15,18 +15,13 @@ import buildcraft.lib.registry.TagManager;
 import buildcraft.lib.registry.TagManager.EnumTagType;
 
 public class BlockEngine_BC8 extends BlockEngineBase_BC8<EnumEngineType> {
-    public BlockEngine_BC8(Material material, String id) {
-        super(material, id);
+    public BlockEngine_BC8(BlockBehaviour.Properties properties, String id) {
+        super(properties, id);
     }
 
     @Override
-    public Property<EnumEngineType> getEngineProperty() {
+    public EnumProperty<EnumEngineType> getEngineProperty() {
         return BuildCraftProperties.ENGINE_TYPE;
-    }
-
-    @Override
-    public EnumEngineType getEngineType(int meta) {
-        return EnumEngineType.fromMeta(meta);
     }
 
     @Override

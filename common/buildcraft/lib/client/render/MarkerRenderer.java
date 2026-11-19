@@ -6,9 +6,13 @@
 
 package buildcraft.lib.client.render;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+
 import net.minecraft.world.entity.player.Player;
 
-import buildcraft.lib.client.render.DetachedRenderer.IDetachedRenderer;
+import buildcraft.lib.debug.IDetachedRenderer;
 import buildcraft.lib.marker.MarkerCache;
 import buildcraft.lib.marker.MarkerConnection;
 import buildcraft.lib.marker.MarkerSubCache;
@@ -16,11 +20,23 @@ import buildcraft.lib.marker.MarkerSubCache;
 public enum MarkerRenderer implements IDetachedRenderer {
     INSTANCE;
 
+    /** How each kind of connection draws itself. Marker connections are common code, so their drawing is registered
+     * here by the client. */
+    private static final Map<Class<?>, Consumer<MarkerConnection<?>>> RENDERERS = new HashMap<>();
+
+    @SuppressWarnings("unchecked")
+    public static <C extends MarkerConnection<C>> void registerRenderer(Class<C> connectionClass, Consumer<C> renderer) {
+        RENDERERS.put(connectionClass, connection -> renderer.accept((C) connection));
+    }
+
     @Override
     public void render(Player player, float partialTicks) {
         for (MarkerCache<? extends MarkerSubCache<?>> cache : MarkerCache.CACHES) {
             for (MarkerConnection<?> connection : cache.getSubCache(player.level()).getConnections()) {
-                connection.renderInWorld();
+                Consumer<MarkerConnection<?>> renderer = RENDERERS.get(connection.getClass());
+                if (renderer != null) {
+                    renderer.accept(connection);
+                }
             }
         }
     }

@@ -12,8 +12,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.entity.projectile.EntitySpectralArrow;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.InteractionHand;
@@ -37,8 +36,8 @@ public class EntityUtil {
         AABB aabb = BoundingBoxUtil.makeAround(around, radius);
         for (ItemEntity ent : world.getEntitiesOfClass(ItemEntity.class, aabb)) {
             if (!ent.isRemoved()) {
-                ent.isRemoved() = true;
                 stacks.add(ent.getItem());
+                ent.discard();
             }
         }
         return stacks;
@@ -49,7 +48,7 @@ public class EntityUtil {
     }
 
     public static void setVec(Entity entity, Vec3 vec) {
-        entity.setPosition(vec.x, vec.y, vec.z);
+        entity.setPos(vec.x, vec.y, vec.z);
     }
 
     public static InteractionHand getWrenchHand(LivingEntity entity) {
@@ -79,12 +78,7 @@ public class EntityUtil {
     }
 
     @Nonnull
-    public static ItemStack getArrowStack(EntityArrow arrow) {
-        // FIXME: Replace this with an invocation of arrow.getArrowStack
-        // (but its protected so we can't)
-        if (arrow instanceof EntitySpectralArrow) {
-            return new ItemStack(Items.SPECTRAL_ARROW);
-        }
-        return new ItemStack(Items.ARROW);
+    public static ItemStack getArrowStack(AbstractArrow arrow) {
+        return arrow.getPickupItemStackOrigin().copy();
     }
 }

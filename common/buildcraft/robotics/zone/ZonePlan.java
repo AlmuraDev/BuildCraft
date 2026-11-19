@@ -16,11 +16,11 @@ import javax.vecmath.Point2i;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.phys.Vec3;
 
 import buildcraft.api.core.IZone;
 
@@ -110,31 +110,31 @@ public class ZonePlan implements IZone {
         return chunkMapping;
     }
 
-    public void writeToNBT(NBTTagCompound nbt) {
-        nbt.setTag(
+    public void writeToNBT(CompoundTag nbt) {
+        nbt.put(
                 "chunkMapping",
                 NBTUtilBC.writeCompoundList(
                         chunkMapping.entrySet().stream()
                                 .map(entry -> {
-                                    NBTTagCompound zoneChunkTag = new NBTTagCompound();
+                                    CompoundTag zoneChunkTag = new CompoundTag();
                                     entry.getValue().writeToNBT(zoneChunkTag);
-                                    zoneChunkTag.setInteger("chunkX", entry.getKey().x);
-                                    zoneChunkTag.setInteger("chunkZ", entry.getKey().z);
+                                    zoneChunkTag.putInt("chunkX", entry.getKey().x);
+                                    zoneChunkTag.putInt("chunkZ", entry.getKey().z);
                                     return zoneChunkTag;
                                 })
                 )
         );
     }
 
-    public void readFromNBT(NBTTagCompound nbt) {
-        NBTUtilBC.readCompoundList(nbt.getTag("chunkMapping"))
+    public void readFromNBT(CompoundTag nbt) {
+        NBTUtilBC.readCompoundList(nbt.get("chunkMapping"))
                 .forEach(zoneChunkTag -> {
                     ZoneChunk chunk = new ZoneChunk();
                     chunk.readFromNBT(zoneChunkTag);
                     chunkMapping.put(
                             new ChunkPos(
-                                    zoneChunkTag.getInteger("chunkX"),
-                                    zoneChunkTag.getInteger("chunkZ")
+                                    zoneChunkTag.getIntOr("chunkX", 0),
+                                    zoneChunkTag.getIntOr("chunkZ", 0)
                             ),
                             chunk
                     );
@@ -165,7 +165,7 @@ public class ZonePlan implements IZone {
     }
 
     @Override
-    public boolean contains(Vec3d point) {
+    public boolean contains(Vec3 point) {
         int xBlock = (int) Math.floor(point.x);
         int zBlock = (int) Math.floor(point.z);
 
@@ -195,11 +195,11 @@ public class ZonePlan implements IZone {
         return null;
     }
 
-    public ZonePlan readFromByteBuf(PacketBuffer buf) {
+    public ZonePlan readFromByteBuf(FriendlyByteBuf buf) {
         chunkMapping.clear();
         int size = buf.readInt();
         for (int i = 0; i < size; i++) {
-            ChunkPos key = new ChunkPos(buf.readInt(), buf.readInt());
+            ChunkPos key = ChunkPos.containing(buf.readInt(), buf.readInt());
             ZoneChunk value = new ZoneChunk();
             value.readFromByteBuf(buf);
             chunkMapping.put(key, value);
@@ -207,7 +207,7 @@ public class ZonePlan implements IZone {
         return this;
     }
 
-    public void writeToByteBuf(PacketBuffer buf) {
+    public void writeToByteBuf(FriendlyByteBuf buf) {
         buf.writeInt(chunkMapping.size());
         for (Map.Entry<ChunkPos, ZoneChunk> e : chunkMapping.entrySet()) {
             buf.writeInt(e.getKey().x);

@@ -6,6 +6,8 @@
 
 package buildcraft.lib.nbt;
 
+
+import net.minecraft.nbt.Tag;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -27,15 +29,16 @@ import io.netty.buffer.ByteBufOutputStream;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.util.profiling.InactiveProfiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 
-import net.minecraftforge.common.util.Constants;
+import net.minecraft.nbt.NbtAccounter;
 
 import buildcraft.api.core.InvalidInputDataException;
 import buildcraft.api.data.NbtSquishConstants;
 
 public class NbtSquisher {
-    public static final ProfilerFiller profiler = new ProfilerFiller();
+    public static final ProfilerFiller profiler = InactiveProfiler.INSTANCE;
     /** Used by testing classes to replace ByteBuf instances with PrintingByteBuf -- but we don't have that
      * class in main because it makes checkstyle complain. */
     public static Function<ByteBuf, FriendlyByteBuf> debugBuffer = null;
@@ -133,7 +136,7 @@ public class NbtSquisher {
             if (type == TYPE_MC) {
                 return NbtIo.read(new DataInputStream(stream));
             } else if (type == TYPE_MC_GZIP) {
-                return NbtIo.readCompressed(stream);
+                return NbtIo.readCompressed(stream, NbtAccounter.unlimitedHeap());
             } else if (type == TYPE_BC_1) {
                 return readBuildCraftV1Direct(new DataInputStream(stream));
             } else if (type == TYPE_BC_1_GZIP) {
@@ -145,7 +148,7 @@ public class NbtSquisher {
             // Defiantly a GZIP stream
             // Assume its a vanilla file
             stream.reset();
-            return NbtIo.readCompressed(stream);
+            return NbtIo.readCompressed(stream, NbtAccounter.unlimitedHeap());
         }
         // Its not a new BC style nbt, try to red it as if it was an older style nbt
         // Reset + mark the same point, this time we only want to reset back 1 or 2 bytes
@@ -156,7 +159,7 @@ public class NbtSquisher {
         if (type == TYPE_MC) {
             return NbtIo.read(new DataInputStream(stream));
         } else if (type == TYPE_MC_GZIP) {
-            return NbtIo.readCompressed(stream);
+            return NbtIo.readCompressed(stream, NbtAccounter.unlimitedHeap());
         } else if (type == TYPE_BC_1) {
             return readBuildCraftV1Direct(new DataInputStream(stream));
         } else if (type == TYPE_BC_1_GZIP) {

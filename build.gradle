@@ -36,6 +36,53 @@ def portedPackages = [
         'buildcraft/core/**',
 ]
 
+// Client rendering, models, the guide book and the GUI screens inside the ported packages. They are ported in the
+// GUIs+guide batch; until then the server side (containers, slots and the GUI interfaces included) compiles without them.
+def deferredSources = [
+        'buildcraft/lib/client/*.java',
+        'buildcraft/lib/client/guide/**',
+        'buildcraft/lib/client/model/**',
+        'buildcraft/lib/client/reload/**',
+        'buildcraft/lib/client/render/**',
+        'buildcraft/lib/client/resource/**',
+        'buildcraft/lib/client/sprite/Atlas*.java',
+        'buildcraft/lib/client/sprite/Dynamic*.java',
+        'buildcraft/lib/client/sprite/SpriteAtlas.java',
+        'buildcraft/lib/client/sprite/SpriteChanging.java',
+        'buildcraft/lib/client/sprite/SpriteNineSliced.java',
+        'buildcraft/lib/client/sprite/SpriteRaw.java',
+        'buildcraft/lib/client/sprite/Sub*.java',
+        'buildcraft/lib/gui/BuildCraftGui.java',
+        'buildcraft/lib/gui/GuiBC8.java',
+        'buildcraft/lib/gui/GuiIcon.java',
+        'buildcraft/lib/gui/GuiScreenBuildCraft.java',
+        'buildcraft/lib/gui/GuiStack.java',
+        'buildcraft/lib/gui/GuiSpriteScaled.java',
+        'buildcraft/lib/gui/GuiElement*.java',
+        'buildcraft/lib/gui/button/**',
+        'buildcraft/lib/gui/config/**',
+        'buildcraft/lib/gui/elem/Gui*.java',
+        'buildcraft/lib/gui/elem/Scroll*.java',
+        'buildcraft/lib/gui/help/DummyHelpElement.java',
+        'buildcraft/lib/gui/json/**',
+        'buildcraft/lib/gui/ledger/**',
+        'buildcraft/lib/gui/recipe/**',
+        'buildcraft/lib/gui/statement/**',
+        'buildcraft/lib/gui/widget/**',
+        'buildcraft/lib/misc/GuiUtil.java',
+        'buildcraft/lib/misc/RenderUtil.java',
+        'buildcraft/lib/misc/SpriteUtil.java',
+        'buildcraft/lib/misc/GlUtil.java',
+        'buildcraft/lib/misc/search/**',
+        'buildcraft/lib/debug/DebugRenderHelper.java',
+        'buildcraft/core/client/**',
+        'buildcraft/core/list/ContainerList.java',
+        'buildcraft/core/list/GuiList.java',
+        'buildcraft/core/list/ListTooltipHandler.java',
+        'buildcraft/core/BCCoreModels.java',
+        'buildcraft/core/marker/volume/AddonDefaultRenderer.java',
+]
+
 def mainResourceDirs = ['buildcraft_resources', 'BuildCraft-Localization', 'BuildCraftGuide/guide_resources']
 
 sourceSets {
@@ -44,6 +91,7 @@ sourceSets {
             srcDirs = ['common', 'BuildCraftAPI/api',
                        'sub_projects/expression/src/main/java', 'sub_projects/expression/src/autogen/java']
             include portedPackages
+            exclude deferredSources
         }
         resources {
             srcDirs = mainResourceDirs

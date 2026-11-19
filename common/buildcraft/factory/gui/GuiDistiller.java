@@ -9,9 +9,9 @@ package buildcraft.factory.gui;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import buildcraft.api.recipes.BuildcraftRecipeRegistry;
 import buildcraft.api.recipes.IRefineryRecipeManager.IDistillationRecipe;
@@ -27,8 +27,8 @@ import buildcraft.lib.misc.RenderUtil;
 import buildcraft.factory.container.ContainerDistiller;
 
 public class GuiDistiller extends GuiBC8<ContainerDistiller> {
-    private static final ResourceLocation TEXTURE_BASE
-        = new ResourceLocation("buildcraftfactory:textures/gui/distiller.png");
+    private static final Identifier TEXTURE_BASE
+        = Identifier.parse("buildcraftfactory:textures/gui/distiller.png");
     private static final int SIZE_X = 176, SIZE_Y = 161;
     private static final GuiIcon ICON_GUI = new GuiIcon(TEXTURE_BASE, 0, 0, SIZE_X, SIZE_Y);
     private static final GuiIcon ICON_TANK_VERTICAL_OVERLAY = new GuiIcon(TEXTURE_BASE, 0, 161, 16, 38);

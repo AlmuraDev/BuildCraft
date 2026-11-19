@@ -7,8 +7,8 @@ package buildcraft.silicon.gui;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import net.minecraft.client.resources.I18n;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.lib.gui.GuiBC8;
 import buildcraft.lib.gui.GuiIcon;
@@ -22,7 +22,7 @@ import buildcraft.silicon.container.ContainerAssemblyTable;
 import buildcraft.silicon.tile.TileAssemblyTable;
 
 public class GuiAssemblyTable extends GuiBC8<ContainerAssemblyTable> {
-    private static final ResourceLocation TEXTURE_BASE = new ResourceLocation("buildcraftsilicon:textures/gui/assembly_table.png");
+    private static final Identifier TEXTURE_BASE = Identifier.parse("buildcraftsilicon:textures/gui/assembly_table.png");
     private static final int SIZE_X = 176, SIZE_Y = 220;
     private static final GuiIcon ICON_GUI = new GuiIcon(TEXTURE_BASE, 0, 0, SIZE_X, SIZE_Y);
     private static final GuiIcon ICON_SAVED = new GuiIcon(TEXTURE_BASE, SIZE_X, 0, 16, 16);

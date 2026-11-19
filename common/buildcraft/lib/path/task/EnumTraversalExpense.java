@@ -6,8 +6,6 @@
 
 package buildcraft.lib.path.task;
 
-import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -32,12 +30,10 @@ public enum EnumTraversalExpense {
         if (world.isEmptyBlock(pos)) {
             return AIR;
         }
-        Material mat = state.getMaterial();
-        if (mat.isLiquid()) {
+        if (!state.getFluidState().isEmpty()) {
             return FLUID;
         }
-        Block block = state.getBlock();
-        if (block.isPassable(world, pos)) {
+        if (state.getCollisionShape(world, pos).isEmpty()) {
             return AIR;
         }
         return SOLID;

@@ -5,17 +5,18 @@
 package buildcraft.builders;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.shader.Framebuffer;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import com.mojang.blaze3d.pipeline.RenderTarget;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.network.IGuiHandler;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.BCModules;
 import buildcraft.api.core.BCLog;
@@ -59,8 +60,8 @@ public abstract class BCBuildersProxy implements IGuiHandler {
     }
 
     @Override
-    public Object getServerGuiElement(int id, EntityPlayer player, World world, int x, int y, int z) {
-        TileEntity tile = world.getTileEntity(new BlockPos(x, y, z));
+    public Object getServerGuiElement(int id, Player player, Level world, int x, int y, int z) {
+        BlockEntity tile = world.getBlockEntity(new BlockPos(x, y, z));
         if (id == BCBuildersGuis.LIBRARY.ordinal()) {
             if (tile instanceof TileElectronicLibrary) {
                 TileElectronicLibrary electronicLibrary = (TileElectronicLibrary) tile;
@@ -98,13 +99,13 @@ public abstract class BCBuildersProxy implements IGuiHandler {
     }
 
     @Override
-    public Object getClientGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
+    public Object getClientGuiElement(int ID, Player player, Level world, int x, int y, int z) {
         return null;
     }
 
     public void fmlPreInit() {
-        MessageManager.registerMessageClass(BCModules.BUILDERS, MessageSnapshotRequest.class, MessageSnapshotRequest.HANDLER, Side.SERVER);
-        MessageManager.registerMessageClass(BCModules.BUILDERS, MessageSnapshotResponse.class, Side.CLIENT);
+        MessageManager.registerMessageClass(BCModules.BUILDERS, MessageSnapshotRequest.class, MessageSnapshotRequest.HANDLER, LogicalSide.SERVER);
+        MessageManager.registerMessageClass(BCModules.BUILDERS, MessageSnapshotResponse.class, LogicalSide.CLIENT);
     }
 
     public void fmlInit() {
@@ -114,16 +115,16 @@ public abstract class BCBuildersProxy implements IGuiHandler {
     }
 
     @SuppressWarnings("unused")
-    @SideOnly(Side.SERVER)
+    @OnlyIn(Dist.DEDICATED_SERVER)
     public static class ServerProxy extends BCBuildersProxy {
     }
 
     @SuppressWarnings("unused")
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public static class ClientProxy extends BCBuildersProxy {
         @Override
-        public Object getClientGuiElement(int id, EntityPlayer player, World world, int x, int y, int z) {
-            TileEntity tile = world.getTileEntity(new BlockPos(x, y, z));
+        public Object getClientGuiElement(int id, Player player, Level world, int x, int y, int z) {
+            BlockEntity tile = world.getBlockEntity(new BlockPos(x, y, z));
             if (id == BCBuildersGuis.LIBRARY.ordinal()) {
                 if (tile instanceof TileElectronicLibrary) {
                     TileElectronicLibrary library = (TileElectronicLibrary) tile;
@@ -169,7 +170,7 @@ public abstract class BCBuildersProxy implements IGuiHandler {
                 } else {
                     BCBuildersConfig.internalStencilCrashTest.set(true);
                     BCCoreConfig.saveConfigs();
-                    Framebuffer framebuffer = Minecraft.getMinecraft().getFramebuffer();
+                    RenderTarget framebuffer = Minecraft.getMinecraft().getFramebuffer();
                     if (!framebuffer.isStencilEnabled()) {
                         framebuffer.enableStencil();
                     }
@@ -180,7 +181,7 @@ public abstract class BCBuildersProxy implements IGuiHandler {
             BCBuildersSprites.fmlPreInit();
             RenderQuarry.init();
 
-            MessageManager.setHandler(MessageSnapshotResponse.class, MessageSnapshotResponse.HANDLER, Side.CLIENT);
+            MessageManager.setHandler(MessageSnapshotResponse.class, MessageSnapshotResponse.HANDLER, LogicalSide.CLIENT);
         }
 
         @Override

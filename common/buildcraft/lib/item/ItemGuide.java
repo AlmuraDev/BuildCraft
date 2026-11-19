@@ -6,7 +6,7 @@
 
 package buildcraft.lib.item;
 
-import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -17,9 +17,10 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 
-import net.minecraftforge.common.util.Constants;
+import net.minecraft.network.chat.Component;
 
 import buildcraft.lib.BCLib;
+import buildcraft.lib.BCLibProxy;
 import buildcraft.lib.guide.GuideBook;
 import buildcraft.lib.guide.GuideBookRegistry;
 import buildcraft.lib.misc.AdvancementUtil;
@@ -30,20 +31,21 @@ public class ItemGuide extends ItemBC_Neptune {
     private static final Identifier ADVANCEMENT = Identifier.parse("buildcraftcore:guide");
     private static final String TAG_BOOK_NAME = "BookName";
 
-    public ItemGuide(String id) {
-        super(id);
-        setContainerItem(this);
+    public ItemGuide(Item.Properties properties, String id) {
+        super(properties, id);
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(Level world, Player player, InteractionHand hand) {
+    public InteractionResult use(Level world, Player player, InteractionHand hand) {
         AdvancementUtil.unlockAdvancement(player, ADVANCEMENT);
-        player.openGui(BCLib.INSTANCE, 0, world, hand == InteractionHand.MAIN_HAND ? 0 : 1, 0, 0);
-        return new ActionResult<>(InteractionResult.SUCCESS, player.getItemInHand(hand));
+        if (world.isClientSide()) {
+            BCLibProxy.getProxy().openGuide(getBookName(player.getItemInHand(hand)));
+        }
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    protected void addSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
+    public void addSubItems(NonNullList<ItemStack> items) {
         for (GuideBook book : GuideBookRegistry.INSTANCE.getAllEntries()) {
             ItemStack stack = new ItemStack(this);
             if (!book.name.toString().equals(ItemGuide.DEFAULT_BOOK)) {
@@ -54,17 +56,17 @@ public class ItemGuide extends ItemBC_Neptune {
     }
 
     @Override
-    public String getItemStackDisplayName(ItemStack stack) {
+    public Component getName(ItemStack stack) {
         String bookName = getBookName(stack);
         GuideBook book = GuideBookRegistry.INSTANCE.getBook(bookName);
         if (book != null) {
-            return book.title.getFormattedText();
+            return book.title;
         }
-        return super.getItemStackDisplayName(stack);
+        return super.getName(stack);
     }
 
     public static String getBookName(ItemStack stack) {
-        CompoundTag nbt = stack.getTagCompound();
+        CompoundTag nbt = NBTUtilBC.getItemData(stack);
         if (nbt == null || !nbt.contains(TAG_BOOK_NAME)) {
             // So that existing guide books continue to work
             return ItemGuide.DEFAULT_BOOK;
@@ -73,7 +75,6 @@ public class ItemGuide extends ItemBC_Neptune {
     }
 
     public static void setBookName(ItemStack stack, String book) {
-        CompoundTag nbt = NBTUtilBC.getItemData(stack);
-        nbt.putString(TAG_BOOK_NAME, book);
+        NBTUtilBC.updateItemData(stack, nbt -> nbt.putString(TAG_BOOK_NAME, book));
     }
 }

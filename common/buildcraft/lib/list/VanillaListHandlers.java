@@ -6,9 +6,7 @@
 
 package buildcraft.lib.list;
 
-import net.minecraft.item.ItemFood;
 
-import net.minecraftforge.oredict.OreDictionary;
 
 import buildcraft.api.lists.ListRegistry;
 
@@ -18,13 +16,11 @@ public class VanillaListHandlers {
         ListRegistry.registerHandler(new ListMatchHandlerFluid());
         ListRegistry.registerHandler(new ListMatchHandlerTools());
         ListRegistry.registerHandler(new ListMatchHandlerArmor());
-        ListRegistry.itemClassAsType.add(ItemFood.class);
+        // 1.12.2 also treated every ItemFood as one type: food is a data component on 26.3, not an item class
     }
 
     public static void fmlPostInit() {
-        for (String s : OreDictionary.getOreNames()) {
-            ListOreDictionaryCache.INSTANCE.registerName(s);
-        }
+        // Tags replace the ore dictionary, and are read when they're needed
         ListRegistry.registerHandler(new ListMatchHandlerOreDictionary());
     }
 }

@@ -15,10 +15,7 @@ import java.util.function.Consumer;
 import net.neoforged.neoforge.common.NeoForge;
 import buildcraft.lib.config.Configuration;
 import buildcraft.lib.config.Property;
-import net.minecraftforge.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent;
-import net.neoforged.fml.ModList;
-import net.minecraftforge.fml.common.LoaderState;
-import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import buildcraft.api.BCModules;
 import buildcraft.api.mj.MjAPI;
@@ -258,19 +255,19 @@ public class BCCoreConfig {
         reloadConfig(game);
         addReloadListener(BCCoreConfig::reloadConfig);
 
-        NeoForge.EVENT_BUS.register(BCCoreConfig.class);
     }
 
     public static void addReloadListener(Consumer<EnumRestartRequirement> listener) {
         reloadListeners.add(listener);
     }
 
-    @SubscribeEvent
-    public static void onConfigChange(OnConfigChangedEvent cce) {
-        if (BCModules.isBcMod(cce.getModID())) {
+    /** Tells the reload listeners that a BuildCraft mod's config was edited in game (1.12.2's config GUI fired an
+     * event for this). */
+    public static void onConfigChange(String modId) {
+        if (BCModules.isBcMod(modId)) {
             EnumRestartRequirement req = EnumRestartRequirement.NONE;
-            if (ModList.get().isInState(LoaderState.AVAILABLE)) {
-                // The loaders state will be LoaderState.SERVER_STARTED when we are in a world
+            if (ServerLifecycleHooks.getCurrentServer() != null) {
+                // A world is open
                 req = EnumRestartRequirement.WORLD;
             }
             for (Consumer<EnumRestartRequirement> listener : reloadListeners) {

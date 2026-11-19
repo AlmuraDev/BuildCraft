@@ -7,13 +7,6 @@
 package buildcraft.lib.crops;
 
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.BlockCrops;
-import net.minecraft.block.BlockDoublePlant;
-import net.minecraft.block.BlockFlower;
-import net.minecraft.block.BlockMelon;
-import net.minecraft.block.BlockMushroom;
-import net.minecraft.block.BlockNetherWart;
-import net.minecraft.block.BlockTallGrass;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
@@ -25,7 +18,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 
-import net.minecraftforge.common.IPlantable;
+import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.DoublePlantBlock;
+import net.minecraft.world.level.block.FlowerBlock;
+import net.minecraft.world.level.block.MushroomBlock;
+import net.minecraft.world.level.block.NetherWartBlock;
+import net.minecraft.world.level.block.TallGrassBlock;
+import net.minecraft.world.level.block.VegetationBlock;
 
 import buildcraft.api.crops.ICropHandler;
 
@@ -34,33 +33,25 @@ import buildcraft.lib.misc.BlockUtil;
 public enum CropHandlerPlantable implements ICropHandler {
     INSTANCE;
 
+    /** Seeds are block items of plants (1.12.2's IPlantable), apart from sugar cane, which has its own handler. */
     @Override
     public boolean isSeed(ItemStack stack) {
-        if (stack.getItem() instanceof IPlantable) {
-            return true;
+        if (stack.getItem() instanceof BlockItem blockItem) {
+            Block block = blockItem.getBlock();
+            return block instanceof VegetationBlock && block != Blocks.SUGAR_CANE;
         }
-
-        if (stack.getItem() instanceof BlockItem) {
-            Block block = ((BlockItem) stack.getItem()).getBlock();
-            if (block instanceof IPlantable && block != Blocks.REEDS) {
-                return true;
-            }
-        }
-
         return false;
     }
 
     @Override
     public boolean canSustainPlant(Level world, ItemStack seed, BlockPos pos) {
-        BlockState state = world.getBlockState(pos);
-        if (seed.getItem() instanceof IPlantable) {
-            Block block = state.getBlock();
-            return block.canSustainPlant(state, world, pos, Direction.UP, (IPlantable) seed.getItem()) && world.isEmptyBlock(pos.up());
-        } else {
-            Block block = state.getBlock();
-            IPlantable plantable = (IPlantable) ((BlockItem) seed.getItem()).getBlock();
-            return block.canSustainPlant(state, world, pos, Direction.UP, plantable) && block != ((BlockItem) seed.getItem()).getBlock() && world.isEmptyBlock(pos.up());
+        if (!(seed.getItem() instanceof BlockItem blockItem)) {
+            return false;
         }
+        Block plant = blockItem.getBlock();
+        BlockPos above = pos.above();
+        return world.getBlockState(pos).getBlock() != plant && world.isEmptyBlock(above)
+            && plant.defaultBlockState().canSurvive(world, above);
     }
 
     @Override
@@ -71,15 +62,15 @@ public enum CropHandlerPlantable implements ICropHandler {
     @Override
     public boolean isMature(BlockGetter blockAccess, BlockState state, BlockPos pos) {
         Block block = state.getBlock();
-        if (block instanceof BlockFlower || block instanceof BlockTallGrass || block instanceof BlockMelon || block instanceof BlockMushroom || block instanceof BlockDoublePlant
-            || block == Blocks.PUMPKIN) {
+        if (block instanceof FlowerBlock || block instanceof TallGrassBlock || block == Blocks.MELON || block instanceof MushroomBlock
+            || block instanceof DoublePlantBlock || block == Blocks.PUMPKIN) {
             return true;
-        } else if (block instanceof BlockCrops) {
-            return ((BlockCrops) block).isMaxAge(state);
-        } else if (block instanceof BlockNetherWart) {
-            return state.getValue(BlockNetherWart.AGE) == 3;
-        } else if (block instanceof IPlantable) {
-            if (blockAccess.getBlockState(pos.down()).getBlock() == block) {
+        } else if (block instanceof CropBlock) {
+            return ((CropBlock) block).isMaxAge(state);
+        } else if (block instanceof NetherWartBlock) {
+            return state.getValue(NetherWartBlock.AGE) == 3;
+        } else if (block instanceof VegetationBlock) {
+            if (blockAccess.getBlockState(pos.below()).getBlock() == block) {
                 return true;
             }
         }

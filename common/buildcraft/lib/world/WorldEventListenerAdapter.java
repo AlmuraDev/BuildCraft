@@ -7,91 +7,16 @@
 package buildcraft.lib.world;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.IWorldEventListener;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
-public class WorldEventListenerAdapter implements IWorldEventListener {
-    @Override
-    public void notifyBlockUpdate(@Nonnull Level world,
-                                  @Nonnull BlockPos pos,
-                                  @Nonnull BlockState oldState,
-                                  @Nonnull BlockState newState,
-                                  int flags) {
-    }
-
-    @Override
-    public void notifyLightSet(@Nonnull BlockPos pos) {
-    }
-
-    @Override
-    public void markBlockRangeForRenderUpdate(int x1, int y1, int z1, int x2, int y2, int z2) {
-    }
-
-    @Override
-    public void playSoundToAllNearExcept(@Nullable Player player,
-                                         @Nonnull SoundEvent sound,
-                                         @Nonnull SoundSource category,
-                                         double x,
-                                         double y,
-                                         double z,
-                                         float volume,
-                                         float pitch) {
-    }
-
-    @Override
-    public void playRecord(@Nonnull SoundEvent sound, @Nonnull BlockPos pos) {
-    }
-
-    @Override
-    public void spawnParticle(int particleID,
-                              boolean ignoreRange,
-                              double xCoord,
-                              double yCoord,
-                              double zCoord,
-                              double xSpeed,
-                              double ySpeed,
-                              double zSpeed,
-                              @Nonnull int... parameters) {
-    }
-
-    @Override
-    public void spawnParticle(int id,
-                              boolean ignoreRange,
-                              boolean minParticles,
-                              double x,
-                              double y,
-                              double z,
-                              double xSpeed,
-                              double ySpeed,
-                              double zSpeed,
-                              @Nonnull int... parameters) {
-    }
-
-    @Override
-    public void onEntityAdded(@Nonnull Entity entity) {
-    }
-
-    @Override
-    public void onEntityRemoved(@Nonnull Entity entity) {
-    }
-
-    @Override
-    public void broadcastSound(int soundID, @Nonnull BlockPos pos, int data) {
-    }
-
-    @Override
-    public void playEvent(@Nullable Player player, int type, @Nonnull BlockPos blockPos, int data) {
-    }
-
-    @Override
-    public void sendBlockBreakProgress(int breakerId, @Nonnull BlockPos pos, int progress) {
-    }
+/** Listens for block changes in a world (1.12.2's IWorldEventListener, of which BuildCraft only used block updates).
+ * Register with {@link WorldEventListeners}. */
+public class WorldEventListenerAdapter {
+    /** Called after a block in the world changed and told its neighbours. 26.3 doesn't say what was there before, so
+     * oldState is the new state too. */
+    public void sendBlockUpdated(@Nonnull Level world, @Nonnull BlockPos pos, @Nonnull BlockState oldState,
+        @Nonnull BlockState newState, int flags) {}
 }

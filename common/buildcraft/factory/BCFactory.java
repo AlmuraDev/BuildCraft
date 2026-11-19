@@ -6,8 +6,8 @@ package buildcraft.factory;
 
 import java.util.function.Consumer;
 
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -43,7 +43,7 @@ public class BCFactory {
         BCFactoryItems.fmlPreInit();
 
         NetworkRegistry.INSTANCE.registerGuiHandler(INSTANCE, BCFactoryProxy.getProxy());
-        MinecraftForge.EVENT_BUS.register(BCFactoryEventDist.INSTANCE);
+        NeoForge.EVENT_BUS.register(BCFactoryEventDist.INSTANCE);
 
         BCFactoryProxy.getProxy().fmlPreInit();
     }

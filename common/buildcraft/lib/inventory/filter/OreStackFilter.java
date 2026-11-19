@@ -14,7 +14,11 @@ import javax.annotation.Nonnull;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.NonNullList;
 
-import net.minecraftforge.oredict.OreDictionary;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
+
+import buildcraft.lib.misc.OreDictTags;
 
 import buildcraft.api.core.IStackFilter;
 import buildcraft.api.recipes.StackDefinition;
@@ -32,28 +36,24 @@ public class OreStackFilter implements IStackFilter {
 
     @Override
     public boolean matches(@Nonnull ItemStack stack) {
-        int[] ids = OreDictionary.getOreIDs(stack);
-
-        if (ids.length == 0) {
-            return false;
-        }
-
         for (String ore : ores) {
-            int expected = OreDictionary.getOreID(ore);
-
-            for (int id : ids) {
-                if (id == expected) {
-                    return true;
-                }
+            if (OreDictTags.matches(stack, ore)) {
+                return true;
             }
         }
-
         return false;
     }
 
     @Override
     public NonNullList<ItemStack> getExamples() {
-        return Arrays.stream(ores).map(OreDictionary::getOres).flatMap(Collection::stream).distinct().collect(StackUtil.nonNullListCollector());
+        NonNullList<ItemStack> examples = NonNullList.create();
+        for (String ore : ores) {
+            TagKey<Item> tag = OreDictTags.toTag(ore);
+            if (tag != null) {
+                BuiltInRegistries.ITEM.getTagOrEmpty(tag).forEach(holder -> examples.add(new ItemStack(holder)));
+            }
+        }
+        return examples;
     }
 
     public static StackDefinition definition(int count, String... ores) {

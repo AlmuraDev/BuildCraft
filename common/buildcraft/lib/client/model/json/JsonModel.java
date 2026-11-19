@@ -79,7 +79,7 @@ public class JsonModel {
     }
 
     public JsonModel(JsonObject obj, ResourceLoaderContext ctx) throws JsonParseException, IOException {
-        ambientOcclusion = GsonHelper.getBoolean(obj, "ambientocclusion", false);
+        ambientOcclusion = GsonHelper.getAsBoolean(obj, "ambientocclusion", false);
         textures = JsonUtil.getSubAsImmutableMap(obj, "textures", new TypeToken<HashMap<String, String>>() {});
         if (obj.has("elements")) {
             cutoutElements = deserializePartArray(obj, "elements", false, ctx);

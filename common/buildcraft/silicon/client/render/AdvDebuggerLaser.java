@@ -6,18 +6,20 @@
 
 package buildcraft.silicon.client.render;
 
+import buildcraft.lib.debug.IDetachedRenderer;
 import org.lwjgl.opengl.GL11;
 
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.world.level.block.state.BlockState;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.properties.BuildCraftProperties;
 
@@ -28,30 +30,30 @@ import buildcraft.lib.misc.VolumeUtil;
 import buildcraft.silicon.BCSiliconBlocks;
 import buildcraft.silicon.tile.TileLaser;
 
-public class AdvDebuggerLaser implements DetachedRenderer.IDetachedRenderer {
+public class AdvDebuggerLaser implements IDetachedRenderer {
     private static final int COLOUR_VISIBLE = 0xFF_99_FF_99;
     private static final int COLOUR_NOT_VISIBLE = 0xFF_11_11_99;
 
     private final BlockPos pos;
-    private final EnumFacing face;
+    private final Direction face;
 
     public AdvDebuggerLaser(TileLaser tile) {
         pos = tile.getPos();
-        IBlockState state = tile.getWorld().getBlockState(pos);
+        BlockState state = tile.getWorld().getBlockState(pos);
         face = state.getBlock() == BCSiliconBlocks.laser
             ? state.getValue(BuildCraftProperties.BLOCK_FACING_6)
             : null;
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     @Override
-    public void render(EntityPlayer player, float partialTicks) {
+    public void render(Player player, float partialTicks) {
         if (pos == null || face == null) {
             return;
         }
         BufferBuilder bb = Tessellator.getInstance().getBuffer();
-        bb.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
-        VolumeUtil.iterateCone(player.world, pos, face, 6, true, (world, start, p, visible) -> {
+        bb.begin(GL11.GL_QUADS, DefaultVertexFormat.BLOCK);
+        VolumeUtil.iterateCone(player.level(), pos, face, 6, true, (world, start, p, visible) -> {
             int colour = visible ? COLOUR_VISIBLE : COLOUR_NOT_VISIBLE;
             DebugRenderHelper.renderSmallCuboid(bb, p, colour);
         });

@@ -16,8 +16,8 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.item.Item;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.InvalidInputDataException;
 import buildcraft.api.transport.pipe.IItemPipe;
@@ -32,7 +32,7 @@ public enum PipeRegistry implements IPipeRegistry {
     INSTANCE;
 
     private final RegistrationHelper helper = new RegistrationHelper();
-    private final Map<ResourceLocation, PipeDefinition> definitions = new HashMap<>();
+    private final Map<Identifier, PipeDefinition> definitions = new HashMap<>();
     private final Map<PipeDefinition, IItemPipe> pipeItems = new IdentityHashMap<>();
 
     @Override
@@ -80,13 +80,13 @@ public enum PipeRegistry implements IPipeRegistry {
 
     @Override
     @Nullable
-    public PipeDefinition getDefinition(ResourceLocation identifier) {
+    public PipeDefinition getDefinition(Identifier identifier) {
         return definitions.get(identifier);
     }
 
     @Nonnull
     public PipeDefinition loadDefinition(String identifier) throws InvalidInputDataException {
-        PipeDefinition def = getDefinition(new ResourceLocation(identifier));
+        PipeDefinition def = getDefinition(Identifier.parse(identifier));
         if (def == null) {
             throw new InvalidInputDataException("Unknown pipe definition " + identifier);
         }

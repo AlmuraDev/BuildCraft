@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
 
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.core.Direction;
-import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.Level;
@@ -40,7 +40,7 @@ public class ParticleUtil {
         ParticlePosition nPos = new ParticlePosition(new Vec3(x, y, z), startingMotion);
 
         for (ParticlePosition pp : ParticlePipes.DUPLICATE_SPREAD.pipe(nPos)) {
-            world.spawnParticle(EnumParticleTypes.FLAME, x, y, z, pp.motion.x, pp.motion.y, pp.motion.z);
+            world.addParticle(ParticleTypes.FLAME, x, y, z, pp.motion.x, pp.motion.y, pp.motion.z);
         }
     }
 }

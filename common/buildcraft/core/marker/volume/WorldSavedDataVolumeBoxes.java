@@ -17,32 +17,27 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.storage.MapStorage;
-import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
 import buildcraft.lib.misc.NBTUtilBC;
+import buildcraft.lib.misc.data.NbtSavedData;
 import buildcraft.lib.net.MessageManager;
 
-public class WorldSavedDataVolumeBoxes extends SavedData {
-    private static final String DATA_NAME = "buildcraft_volume_boxes";
+public class WorldSavedDataVolumeBoxes extends NbtSavedData {
+    public static final SavedDataType<WorldSavedDataVolumeBoxes> TYPE =
+        NbtSavedData.type(Identifier.fromNamespaceAndPath("buildcraftcore", "volume_boxes"), WorldSavedDataVolumeBoxes::new);
     /**
-     * Used to assign {@link WorldSavedDataVolumeBoxes#world} to pass it to {@link VolumeBox},
-     * as we can't pass it other way ({@link MapStorage} can call only constructor with one {@link String} argument
-     * and then it calls NBT deserialization method,
-     * giving us no chance to set the {@link WorldSavedDataVolumeBoxes#world} field).
+     * Used to assign {@link WorldSavedDataVolumeBoxes#world} to pass it to {@link VolumeBox}, as the saved data
+     * storage only calls the no-argument constructor and then reads the NBT, giving us no chance to set the
+     * {@link WorldSavedDataVolumeBoxes#world} field.
      */
     private static Level currentWorld;
     public final Level world = currentWorld;
     public final List<VolumeBox> volumeBoxes = new ArrayList<>();
 
-    public WorldSavedDataVolumeBoxes() {
-        super(DATA_NAME);
-    }
-
-    @SuppressWarnings("unused")
-    public WorldSavedDataVolumeBoxes(String name) {
-        super(name);
-    }
+    public WorldSavedDataVolumeBoxes() {}
 
     public VolumeBox getVolumeBoxAt(BlockPos pos) {
         return volumeBoxes.stream().filter(volumeBox -> volumeBox.box.contains(pos)).findFirst().orElse(null);
@@ -71,10 +66,10 @@ public class WorldSavedDataVolumeBoxes extends SavedData {
                 AABB oldAabb = volumeBox.box.getBoundingBox();
                 volumeBox.box.reset();
                 volumeBox.box.extendToEncompass(volumeBox.getHeld());
-                BlockPos lookingAt = new BlockPos(
-                    player.getPositionVector()
+                BlockPos lookingAt = BlockPos.containing(
+                    player.position()
                         .add(0, player.getEyeHeight(), 0)
-                        .add(player.getLookVec().scale(volumeBox.getDist()))
+                        .add(player.getLookAngle().scale(volumeBox.getDist()))
                 );
                 volumeBox.box.extendToEncompass(lookingAt);
                 if (!volumeBox.box.getBoundingBox().equals(oldAabb)) {
@@ -92,14 +87,14 @@ public class WorldSavedDataVolumeBoxes extends SavedData {
             }
         }
         if (dirty.get()) {
-            markDirty();
+            markDirtyAndSync();
         }
     }
 
-    @Override
-    public void markDirty() {
-        super.setChanged();
-        MessageManager.sendToDimension(new MessageVolumeBoxes(volumeBoxes), world.provider.getDimension());
+    /** Marks this dirty and sends the boxes to every player in the dimension. */
+    public void markDirtyAndSync() {
+        setDirty();
+        MessageManager.sendToDimension(new MessageVolumeBoxes(volumeBoxes), world.dimension());
     }
 
     @SuppressWarnings("NullableProblems")
@@ -122,15 +117,13 @@ public class WorldSavedDataVolumeBoxes extends SavedData {
         if (world.isClientSide()) {
             throw new IllegalArgumentException("Tried to create a world saved data instance on the client!");
         }
-        MapStorage storage = world.getPerWorldStorage();
-        currentWorld = world;
-        WorldSavedDataVolumeBoxes instance = (WorldSavedDataVolumeBoxes)
-            storage.getOrLoadData(WorldSavedDataVolumeBoxes.class, DATA_NAME);
-        if (instance == null) {
-            instance = new WorldSavedDataVolumeBoxes();
-            storage.setData(DATA_NAME, instance);
+        synchronized (WorldSavedDataVolumeBoxes.class) {
+            currentWorld = world;
+            try {
+                return ((ServerLevel) world).getDataStorage().computeIfAbsent(TYPE);
+            } finally {
+                currentWorld = null;
+            }
         }
-        currentWorld = null;
-        return instance;
     }
 }

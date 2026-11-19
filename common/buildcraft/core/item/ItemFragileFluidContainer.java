@@ -2,91 +2,88 @@ package buildcraft.core.item;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
-import net.neoforged.neoforge.capabilities.BlockCapability;
-import buildcraft.lib.misc.FluidUtilBC;
-import buildcraft.api.core.ICapabilityProvider;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import buildcraft.api.transfer.FluidTankProperties;
-import buildcraft.api.transfer.IFluidHandlerItem;
-import buildcraft.api.transfer.IFluidTankProperties;
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.fluids.SimpleFluidContent;
+import net.neoforged.neoforge.transfer.access.ItemAccess;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.neoforged.neoforge.transfer.fluid.ItemAccessFluidHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 import buildcraft.api.items.IItemFluidShard;
 
 import buildcraft.lib.fluid.BCFluid;
+import buildcraft.lib.fluid.FluidManager;
 import buildcraft.lib.item.ItemBC_Neptune;
 import buildcraft.lib.misc.LocaleUtil;
-import buildcraft.lib.misc.NBTUtilBC;
-import buildcraft.lib.misc.StackUtil;
 
+/** A shard holding up to half a bucket of fluid, dropped by tanks and pipes that break while holding fluid. It can only
+ * be drained, and breaks once empty. The fluid is the "buildcraftcore:fluid" component (1.12.2 kept it in the stack's
+ * "fluid" tag). */
 public class ItemFragileFluidContainer extends ItemBC_Neptune implements IItemFluidShard {
 
     // Half of a bucket
     public static final int MAX_FLUID_HELD = 500;
 
-    public ItemFragileFluidContainer(String id) {
-        super(id);
-        setMaxStackSize(1);
+    /** Registered by core as "buildcraftcore:fluid". */
+    public static final DataComponentType<SimpleFluidContent> FLUID = DataComponentType.<SimpleFluidContent> builder()
+        .persistent(SimpleFluidContent.CODEC)
+        .networkSynchronized(SimpleFluidContent.STREAM_CODEC)
+        .build();
+
+    public ItemFragileFluidContainer(Item.Properties properties, String id) {
+        super(properties.stacksTo(1), id);
+    }
+
+    /** Lets NeoForge (and BuildCraft, through it) drain the shard. Must be on core's mod event bus. */
+    public void registerCapabilities(RegisterCapabilitiesEvent event) {
+        event.registerItem(Capabilities.Fluid.ITEM, (stack, access) -> new FragileFluidHandler(access), this);
     }
 
     @Override
-    public ICapabilityProvider initCapabilities(ItemStack stack, CompoundTag nbt) {
-        return new FragileFluidHandler(stack);
-    }
-
-    @Override
-    protected void addSubItems(CreativeTabs tab, NonNullList<ItemStack> items) {
+    public void addSubItems(NonNullList<ItemStack> items) {
         // Never allow this to be displayed in a creative tab -- we don't want to list every single fluid...
     }
 
     @Override
-    public String getItemStackDisplayName(ItemStack stack) {
+    public Component getName(ItemStack stack) {
         FluidStack fluid = getFluid(stack);
 
         String localized;
 
         if (fluid == null) {
             localized = "ERROR! NULL FLUID!";
-        } else if (fluid.getFluid() instanceof BCFluid) {
-            BCFluid bcFluid = (BCFluid) fluid.getFluid();
-            if (bcFluid.isHeatable()) {
-                // Add the heatable bit to the end of the name
-                localized = bcFluid.getBareLocalizedName(fluid);
-                String whole = LocaleUtil.localize(getDescriptionId() + ".name", localized);
-                return LocaleUtil.localize("buildcraft.fluid.heat_" + bcFluid.getHeatValue(), whole);
-            } else {
-                localized = fluid.getHoverName();
-            }
         } else {
-            localized = fluid.getHoverName();
+            BCFluid bcFluid = FluidManager.getBCFluid(fluid.getFluid());
+            if (bcFluid != null && bcFluid.isHeatable()) {
+                // Add the heatable bit to the end of the name
+                localized = bcFluid.getBareLocalizedName();
+                String whole = LocaleUtil.localize(getDescriptionId() + ".name", localized);
+                return Component.literal(LocaleUtil.localize("buildcraft.fluid.heat_" + bcFluid.getHeatValue(), whole));
+            } else {
+                localized = fluid.getHoverName().getString();
+            }
         }
-        return LocaleUtil.localize(getDescriptionId() + ".name", localized);
+        return Component.literal(LocaleUtil.localize(getDescriptionId() + ".name", localized));
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
     public void addInformation(ItemStack stack, @Nullable Level worldIn, List<String> tooltip, TooltipFlag flagIn) {
-        super.addInformation(stack, worldIn, tooltip, flagIn);
-        CompoundTag fluidTag = stack.getSubCompound("fluid");
-        if (fluidTag != null) {
-            FluidStack fluid = FluidStack.loadFluidStackFromNBT(fluidTag);
-            if (fluid != null && fluid.getAmount() > 0) {
-                tooltip.add(LocaleUtil.localizeFluidStaticAmount(fluid.getAmount(), MAX_FLUID_HELD));
-            }
+        FluidStack fluid = getFluid(stack);
+        if (fluid != null && fluid.getAmount() > 0) {
+            tooltip.add(LocaleUtil.localizeFluidStaticAmount(fluid.getAmount(), MAX_FLUID_HELD));
         }
     }
 
@@ -97,8 +94,7 @@ public class ItemFragileFluidContainer extends ItemBC_Neptune implements IItemFl
         }
         int amount = fluid.getAmount();
         if (amount >= MAX_FLUID_HELD) {
-            FluidStack fluid2 = fluid.copy();
-            fluid2.setAmount(MAX_FLUID_HELD);
+            FluidStack fluid2 = fluid.copyWithAmount(MAX_FLUID_HELD);
             while (amount >= MAX_FLUID_HELD) {
                 ItemStack stack = new ItemStack(this);
                 setFluid(stack, fluid2);
@@ -108,14 +104,13 @@ public class ItemFragileFluidContainer extends ItemBC_Neptune implements IItemFl
         }
         if (amount > 0) {
             ItemStack stack = new ItemStack(this);
-            setFluid(stack, (fluid).copyWithAmount(amount));
+            setFluid(stack, fluid.copyWithAmount(amount));
             toDrop.add(stack);
         }
     }
 
     static void setFluid(ItemStack container, FluidStack fluid) {
-        CompoundTag nbt = NBTUtilBC.getItemData(container);
-        nbt.put("fluid", fluid.writeToNBT(new CompoundTag()));
+        container.set(FLUID, SimpleFluidContent.copyOf(fluid));
     }
 
     @Nullable
@@ -123,82 +118,24 @@ public class ItemFragileFluidContainer extends ItemBC_Neptune implements IItemFl
         if (container.isEmpty()) {
             return null;
         }
-        CompoundTag fluidNbt = container.getSubCompound("fluid");
-        if (fluidNbt == null) {
-            return null;
-        }
-        return FluidStack.loadFluidStackFromNBT(fluidNbt);
+        SimpleFluidContent content = container.get(FLUID);
+        return content == null || content.isEmpty() ? null : content.copy();
     }
 
-    public class FragileFluidHandler implements IFluidHandlerItem, ICapabilityProvider {
-
-        @Nonnull
-        private ItemStack container;
-
-        public FragileFluidHandler(@Nonnull ItemStack container) {
-            this.container = container;
+    /** Drain only; the shard breaks (becomes empty) when the last of its fluid is taken. */
+    public final class FragileFluidHandler extends ItemAccessFluidHandler {
+        public FragileFluidHandler(ItemAccess access) {
+            super(access, FLUID, MAX_FLUID_HELD);
         }
 
         @Override
-        public boolean hasCapability(BlockCapability<?, Direction> capability, Direction facing) {
-            return getCapability(capability, facing) != null;
-        }
-
-        @Override
-        public <T> T getCapability(BlockCapability<T, Direction> capability, Direction facing) {
-            if (capability == CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY
-                || capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
-                return (T) this;
-            }
-            return null;
-        }
-
-        @Override
-        public IFluidTankProperties[] getTankProperties() {
-            return new IFluidTankProperties[] {
-                new FluidTankProperties(getFluid(container), MAX_FLUID_HELD, false, true) };
-        }
-
-        @Override
-        public int fill(FluidStack resource, boolean doFill) {
+        public int insert(int index, FluidResource resource, int amount, TransactionContext transaction) {
             return 0;
         }
 
         @Override
-        public FluidStack drain(FluidStack resource, boolean doDrain) {
-            FluidStack fluid = ItemFragileFluidContainer.getFluid(container);
-            if (fluid == null || resource == null) {
-                return null;
-            }
-            if (!FluidUtilBC.isFluidEqual(fluid, resource)) {
-                return null;
-            }
-            return drain(resource.getAmount(), doDrain);
-        }
-
-        @Override
-        public FluidStack drain(int maxDrain, boolean doDrain) {
-            FluidStack fluid = ItemFragileFluidContainer.getFluid(container);
-            if (fluid == null || maxDrain <= 0) {
-                return null;
-            }
-            int toDrain = Math.min(maxDrain, fluid.getAmount());
-            FluidStack f = (fluid).copyWithAmount(toDrain);
-            if (doDrain) {
-                fluid.shrink(toDrain);
-                if (fluid.getAmount() <= 0) {
-                    fluid = null;
-                    container = StackUtil.EMPTY;
-                } else {
-                    setFluid(container, fluid);
-                }
-            }
-            return f;
-        }
-
-        @Override
-        public ItemStack getContainer() {
-            return container;
+        protected ItemResource update(ItemResource accessResource, int index, FluidResource newResource, int newAmount) {
+            return newAmount <= 0 ? ItemResource.EMPTY : super.update(accessResource, index, newResource, newAmount);
         }
     }
 }

@@ -24,7 +24,7 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.core.NonNullList;
 
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraftforge.oredict.OreDictionary;
 
 import buildcraft.lib.client.guide.parts.GuidePartFactory;

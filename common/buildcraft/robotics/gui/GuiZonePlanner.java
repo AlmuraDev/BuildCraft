@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.vecmath.Vector3d;
+import org.joml.Vector3d;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.BufferUtils;
@@ -21,16 +21,16 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.util.glu.GLU;
 
 import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ChunkPos;
 
 import buildcraft.lib.gui.GuiBC8;
 import buildcraft.lib.gui.GuiIcon;
@@ -47,7 +47,7 @@ import buildcraft.robotics.zone.ZonePlannerMapDataClient;
 import buildcraft.robotics.zone.ZonePlannerMapRenderer;
 
 public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
-    private static final ResourceLocation TEXTURE_BASE = new ResourceLocation("buildcraftrobotics:textures/gui/zone_planner.png");
+    private static final Identifier TEXTURE_BASE = Identifier.parse("buildcraftrobotics:textures/gui/zone_planner.png");
     private static final int SIZE_X = 256, SIZE_Y = 228;
     private static final GuiIcon ICON_GUI = new GuiIcon(TEXTURE_BASE, 0, 0, SIZE_X, SIZE_Y);
     private static final GuiIcon ICON_PROGRESS_INPUT = new GuiIcon(TEXTURE_BASE, 9, 228, 28, 9);
@@ -381,7 +381,7 @@ public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
             ZonePlannerMapChunk zonePlannerMapChunk = ZonePlannerMapDataClient.INSTANCE.getChunk(
                 mc.world,
                 new ZonePlannerMapChunkKey(
-                    new ChunkPos(found),
+                    ChunkPos.containing(found),
                     mc.world.provider.getDimension(),
                     container.tile.getLevel()
                 )
@@ -405,7 +405,7 @@ public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
             int a = 0x77;
             ZonePlannerMapRenderer.INSTANCE.setColor(r << 16 | g << 8 | b << 0 | a << 24);
             BufferBuilder builder = Tessellator.getInstance().getBuffer();
-            builder.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+            builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
             ZonePlannerMapRenderer.INSTANCE.drawBlockCuboid(builder, found.getX(), found.getY(), found.getZ());
             Tessellator.getInstance().draw();
             GlStateManager.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
@@ -425,7 +425,7 @@ public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
                 layer = bufferLayer;
             }
             if (!layer.getChunkPoses().isEmpty()) {
-                Tessellator.getInstance().getBuffer().begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_COLOR);
+                Tessellator.getInstance().getBuffer().begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
                 for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
                     for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
                         ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
@@ -456,7 +456,7 @@ public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
                                 } else {
                                     continue;
                                 }
-                                int color = EnumDyeColor.byMetadata(i).getColorValue();
+                                int color = DyeColor.byMetadata(i).getColorValue();
                                 int r = (color >> 16) & 0xFF;
                                 int g = (color >> 8) & 0xFF;
                                 int b = (color >> 0) & 0xFF;

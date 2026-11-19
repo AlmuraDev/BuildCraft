@@ -19,12 +19,12 @@ import com.google.common.primitives.Bytes;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ITickable;
+import net.minecraft.world.item.ItemStack;
+import buildcraft.lib.tile.ITickable;
 
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
+import buildcraft.api.transfer.IItemHandlerModifiable;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.data.NbtSquishConstants;
@@ -112,7 +112,7 @@ public class TileElectronicLibrary extends TileBC_Neptune implements ITickable {
     public void update() {
         deltaManager.tick();
 
-        if (world.isRemote) {
+        if (world.isClientSide()) {
             return;
         }
 
@@ -163,9 +163,9 @@ public class TileElectronicLibrary extends TileBC_Neptune implements ITickable {
     // 3. server adds snapshot to its database
 
     @Override
-    public void writePayload(int id, PacketBufferBC buffer, Side side) {
+    public void writePayload(int id, PacketBufferBC buffer, LogicalSide side) {
         super.writePayload(id, buffer, side);
-        if (side == Side.SERVER) {
+        if (side == LogicalSide.SERVER) {
             if (id == NET_RENDER_DATA) {
                 buffer.writeBoolean(selected != null);
                 if (selected != null) {
@@ -199,9 +199,9 @@ public class TileElectronicLibrary extends TileBC_Neptune implements ITickable {
     }
 
     @Override
-    public void readPayload(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+    public void readPayload(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         super.readPayload(id, buffer, side, ctx);
-        if (side == Side.CLIENT) {
+        if (side == LogicalSide.CLIENT) {
             if (id == NET_RENDER_DATA) {
                 if (buffer.readBoolean()) {
                     selected = new Snapshot.Key(buffer);
@@ -227,7 +227,7 @@ public class TileElectronicLibrary extends TileBC_Neptune implements ITickable {
 
                             private void write(boolean last) throws IOException {
                                 MessageManager.sendToServer(createMessage(NET_UP, localBuffer -> {
-                                    localBuffer.writeUniqueId(ctx.getClientHandler().getGameProfile().getId());
+                                    localBuffer.writeUUID(ctx.getClientHandler().getGameProfile().getId());
                                     selected.writeToByteBuf(localBuffer);
                                     localBuffer.writeBoolean(last);
                                     localBuffer.writeByteArray(buf);
@@ -265,9 +265,9 @@ public class TileElectronicLibrary extends TileBC_Neptune implements ITickable {
                 }
             }
         }
-        if (side == Side.SERVER) {
+        if (side == LogicalSide.SERVER) {
             if (id == NET_UP) {
-                UUID playerId = buffer.readUniqueId();
+                UUID playerId = buffer.readUUID();
                 Snapshot.Key key = new Snapshot.Key(buffer);
                 Pair<UUID, Snapshot.Key> pair = Pair.of(playerId, key);
                 boolean last = buffer.readBoolean();

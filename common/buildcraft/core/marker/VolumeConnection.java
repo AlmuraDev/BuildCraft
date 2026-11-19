@@ -17,13 +17,11 @@ import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-import buildcraft.lib.client.render.laser.LaserBoxRenderer;
 import buildcraft.lib.marker.MarkerConnection;
 import buildcraft.lib.misc.PositionUtil;
 import buildcraft.lib.misc.data.Box;
 
 import buildcraft.core.BCCoreConfig;
-import buildcraft.core.client.BuildCraftLaserManager;
 
 public class VolumeConnection extends MarkerConnection<VolumeConnection> {
     private static final double RENDER_SCALE = 1 / 16.05;
@@ -47,7 +45,7 @@ public class VolumeConnection extends MarkerConnection<VolumeConnection> {
         Direction directOffset = PositionUtil.getDirectFacingOffset(from, to);
         if (directOffset == null) return false;
         for (int i = 1; i <= BCCoreConfig.markerMaxDistance; i++) {
-            BlockPos offset = from.offset(directOffset, i);
+            BlockPos offset = from.relative(directOffset, i);
             if (offset.equals(to)) return true;
             if (subCache.hasLoadedOrUnloadedMarker(offset)) return false;
         }
@@ -164,9 +162,4 @@ public class VolumeConnection extends MarkerConnection<VolumeConnection> {
     //
     // ###########
 
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public void renderInWorld() {
-        LaserBoxRenderer.renderLaserBoxStatic(box, BuildCraftLaserManager.MARKER_VOLUME_CONNECTED, true);
-    }
 }

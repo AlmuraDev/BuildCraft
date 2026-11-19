@@ -15,7 +15,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class SlotDisplay extends Slot {
-    private static Container emptyInventory = new SimpleContainer("[Null]", true, 0);
+    private static Container emptyInventory = new SimpleContainer(0);
     private final IntFunction<ItemStack> getter;
 
     public SlotDisplay(IntFunction<ItemStack> getter, int index, int xPosition, int yPosition) {
@@ -24,41 +24,39 @@ public class SlotDisplay extends Slot {
     }
 
     @Override
-    public ItemStack onTake(Player player, ItemStack stack) {
-        return ItemStack.EMPTY;
-    }
+    public void onTake(Player player, ItemStack stack) {}
 
     @Override
-    public boolean isItemValid(ItemStack stack) {
+    public boolean mayPlace(ItemStack stack) {
         return false;
     }
 
     @Override
-    public ItemStack getStack() {
+    public ItemStack getItem() {
         return getter.apply(getSlotIndex()).copy();
     }
 
     @Override
-    public void putStack(ItemStack stack) {
+    public void set(ItemStack stack) {
     }
 
     @Override
-    public boolean canTakeStack(Player player) {
+    public boolean mayPickup(Player player) {
         return false;
     }
 
     @Override
-    public ItemStack decrStackSize(int amount) {
-        return getStack();
+    public ItemStack remove(int amount) {
+        return getItem();
     }
 
     @Override
-    public int getItemStackLimit(ItemStack stack) {
-        return getStack().getCount();
+    public int getMaxStackSize(ItemStack stack) {
+        return getItem().getCount();
     }
 
     @Override
-    public int getSlotStackLimit() {
-        return getStack().getCount();
+    public int getMaxStackSize() {
+        return getItem().getCount();
     }
 }

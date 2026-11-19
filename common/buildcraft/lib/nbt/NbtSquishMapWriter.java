@@ -23,7 +23,6 @@ import gnu.trove.list.array.TShortArrayList;
 import gnu.trove.map.hash.TIntIntHashMap;
 import gnu.trove.set.hash.TIntHashSet;
 
-import net.minecraft.init.Bootstrap;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -43,7 +42,7 @@ class NbtSquishMapWriter {
 
     private static void log(String string) {
         if (debug) {
-            Bootstrap.SYSOUT.print(string + "\n");
+            System.out.print(string + "\n");
         } else {
             throw new IllegalArgumentException("Don't allocate a string if we aren't debugging!");
         }

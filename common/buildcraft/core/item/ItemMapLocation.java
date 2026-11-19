@@ -9,19 +9,20 @@ package buildcraft.core.item;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javax.annotation.Nonnull;
 
-import gnu.trove.map.hash.TIntObjectHashMap;
-
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import buildcraft.api.core.ActionResult;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -45,26 +46,24 @@ import buildcraft.lib.misc.StackUtil;
 import buildcraft.lib.misc.StringUtilBC;
 import buildcraft.lib.misc.data.Box;
 
-import buildcraft.robotics.zone.ZonePlan;
-
 public class ItemMapLocation extends ItemBC_Neptune implements IMapLocation {
     private static final String[] STORAGE_TAGS = "x,y,z,side,xMin,xMax,yMin,yMax,zMin,zMax,path,chunkMapping,name".split(",");
 
-    public ItemMapLocation(String id) {
-        super(id);
-        setHasSubtypes(true);
+    /** Reads the zone of a ZONE map location from the stack's data. Robotics (which owns ZonePlan) sets this. */
+    public static Function<CompoundTag, IZone> zoneReader = nbt -> null;
+
+    public ItemMapLocation(Item.Properties properties, String id) {
+        super(properties.stacksTo(16), id);
     }
 
-    @Override
-    public int getItemStackLimit(ItemStack stack) {
-        return MapLocationType.getFromStack(StackUtil.asNonNull(stack)) == MapLocationType.CLEAN ? 16 : 1;
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
-        for (MapLocationType type : MapLocationType.values()) {
-            addVariant(variants, type.meta, type.name().toLowerCase(Locale.ROOT));
+    /** Sets the stack's location type. Clean maps stack to 16, written ones don't stack (1.12.2's
+     * getItemStackLimit). */
+    private static void setType(@Nonnull ItemStack stack, MapLocationType type) {
+        type.setToStack(stack);
+        if (type == MapLocationType.CLEAN) {
+            stack.remove(DataComponents.MAX_STACK_SIZE);
+        } else {
+            stack.set(DataComponents.MAX_STACK_SIZE, 1);
         }
     }
 
@@ -134,40 +133,40 @@ public class ItemMapLocation extends ItemBC_Neptune implements IMapLocation {
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(Level world, Player player, InteractionHand hand) {
+    public InteractionResult use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (world.isClientSide()) {
-            return new ActionResult<>(InteractionResult.PASS, stack);
+            return InteractionResult.PASS;
         }
-        if (player.isSneaking()) {
+        if (player.isShiftKeyDown()) {
             return clearMarkerData(StackUtil.asNonNull(stack));
         }
-        return new ActionResult<>(InteractionResult.PASS, stack);
+        return InteractionResult.PASS;
     }
 
-    private static ActionResult<ItemStack> clearMarkerData(@Nonnull ItemStack stack) {
+    private static InteractionResult clearMarkerData(@Nonnull ItemStack stack) {
         if (MapLocationType.getFromStack(stack) == MapLocationType.CLEAN) {
-            return new ActionResult<>(InteractionResult.PASS, stack);
+            return InteractionResult.PASS;
         }
         CompoundTag nbt = NBTUtilBC.getItemData(stack);
         for (String key : STORAGE_TAGS) {
             nbt.remove(key);
         }
-        if (nbt.isEmpty()) {
-            stack.setTagCompound(null);
-        }
-        MapLocationType.CLEAN.setToStack(stack);
-        return new ActionResult<>(InteractionResult.SUCCESS, stack);
+        NBTUtilBC.setItemData(stack, nbt);
+        setType(stack, MapLocationType.CLEAN);
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public InteractionResult onItemUseFirst(Player player, Level world, BlockPos pos, Direction side, float hitX,
-        float hitY, float hitZ, InteractionHand hand) {
-        if (world.isClientSide()) {
+    public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
+        Player player = context.getPlayer();
+        Level world = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        Direction side = context.getClickedFace();
+        if (world.isClientSide() || player == null) {
             return InteractionResult.PASS;
         }
 
-        ItemStack stack = StackUtil.asNonNull(player.getItemInHand(hand));
         if (MapLocationType.getFromStack(stack) != MapLocationType.CLEAN) {
             return InteractionResult.FAIL;
         }
@@ -182,14 +181,15 @@ public class ItemMapLocation extends ItemBC_Neptune implements IMapLocation {
 
         BlockEntity tile = world.getBlockEntity(pos);
         CompoundTag cpt = NBTUtilBC.getItemData(modified);
+        MapLocationType type;
 
         if (tile instanceof IPathProvider) {
             List<BlockPos> path = ((IPathProvider) tile).getPath();
 
             if (path.size() > 1 && path.get(0).equals(path.get(path.size() - 1))) {
-                MapLocationType.PATH_REPEATING.setToStack(stack);
+                type = MapLocationType.PATH_REPEATING;
             } else {
-                MapLocationType.PATH.setToStack(stack);
+                type = MapLocationType.PATH;
             }
 
             ListTag pathNBT = new ListTag();
@@ -200,7 +200,7 @@ public class ItemMapLocation extends ItemBC_Neptune implements IMapLocation {
 
             cpt.put("path", pathNBT);
         } else if (tile instanceof IAreaProvider) {
-            MapLocationType.AREA.setToStack(modified);
+            type = MapLocationType.AREA;
 
             IAreaProvider areaTile = (IAreaProvider) tile;
 
@@ -212,14 +212,19 @@ public class ItemMapLocation extends ItemBC_Neptune implements IMapLocation {
             cpt.putInt("zMax", areaTile.max().getZ());
 
         } else {
-            MapLocationType.SPOT.setToStack(modified);
+            type = MapLocationType.SPOT;
 
             cpt.putByte("side", (byte) side.get3DDataValue());
             cpt.putInt("x", pos.getX());
             cpt.putInt("y", pos.getY());
             cpt.putInt("z", pos.getZ());
         }
+        NBTUtilBC.setItemData(modified, cpt);
+        setType(modified, type);
 
+        if (modified != stack && !player.getInventory().add(modified)) {
+            player.drop(modified, false, net.minecraft.util.Prediction.SERVER_ONLY);
+        }
         return InteractionResult.SUCCESS;
     }
 
@@ -310,9 +315,7 @@ public class ItemMapLocation extends ItemBC_Neptune implements IMapLocation {
         MapLocationType type = MapLocationType.getFromStack(item);
         switch (type) {
             case ZONE: {
-                ZonePlan plan = new ZonePlan();
-                plan.readFromNBT(cpt);
-                return plan;
+                return zoneReader.apply(cpt);
             }
             case AREA: {
                 return getBox(item);
@@ -355,21 +358,22 @@ public class ItemMapLocation extends ItemBC_Neptune implements IMapLocation {
         }
     }
 
-    public static void setZone(@Nonnull ItemStack item, ZonePlan plan) {
-        CompoundTag cpt = NBTUtilBC.getItemData(item);
-        MapLocationType.ZONE.setToStack(item);
-        plan.writeToNBT(cpt);
+    /** Makes the stack a ZONE map location.
+     *
+     * @param planWriter Writes the zone plan into the stack's data (robotics passes ZonePlan::writeToNBT). */
+    public static void setZone(@Nonnull ItemStack item, Consumer<CompoundTag> planWriter) {
+        NBTUtilBC.updateItemData(item, planWriter);
+        setType(item, MapLocationType.ZONE);
     }
 
     @Override
-    public String getName(@Nonnull ItemStack item) {
+    public String getLabel(@Nonnull ItemStack item) {
         return NBTUtilBC.getItemData(item).getStringOr("name", "");
     }
 
     @Override
-    public boolean setName(@Nonnull ItemStack item, String name) {
-        CompoundTag cpt = NBTUtilBC.getItemData(item);
-        cpt.putString("name", name);
+    public boolean setLabel(@Nonnull ItemStack item, String name) {
+        NBTUtilBC.updateItemData(item, cpt -> cpt.putString("name", name));
         return true;
     }
 }

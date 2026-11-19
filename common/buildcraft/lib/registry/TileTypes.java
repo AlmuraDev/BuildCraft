@@ -49,7 +49,25 @@ public final class TileTypes {
         }
     }
 
+    /** A block that creates different tile types depending on its state (like engines, by engine type). */
+    public interface IStateTileTypes {
+        BlockEntityType<?> getTileType(BlockState state);
+    }
+
+    /** Records a tile type whose blocks pick it themselves (see {@link IStateTileTypes}), so its capabilities are still
+     * exposed. */
+    public static void addType(BlockEntityType<? extends TileBC_Neptune> type) {
+        TYPES.add(type);
+    }
+
     public static BlockEntityType<?> forState(BlockState state) {
+        if (state.getBlock() instanceof IStateTileTypes stateTypes) {
+            BlockEntityType<?> type = stateTypes.getTileType(state);
+            if (type == null) {
+                throw new IllegalStateException("No BuildCraft tile type for " + state + "!");
+            }
+            return type;
+        }
         BlockEntityType<?> type = BY_BLOCK.get(state.getBlock());
         if (type == null) {
             throw new IllegalStateException("No BuildCraft tile type for " + state + "!");

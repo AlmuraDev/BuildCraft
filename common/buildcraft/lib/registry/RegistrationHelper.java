@@ -22,6 +22,9 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
 import buildcraft.lib.block.BlockBCBase_Neptune;
+import buildcraft.lib.engine.BlockEngineBase_BC8;
+import buildcraft.api.core.IEngineType;
+import buildcraft.lib.engine.TileEngineBase_BC8;
 import buildcraft.lib.item.IItemBuildCraft;
 import buildcraft.lib.item.ItemBlockBC_Neptune;
 import buildcraft.lib.registry.TagManager.EnumTagType;
@@ -235,6 +238,32 @@ public final class RegistrationHelper {
             currentEvent.register(Registries.BLOCK_ENTITY_TYPE, name, () -> type);
             TileTypes.bind(type, array);
         });
+    }
+
+    /** Registers the tile of one engine type, created by the given engine block (which may belong to another module,
+     * as BuildCraft's engines all share core's engine block). Engines can be disabled in the "engines" category of the
+     * object config ("buildcraftcore:engine/stone").
+     *
+     * @return false if the engine was disabled. */
+    public <E extends Enum<E> & IEngineType & net.minecraft.util.StringRepresentable, T extends TileEngineBase_BC8> boolean registerEngineTile(String tagId,
+        String engineBlockName, E type, BlockEntityType.BlockEntitySupplier<T> factory,
+        Supplier<? extends BlockEngineBase_BC8<E>> block) {
+        String key = engineBlockName + "/" + type.name().toLowerCase(java.util.Locale.ROOT);
+        if (!RegistryConfig.isEnabled(modId, "engines", key, tagId + ".name")) {
+            return false;
+        }
+        Identifier name = registryName(tagId);
+        tileTasks.add(() -> {
+            BlockEngineBase_BC8<E> engineBlock = block.get();
+            if (engineBlock == null) {
+                return;
+            }
+            BlockEntityType<T> tileType = new BlockEntityType<>(factory, engineBlock);
+            currentEvent.register(Registries.BLOCK_ENTITY_TYPE, name, () -> tileType);
+            engineBlock.bindEngine(type, tileType);
+            TileTypes.addType(tileType);
+        });
+        return true;
     }
 
     /** Lets other registries (sounds, fluids, menus...) be filled with the same deferred approach. */

@@ -16,10 +16,6 @@ import javax.annotation.Nonnull;
 import net.minecraft.world.item.ItemStack;
 
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.fml.ModList;
-import net.minecraftforge.fml.common.LoaderState;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 
 import buildcraft.api.core.BCLog;
 
@@ -34,9 +30,10 @@ public class BuildCraftObjectCaches {
     public static final NetworkedFluidStackCache CACHE_FLUIDS = new NetworkedFluidStackCache();
 
     static final List<NetworkedObjectCache<?>> CACHES = new ArrayList<>();
+    private static boolean postInitDone = false;
 
     public static void registerCache(NetworkedObjectCache<?> cache) {
-        if (ModList.get().hasReachedState(LoaderState.POSTINITIALIZATION)) {
+        if (postInitDone) {
             throw new IllegalStateException("May only construct a cache BEFORE post-init!");
         }
         BuildCraftObjectCaches.CACHES.add(cache);
@@ -57,14 +54,15 @@ public class BuildCraftObjectCaches {
         return CACHE_ITEMS.client().retrieve(id);
     }
 
-    /** Called by BuildCraftLib in the {@link FMLPreInitializationEvent} */
+    /** Called by BuildCraftLib in the pre-init */
     public static void fmlPreInit() {
         registerCache(CACHE_ITEMS);
         registerCache(CACHE_FLUIDS);
     }
 
-    /** Called by BuildCraftLib in the {@link FMLPostInitializationEvent} */
+    /** Called by BuildCraftLib in the post-init */
     public static void fmlPostInit() {
+        postInitDone = true;
         CACHES.sort(Comparator.comparing(a -> a.getClass().getSimpleName()));
         if (NetworkedObjectCache.DEBUG_LOG) {
             BCLog.logger.info("[lib.net.cache] Sorted list of networked object caches:");

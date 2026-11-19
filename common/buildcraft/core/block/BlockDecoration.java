@@ -4,64 +4,31 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core.block;
 
-import net.minecraft.block.material.Material;
+import java.util.List;
+
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.core.NonNullList;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.BlockGetter;
 
 import buildcraft.api.enums.EnumDecoratedBlock;
 import buildcraft.api.properties.BuildCraftProperties;
 
 import buildcraft.lib.block.BlockBCBase_Neptune;
 
-public class BlockDecoration extends BlockBCBase_Neptune {
-    public static final Property<EnumDecoratedBlock> DECORATED_TYPE = BuildCraftProperties.DECORATED_BLOCK;
 
-    public BlockDecoration(String id) {
-        super(Material.IRON, id);
-        setDefaultState(getDefaultState().setValue(DECORATED_TYPE, EnumDecoratedBlock.DESTROY));
+public class BlockDecoration extends BlockBCBase_Neptune {
+    public static final EnumProperty<EnumDecoratedBlock> DECORATED_TYPE = BuildCraftProperties.DECORATED_BLOCK;
+
+    public BlockDecoration(BlockBehaviour.Properties properties, String id) {
+        super(properties.lightLevel(state -> state.getValue(DECORATED_TYPE).lightValue), id);
+        registerDefaultState(defaultBlockState().setValue(DECORATED_TYPE, EnumDecoratedBlock.DESTROY));
     }
 
     // BlockState
 
     @Override
-    protected StateDefinition createBlockState() {
-        return new StateDefinition(this, DECORATED_TYPE);
-    }
-
-    @Override
-    public BlockState getStateFromMeta(int meta) {
-        BlockState state = getDefaultState();
-        return state.setValue(DECORATED_TYPE, EnumDecoratedBlock.fromMeta(meta));
-    }
-
-    @Override
-    public int getMetaFromState(BlockState state) {
-        return state.getValue(DECORATED_TYPE).ordinal();
-    }
-
-    // Other
-
-    @Override
-    public void getSubBlocks(CreativeTabs tab, NonNullList<ItemStack> list) {
-        for (EnumDecoratedBlock type : EnumDecoratedBlock.values()) {
-            list.add(new ItemStack(this, 1, type.ordinal()));
-        }
-    }
-
-    @Override
-    public int damageDropped(BlockState state) {
-        return state.getValue(DECORATED_TYPE).ordinal();
-    }
-
-    @Override
-    public int getLightValue(BlockState state, BlockGetter world, BlockPos pos) {
-        EnumDecoratedBlock type = state.getValue(DECORATED_TYPE);
-        return type.lightValue;
+    protected void addProperties(List<Property<?>> properties) {
+        super.addProperties(properties);
+        properties.add(DECORATED_TYPE);
     }
 }

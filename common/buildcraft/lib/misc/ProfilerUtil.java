@@ -9,7 +9,11 @@ import java.nio.file.StandardOpenOption;
 import java.text.NumberFormat;
 import java.util.List;
 
+import net.minecraft.util.profiling.InactiveProfiler;
+import net.minecraft.util.profiling.ProfileCollector;
+import net.minecraft.util.profiling.ProfileResults;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.util.profiling.ResultField;
 
 import buildcraft.api.core.BCLog;
 
@@ -100,11 +104,15 @@ public class ProfilerUtil {
     private static <E extends Throwable> void writeProfilerResults_Internal(ProfilerFiller profiler, String sectionName,
         long totalNanoseconds, int indent, ILogAcceptor<E> dest) throws E {
 
-        List<ProfilerFiller.Result> list = profiler.getProfilingData(sectionName);
+        if (!(profiler instanceof ProfileCollector collector)) {
+            // Only collecting profilers have results (1.12.2's profiler always did, once enabled)
+            return;
+        }
+        List<ResultField> list = collector.getResults().getTimes(sectionName.replace('.', ProfileResults.PATH_SEPARATOR));
 
         if (list != null && list.size() >= 3) {
             for (int i = 1; i < list.size(); ++i) {
-                ProfilerFiller.Result result = list.get(i);
+                ResultField result = list.get(i);
                 StringBuilder builder = new StringBuilder();
                 builder.append(StringUtilBC.formatDirect("[%02d] ", indent));
 
@@ -112,14 +120,14 @@ public class ProfilerUtil {
                     builder.append("|   ");
                 }
 
-                builder.append(result.profilerName);
+                builder.append(result.name);
                 builder.append(" - ");
-                builder.append(StringUtilBC.formatDirect("%.2f", result.usePercentage));
+                builder.append(StringUtilBC.formatDirect("%.2f", result.percentage));
                 builder.append("%/");
-                builder.append(StringUtilBC.formatDirect("%.2f", result.totalUsePercentage));
+                builder.append(StringUtilBC.formatDirect("%.2f", result.globalPercentage));
                 if (totalNanoseconds > 0) {
                     builder.append(" (");
-                    long nano = (long) (result.totalUsePercentage * totalNanoseconds / 100);
+                    long nano = (long) (result.globalPercentage * totalNanoseconds / 100);
                     if (nano < 99_999) {
                         builder.append(NumberFormat.getInstance().format(nano));
                         builder.append("ns");
@@ -137,13 +145,13 @@ public class ProfilerUtil {
                 }
                 dest.write(builder.toString());
 
-                if (!"unspecified".equals(result.profilerName)) {
+                if (!"unspecified".equals(result.name)) {
                     if (indent > 20) {
                         // Something probably went wrong
                         dest.write("[[ Too deep! ]]");
                         continue;
                     }
-                    writeProfilerResults_Internal(profiler, sectionName + "." + result.profilerName, totalNanoseconds,
+                    writeProfilerResults_Internal(profiler, sectionName + "." + result.name, totalNanoseconds,
                         indent + 1, dest);
                 }
             }
@@ -167,15 +175,20 @@ public class ProfilerUtil {
         }
     }
 
+    /** @return true if the profiler records anything (1.12.2's profilingEnabled). */
+    public static boolean isEnabled(ProfilerFiller profiler) {
+        return profiler != null && profiler != InactiveProfiler.INSTANCE;
+    }
+
     public static ProfilerEntry createEntry(ProfilerFiller p1, ProfilerFiller p2) {
-        if (p1.profilingEnabled) {
-            if (p2.profilingEnabled) {
+        if (isEnabled(p1)) {
+            if (isEnabled(p2)) {
                 return new ProfilerEntry2(p1, p2);
             } else {
                 return new ProfilerEntry1(p1);
             }
         } else {
-            if (p2.profilingEnabled) {
+            if (isEnabled(p2)) {
                 return new ProfilerEntry1(p2);
             } else {
                 return ProfilerEntry0.INSTANCE;

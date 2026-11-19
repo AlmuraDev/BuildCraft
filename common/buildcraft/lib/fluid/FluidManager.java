@@ -58,6 +58,17 @@ public class FluidManager {
         return Collections.unmodifiableList(all);
     }
 
+    /** @return The BuildCraft fluid the given (source or flowing) fluid belongs to, or null if it isn't one. */
+    @Nullable
+    public static BCFluid getBCFluid(net.minecraft.world.level.material.Fluid fluid) {
+        for (BCFluid bc : all) {
+            if (bc.is(fluid)) {
+                return bc;
+            }
+        }
+        return null;
+    }
+
     /** @return The fluid that had the given name on 1.12.2, or null. */
     @Nullable
     public static BCFluid getByLegacyName(String name) {
@@ -102,7 +113,7 @@ public class FluidManager {
                     .replaceable()
                     .noCollision()
                     .strength(100.0F)
-                    .pushReaction(PushReaction.DESTROY)
+                    .pushReaction(PushReaction.POPPED)
                     .noLootTable()
                     .liquid();
                 if (fluid.isFlammable()) {

@@ -135,7 +135,7 @@ public class GuidePageContents extends GuidePageBase {
         if (index == 0) {
             int xMiddle = x + width / 2;
             int _y = y;
-            String text = gui.book == null ? "Everything" : gui.book.title.getUnformattedText();
+            String text = gui.book == null ? "Everything" : gui.book.title.getString();
             WrappedTextData wrapped = GuiUtil.getWrappedTextData(text, f, width, false, 3f);
             wrapped.drawAt(xMiddle, _y, 0, true);
             _y += wrapped.height;

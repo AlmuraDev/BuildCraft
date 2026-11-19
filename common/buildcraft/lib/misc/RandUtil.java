@@ -17,7 +17,7 @@ public class RandUtil {
      *            generator class (Perhaps by using <code>new SecureRandom().nextLong()</code>).
      * @return A {@link Random} instance that starts off with the same seed given the same arguments. */
     public static Random createRandomForChunk(Level world, int chunkX, int chunkY, long magicNumber) {
-        long worldSeed = world.getSeed();
+        long worldSeed = world instanceof net.minecraft.server.level.ServerLevel server ? server.getSeed() : 0;
         return createRandomForChunk(worldSeed, chunkX, chunkY, magicNumber);
     }
 

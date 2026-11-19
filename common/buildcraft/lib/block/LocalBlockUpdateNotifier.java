@@ -9,7 +9,7 @@ import javax.annotation.Nonnull;
 
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.IWorldEventListener;
+import buildcraft.lib.world.WorldEventListeners;
 import net.minecraft.world.level.Level;
 
 import buildcraft.lib.world.WorldEventListenerAdapter;
@@ -27,14 +27,14 @@ public class LocalBlockUpdateNotifier {
 
     private LocalBlockUpdateNotifier(Level world) {
 
-        IWorldEventListener worldEventListener = new WorldEventListenerAdapter() {
+        WorldEventListenerAdapter worldEventListener = new WorldEventListenerAdapter() {
             @Override
-            public void notifyBlockUpdate(@Nonnull Level world, @Nonnull BlockPos eventPos, @Nonnull BlockState oldState,
+            public void sendBlockUpdated(@Nonnull Level world, @Nonnull BlockPos eventPos, @Nonnull BlockState oldState,
                                           @Nonnull BlockState newState, int flags) {
                 notifySubscribersInRange(world, eventPos, oldState, newState, flags);
             }
         };
-        world.addEventListener(worldEventListener);
+        WorldEventListeners.add(world, worldEventListener);
     }
 
     /**

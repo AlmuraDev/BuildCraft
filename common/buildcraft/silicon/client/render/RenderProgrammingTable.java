@@ -9,17 +9,18 @@ package buildcraft.silicon.client.render;
 import javax.annotation.Nonnull;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import net.minecraftforge.client.model.animation.FastTESR;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.silicon.tile.TileProgrammingTable_Neptune;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class RenderProgrammingTable extends FastTESR<TileProgrammingTable_Neptune> {
     @Override
     public void renderTileEntityFast(@Nonnull TileProgrammingTable_Neptune tile, double x, double y, double z, float partialTicks, int destroyStage, float partial, @Nonnull BufferBuilder buffer) {
@@ -27,7 +28,7 @@ public class RenderProgrammingTable extends FastTESR<TileProgrammingTable_Neptun
         Minecraft.getMinecraft().mcProfiler.startSection("table");
         Minecraft.getMinecraft().mcProfiler.startSection("programming");
 
-        TextureAtlasSprite sprite = Minecraft.getMinecraft().getTextureMapBlocks().registerSprite(new ResourceLocation("blocks/glass_white"));
+        TextureAtlasSprite sprite = Minecraft.getMinecraft().getTextureMapBlocks().registerSprite(Identifier.parse("blocks/glass_white"));
         int combinedLight = tile.getWorld().getCombinedLight(tile.getPos(), 0);
         int light1 = combinedLight >> 16 & 65535;
         int light2 = combinedLight & 65535;

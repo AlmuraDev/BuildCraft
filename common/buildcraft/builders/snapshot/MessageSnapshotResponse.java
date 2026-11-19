@@ -12,10 +12,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
 
-import net.minecraft.nbt.CompressedStreamTools;
+import net.minecraft.nbt.NbtIo;
 
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import buildcraft.lib.net.IMessage;
+import buildcraft.lib.net.IMessageHandler;
 
 public class MessageSnapshotResponse implements IMessage {
     private Snapshot snapshot;
@@ -35,12 +35,12 @@ public class MessageSnapshotResponse implements IMessage {
 //        buf.writeInt(bytes.length);
 //        buf.writeBytes(bytes);
 //        try {
-//            CompressedStreamTools.write(Snapshot.writeToNBT(snapshot), new ByteBufOutputStream(buf));
+//            NbtIo.write(Snapshot.writeToNBT(snapshot), new ByteBufOutputStream(buf));
 //        } catch (IOException e) {
 //            throw new RuntimeException(e);
 //        }
         try {
-            CompressedStreamTools.writeCompressed(Snapshot.writeToNBT(snapshot), new ByteBufOutputStream(buf));
+            NbtIo.writeCompressed(Snapshot.writeToNBT(snapshot), new ByteBufOutputStream(buf));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -50,8 +50,8 @@ public class MessageSnapshotResponse implements IMessage {
     public void fromBytes(ByteBuf buf) {
         try {
 //            snapshot = Snapshot.readFromNBT(NbtSquisher.expand(buf.readBytes(buf.readInt()).array()));
-//            snapshot = Snapshot.readFromNBT(CompressedStreamTools.read(new ByteBufInputStream(buf), NBTSizeTracker.INFINITE));
-            snapshot = Snapshot.readFromNBT(CompressedStreamTools.readCompressed(new ByteBufInputStream(buf)));
+//            snapshot = Snapshot.readFromNBT(NbtIo.read(new ByteBufInputStream(buf), NBTSizeTracker.INFINITE));
+            snapshot = Snapshot.readFromNBT(NbtIo.readCompressed(new ByteBufInputStream(buf)));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

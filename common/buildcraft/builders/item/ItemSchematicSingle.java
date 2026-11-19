@@ -11,22 +11,24 @@ import javax.annotation.Nonnull;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
 
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.nbt.CompoundTag;
+import buildcraft.api.core.ActionResult;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.Level;
 
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.BCLog;
 import buildcraft.api.core.InvalidInputDataException;
@@ -58,48 +60,56 @@ public class ItemSchematicSingle extends ItemBC_Neptune {
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
         addVariant(variants, DAMAGE_CLEAN, "clean");
         addVariant(variants, DAMAGE_USED, "used");
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand) {
-        ItemStack stack = StackUtil.asNonNull(player.getHeldItem(hand));
-        if (world.isRemote) {
-            return new ActionResult<>(EnumActionResult.PASS, stack);
+    public InteractionResult use(Level world, Player player, InteractionHand hand) {
+        ItemStack stack = StackUtil.asNonNull(player.getItemInHand(hand));
+        if (world.isClientSide()) {
+            return InteractionResult.PASS;
         }
         if (player.isSneaking()) {
-            NBTTagCompound itemData = NBTUtilBC.getItemData(stack);
-            itemData.removeTag(NBT_KEY);
-            if (itemData.hasNoTags()) {
+            CompoundTag itemData = NBTUtilBC.getItemData(stack);
+            itemData.remove(NBT_KEY);
+            if (itemData.isEmpty()) {
                 stack.setTagCompound(null);
             }
             stack.setItemDamage(DAMAGE_CLEAN);
-            return new ActionResult<>(EnumActionResult.SUCCESS, stack);
+            return InteractionResult.SUCCESS;
         }
-        return new ActionResult<>(EnumActionResult.PASS, stack);
+        return InteractionResult.PASS;
     }
 
     @Override
-    public EnumActionResult onItemUseFirst(EntityPlayer player, World world, BlockPos pos, EnumFacing side, float hitX, float hitY, float hitZ, EnumHand hand) {
-        if (world.isRemote) {
-            return EnumActionResult.PASS;
+    public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
+        Player player = context.getPlayer();
+        Level world = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        InteractionHand hand = context.getHand();
+        Direction side = context.getClickedFace();
+        float hitX = (float) (context.getClickLocation().x - pos.getX());
+        float hitY = (float) (context.getClickLocation().y - pos.getY());
+        float hitZ = (float) (context.getClickLocation().z - pos.getZ());
+        if (world.isClientSide()) {
+            return InteractionResult.PASS;
         }
-        ItemStack stack = player.getHeldItem(hand);
+        ItemStack stack = player.getItemInHand(hand);
         if (player.isSneaking()) {
-            NBTTagCompound itemData = NBTUtilBC.getItemData(StackUtil.asNonNull(stack));
-            itemData.removeTag(NBT_KEY);
-            if (itemData.hasNoTags()) {
+            CompoundTag itemData = NBTUtilBC.getItemData(StackUtil.asNonNull(stack));
+            itemData.remove(NBT_KEY);
+            if (itemData.isEmpty()) {
                 stack.setTagCompound(null);
             }
             stack.setItemDamage(DAMAGE_CLEAN);
-            return EnumActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }
         int damage = stack.getItemDamage();
         if (damage != DAMAGE_USED) {
-            IBlockState state = world.getBlockState(pos);
+            BlockState state = world.getBlockState(pos);
             ISchematicBlock schematicBlock = SchematicBlockManager.getSchematicBlock(new SchematicBlockContext(
                 world,
                 pos,
@@ -108,11 +118,11 @@ public class ItemSchematicSingle extends ItemBC_Neptune {
                 state.getBlock()
             ));
             if (schematicBlock.isAir()) {
-                return EnumActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
-            NBTUtilBC.getItemData(stack).setTag(NBT_KEY, SchematicBlockManager.writeToNBT(schematicBlock));
+            NBTUtilBC.getItemData(stack).put(NBT_KEY, SchematicBlockManager.writeToNBT(schematicBlock));
             stack.setItemDamage(DAMAGE_USED);
-            return EnumActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         } else {
             BlockPos placePos = pos;
             boolean replaceable = world.getBlockState(pos).getBlock().isReplaceable(world, pos);
@@ -120,10 +130,10 @@ public class ItemSchematicSingle extends ItemBC_Neptune {
                 placePos = placePos.offset(side);
             }
             if (!world.mayPlace(world.getBlockState(pos).getBlock(), placePos, false, side, null)) {
-                return EnumActionResult.FAIL;
+                return InteractionResult.FAIL;
             }
-            if (replaceable && !world.isAirBlock(placePos)) {
-                world.setBlockToAir(placePos);
+            if (replaceable && !world.isEmptyBlock(placePos)) {
+                world.removeBlock(placePos, false);
             }
             try {
                 ISchematicBlock schematicBlock = getSchematic(stack);
@@ -152,11 +162,11 @@ public class ItemSchematicSingle extends ItemBC_Neptune {
                                     );
                                     SoundUtil.playBlockPlace(world, placePos);
                                     player.swingArm(hand);
-                                    return EnumActionResult.SUCCESS;
+                                    return InteractionResult.SUCCESS;
                                 }
                             } else {
                                 player.sendStatusMessage(
-                                    new TextComponentString(
+                                    Component.literal(
                                         "Not enough items. Total needed: " +
                                             StackUtil.mergeSameItems(requiredItems).stream()
                                                 .map(s -> s.getTextComponent().getFormattedText() + " x " + s.getCount())
@@ -167,7 +177,7 @@ public class ItemSchematicSingle extends ItemBC_Neptune {
                             }
                         } else {
                             player.sendStatusMessage(
-                                new TextComponentString("Schematic requires fluids"),
+                                Component.literal("Schematic requires fluids"),
                                 true
                             );
                         }
@@ -175,18 +185,18 @@ public class ItemSchematicSingle extends ItemBC_Neptune {
                 }
             } catch (InvalidInputDataException e) {
                 player.sendStatusMessage(
-                    new TextComponentString("Invalid schematic: " + e.getMessage()),
+                    Component.literal("Invalid schematic: " + e.getMessage()),
                     true
                 );
                 e.printStackTrace();
             }
-            return EnumActionResult.FAIL;
+            return InteractionResult.FAIL;
         }
     }
 
     public static ISchematicBlock getSchematic(@Nonnull ItemStack stack) throws InvalidInputDataException {
         if (stack.getItem() instanceof ItemSchematicSingle) {
-            return SchematicBlockManager.readFromNBT(NBTUtilBC.getItemData(stack).getCompoundTag(NBT_KEY));
+            return SchematicBlockManager.readFromNBT(NBTUtilBC.getItemData(stack).getCompoundOrEmpty(NBT_KEY));
         }
         return null;
     }

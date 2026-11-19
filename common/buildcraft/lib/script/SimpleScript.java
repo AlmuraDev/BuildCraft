@@ -48,7 +48,7 @@ public class SimpleScript {
     static BufferedWriter logWriter;
 
     static {
-        CONTEXT.put_s_b("is_mod_loaded", ModList::isModLoaded);
+        CONTEXT.put_s_b("is_mod_loaded", id -> ModList.get().isLoaded(id));
         // Functions:
 
         // Debug: turns on script debugging

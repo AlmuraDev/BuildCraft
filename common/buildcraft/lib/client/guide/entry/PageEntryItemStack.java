@@ -1,5 +1,9 @@
 package buildcraft.lib.client.guide.entry;
 
+import buildcraft.lib.misc.NBTUtilBC;
+import buildcraft.api.core.NbtStacks;
+import buildcraft.lib.misc.StackUtil;
+import net.minecraft.core.registries.BuiltInRegistries;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,7 +23,6 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
 import buildcraft.api.BCModules;
 import buildcraft.api.core.BCLog;
@@ -61,7 +64,7 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
     public void iterateAllDefault(IEntryLinkConsumer consumer, ProfilerFiller prof) {
 
         // For now, we can always re-enable this as a last resort fix.
-        boolean limitDomains = ForgeRegistries.ITEMS.getKeys().size() > BCLibConfig.guideItemSearchLimit;
+        boolean limitDomains = BuiltInRegistries.ITEM.getKeys().size() > BCLibConfig.guideItemSearchLimit;
 
         Set<String> domains = new HashSet<>();
         // Always show all of minecraft's items
@@ -75,12 +78,12 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
         if (limitDomains) {
             BCLog.logger.warn(
                 "[lib.guide] Limiting the domians of items to only: " + domains + " because there are "
-                    + ForgeRegistries.ITEMS.getKeys().size() + " items!"
+                    + BuiltInRegistries.ITEM.getKeys().size() + " items!"
             );
         }
 
-        for (Item item : ForgeRegistries.ITEMS) {
-            Identifier regName = item.getRegistryName();
+        for (Item item : BuiltInRegistries.ITEM) {
+            Identifier regName = BuiltInRegistries.ITEM.getKey(item);
             if (regName == null || (limitDomains && !domains.contains(regName.getNamespace()))) {
                 continue;
             }
@@ -89,7 +92,7 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
             }
             NonNullList<ItemStack> stacks = NonNullList.create();
             prof.push("search");
-            item.getSubItems(CreativeTabs.SEARCH, stacks);
+            StackUtil.addSubItems(item, stacks);
             prof.popPush("itr_search");
             if (stacks.size() > 200) {
                 // Likely a "super-item" which is constructed from a different registry
@@ -110,8 +113,8 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
                     consumer.addChild(TAGS, PageLinkItemStack.create(false, stack, prof));
                 } catch (RuntimeException e) {
                     throw new Error(
-                        "Failed to create a page link for " + item.getRegistryName() + " " + item.getClass() + " ("
-                            + stack.serializeNBT() + ")", e
+                        "Failed to create a page link for " + BuiltInRegistries.ITEM.getKey(item) + " " + item.getClass() + " ("
+                            + NbtStacks.writeItemStack(stack) + ")", e
                     );
                 }
             }
@@ -141,18 +144,18 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
         final ItemStack stack;
         final boolean matchMeta, matchNbt;
         if (jStack.isJsonPrimitive()) {
-            String str = GsonHelper.getString(jStack, "stack");
+            String str = GsonHelper.getAsString(jStack, "stack");
             if (str.startsWith("{") && str.endsWith("}")) {
                 stack = MarkdownPageLoader.loadComplexItemStack(str.substring(1, str.length() - 1));
                 stack.setCount(1);
                 matchMeta = true;
-                matchNbt = stack.hasTagCompound();
+                matchNbt = NBTUtilBC.hasItemData(stack);
             } else {
                 if (str.startsWith("(") && str.endsWith(")")) {
                     str = str.substring(1, str.length() - 1);
                 }
                 Identifier loc = Identifier.parse(str);
-                Item item = ForgeRegistries.ITEMS.getValue(loc);
+                Item item = BuiltInRegistries.ITEM.getValue(loc);
                 if (item == null) {
                     if (RegistryConfig.hasItemBeenDisabled(loc)) {
                         return new OptionallyDisabled<>("The item '" + loc + "' has been disabled.");

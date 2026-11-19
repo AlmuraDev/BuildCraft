@@ -10,7 +10,7 @@ import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-import buildcraft.lib.client.render.DetachedRenderer.IDetachedRenderer;
+import buildcraft.lib.debug.IDetachedRenderer;
 
 /** Something that can be put into an "advanced debug" state - every tick {@link #sendDebugState()} will be called on
  * the server, to allow the client to render all of the details normally hidden on the server. */

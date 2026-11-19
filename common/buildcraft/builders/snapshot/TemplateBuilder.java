@@ -9,11 +9,11 @@ package buildcraft.builders.snapshot;
 import java.util.Collections;
 import java.util.List;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.WorldServer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 
-import net.minecraftforge.common.util.FakePlayer;
+import net.neoforged.neoforge.common.util.FakePlayer;
 
 import buildcraft.api.core.BuildCraftAPI;
 import buildcraft.api.template.TemplateApi;
@@ -40,7 +40,7 @@ public class TemplateBuilder extends SnapshotBuilder<ITileForTemplateBuilder> {
 
     @Override
     protected boolean canPlace(BlockPos blockPos) {
-        return tile.getWorldBC().isAirBlock(blockPos);
+        return tile.getWorldBC().isEmptyBlock(blockPos);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class TemplateBuilder extends SnapshotBuilder<ITileForTemplateBuilder> {
     @Override
     protected boolean doPlaceTask(PlaceTask placeTask) {
         FakePlayer fakePlayer = BuildCraftAPI.fakePlayerProvider.getFakePlayer(
-            (WorldServer) tile.getWorldBC(),
+            (ServerLevel) tile.getWorldBC(),
             tile.getOwner(),
             tile.getBuilderPos()
         );
@@ -82,6 +82,6 @@ public class TemplateBuilder extends SnapshotBuilder<ITileForTemplateBuilder> {
 
     @Override
     protected boolean isBlockCorrect(BlockPos blockPos) {
-        return !isAir(blockPos) && !tile.getWorldBC().isAirBlock(blockPos);
+        return !isAir(blockPos) && !tile.getWorldBC().isEmptyBlock(blockPos);
     }
 }

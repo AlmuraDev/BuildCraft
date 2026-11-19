@@ -4,40 +4,39 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core.block;
 
-import java.util.Random;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.util.RandomSource;
+import net.minecraft.server.level.ServerLevel;
+import javax.annotation.Nullable;
 
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 import buildcraft.lib.block.BlockMarkerBase;
-import buildcraft.lib.tile.TileBC_Neptune;
 
 import buildcraft.core.tile.TileMarkerVolume;
 
 public class BlockMarkerVolume extends BlockMarkerBase {
-    public BlockMarkerVolume(Material material, String id) {
-        super(material, id);
+    public BlockMarkerVolume(BlockBehaviour.Properties properties, String id) {
+        super(properties, id);
     }
 
     @Override
-    public TileBC_Neptune createTileEntity(Level worldIn, BlockState state) {
-        return new TileMarkerVolume();
-    }
-
-    @Override
-    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block blockIn, BlockPos fromPos) {
+    protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block blockIn,
+        @Nullable Orientation orientation, boolean movedByPiston) {
+        super.neighborChanged(state, world, pos, blockIn, orientation, movedByPiston);
         checkSignalState(world, pos);
     }
 
     @Override
-    public void updateTick(Level world, BlockPos pos, BlockState state, Random rand) {
+    protected void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rand) {
         checkSignalState(world, pos);
     }
 
@@ -49,7 +48,7 @@ public class BlockMarkerVolume extends BlockMarkerBase {
         if (tile instanceof TileMarkerVolume) {
             TileMarkerVolume volume = (TileMarkerVolume) tile;
 
-            boolean powered = world.isBlockPowered(pos);
+            boolean powered = world.hasNeighborSignal(pos);
 
             if (volume.isShowingSignals() != powered) {
                 volume.switchSignals();
@@ -58,8 +57,8 @@ public class BlockMarkerVolume extends BlockMarkerBase {
     }
 
     @Override
-    public boolean onBlockActivated(Level world, BlockPos pos, BlockState state, Player player, InteractionHand hand,
-        Direction side, float hitX, float hitY, float hitZ) {
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player,
+        BlockHitResult hit) {
         if (!world.isClientSide()) {
             BlockEntity tile = world.getBlockEntity(pos);
             if (tile instanceof TileMarkerVolume) {
@@ -68,6 +67,6 @@ public class BlockMarkerVolume extends BlockMarkerBase {
                 volume.onManualConnectionAttempt(player);
             }
         }
-        return true;
+        return InteractionResult.SUCCESS;
     }
 }

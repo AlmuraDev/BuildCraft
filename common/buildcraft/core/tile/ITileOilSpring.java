@@ -4,9 +4,7 @@ import com.mojang.authlib.GameProfile;
 
 import net.minecraft.core.BlockPos;
 
-import buildcraft.energy.tile.TileSpringOil;
-
-/** Implemented by {@link TileSpringOil} in the energy module. */
+/** Implemented by TileSpringOil in the energy module. */
 public interface ITileOilSpring {
 
     /** Pumps should call this when they pump oil from this spring. */

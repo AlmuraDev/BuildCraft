@@ -170,6 +170,24 @@ CLASSES = {
     'net.minecraftforge.fluids.IFluidTank': 'buildcraft.api.transfer.IFluidTank',
     'net.minecraftforge.energy.IEnergyStorage': 'buildcraft.api.transfer.IEnergyStorage',
     'net.minecraft.util.ActionResult': 'buildcraft.api.core.ActionResult',
+    # javax.vecmath (gone) -> JOML, which 26.3 uses
+    'javax.vecmath.Vector3f': 'org.joml.Vector3f',
+    'javax.vecmath.Point3f': 'org.joml.Vector3f',
+    'javax.vecmath.Tuple3f': 'org.joml.Vector3f',
+    'javax.vecmath.Vector4f': 'org.joml.Vector4f',
+    'javax.vecmath.Point4f': 'org.joml.Vector4f',
+    'javax.vecmath.Tuple4f': 'org.joml.Vector4f',
+    'javax.vecmath.Vector2f': 'org.joml.Vector2f',
+    'javax.vecmath.Point2f': 'org.joml.Vector2f',
+    'javax.vecmath.Tuple2f': 'org.joml.Vector2f',
+    'javax.vecmath.Matrix4f': 'org.joml.Matrix4f',
+    'javax.vecmath.Matrix3f': 'org.joml.Matrix3f',
+    'javax.vecmath.Vector3d': 'org.joml.Vector3d',
+    'javax.vecmath.Point3d': 'org.joml.Vector3d',
+    'javax.vecmath.Tuple3d': 'org.joml.Vector3d',
+    'javax.vecmath.Matrix4d': 'org.joml.Matrix4d',
+    'javax.vecmath.AxisAngle4f': 'org.joml.AxisAngle4f',
+    'javax.vecmath.Quat4f': 'org.joml.Quaternionf',
     'net.minecraftforge.common.config.Configuration': 'buildcraft.lib.config.Configuration',
     'net.minecraftforge.common.config.Property': 'buildcraft.lib.config.Property',
     'net.minecraftforge.common.config.ConfigCategory': 'buildcraft.lib.config.ConfigCategory',
@@ -203,10 +221,12 @@ METHODS = [
     (r'\.spawnEntity\(', '.addFreshEntity('),
     (r'\.getEntitiesWithinAABB\(', '.getEntitiesOfClass('),
     (r'\.notifyBlockUpdate\(', '.sendBlockUpdated('),
+    # BuildCraft's WorldEventListenerAdapter keeps the call's new name, so its overrides follow.
+    (r'\bpublic void notifyBlockUpdate\(', 'public void sendBlockUpdated('),
     (r'\.getHeldItemMainhand\(\)', '.getMainHandItem()'),
     (r'\.getHeldItemOffhand\(\)', '.getOffhandItem()'),
     (r'\.getHeldItem\(', '.getItemInHand('),
-    (r'\.getDisplayName\(\)', '.getHoverName()'),
+    (r'(?<!getModInfo\(\))\.getDisplayName\(\)', '.getHoverName()'),
     (r'\bItemStack\.areItemsEqual\(', 'ItemStack.isSameItem('),
     (r'\bItemStack\.areItemStackTagsEqual\(', 'ItemStack.isSameItemSameComponents('),
     # nbt
@@ -242,6 +262,60 @@ METHODS = [
     (r'\.dotProduct\(', '.dot('),
     (r'\bDirection\.VALUES\b', 'Direction.values()'),
     (r'\bDirection\.getFront\(', 'Direction.from3DDataValue('),
+    (r'\bDirection\.HORIZONTALS\b', 'Direction.Plane.HORIZONTAL'),
+    # registries
+    (r'\bForgeRegistries\.ITEMS\b', 'BuiltInRegistries.ITEM'),
+    (r'\bForgeRegistries\.BLOCKS\b', 'BuiltInRegistries.BLOCK'),
+    (r'\bForgeRegistries\.FLUIDS\b', 'BuiltInRegistries.FLUID'),
+    (r'\bForgeRegistries\.ENTITIES\b', 'BuiltInRegistries.ENTITY_TYPE'),
+    (r'\bForgeRegistries\.SOUND_EVENTS\b', 'BuiltInRegistries.SOUND_EVENT'),
+    (r'\bItem\.REGISTRY\b', 'BuiltInRegistries.ITEM'),
+    (r'\bBlock\.REGISTRY\b', 'BuiltInRegistries.BLOCK'),
+    (r'import net\.minecraftforge\.fml\.common\.registry\.ForgeRegistries;',
+     'import net.minecraft.core.registries.BuiltInRegistries;'),
+    (r'([\w.()]+)\.getSubItems\(CreativeTabs\.\w+, (\w+)\)', r'StackUtil.addSubItems(\1, \2)'),
+    (r'\bFluidUtil\.getFluidContained\(', 'FluidUtilBC.getFluidContained('),
+    # json
+    (r'\bGsonHelper\.getString\(', 'GsonHelper.getAsString('),
+    (r'\bGsonHelper\.getInt\(', 'GsonHelper.getAsInt('),
+    (r'\bGsonHelper\.getLong\(', 'GsonHelper.getAsLong('),
+    (r'\bGsonHelper\.getFloat\(', 'GsonHelper.getAsFloat('),
+    (r'\bGsonHelper\.getDouble\(', 'GsonHelper.getAsDouble('),
+    (r'\bGsonHelper\.getBoolean\(', 'GsonHelper.getAsBoolean('),
+    (r'\bGsonHelper\.getJsonObject\(', 'GsonHelper.getAsJsonObject('),
+    (r'\bGsonHelper\.getJsonArray\(', 'GsonHelper.getAsJsonArray('),
+    (r'\bGsonHelper\.hasField\(', 'GsonHelper.isValidNode('),
+    (r'\bGsonHelper\.isString\(', 'GsonHelper.isStringValue('),
+    (r'\bGsonHelper\.isNumber\(', 'GsonHelper.isNumberValue('),
+    (r'\bGsonHelper\.isBoolean\(', 'GsonHelper.isBooleanValue('),
+    (r'\bGsonHelper\.isJsonArray\(', 'GsonHelper.isArrayNode('),
+    (r'\bGsonHelper\.isJsonPrimitive\(', 'GsonHelper.isValidPrimitive('),
+    # text
+    (r'\bnew TextComponentTranslation\(', 'Component.translatable('),
+    (r'\bnew TextComponentString\(', 'Component.literal('),
+    (r'import net\.minecraft\.util\.text\.(TextComponentTranslation|TextComponentString);',
+     'import net.minecraft.network.chat.Component;'),
+    (r'\bChatFormatting\.fromColorIndex\(', 'ChatFormatting.getById('),
+    # positions
+    (r'\bBlockPos\.ORIGIN\b', 'BlockPos.ZERO'),
+    # world block-change listeners (see buildcraft.lib.world.WorldEventListeners)
+    (r'([\w.]+(?:\(\))?)\.addEventListener\(', r'WorldEventListeners.add(\1, '),
+    (r'([\w.]+(?:\(\))?)\.removeEventListener\(', r'WorldEventListeners.remove(\1, '),
+    (r'private final IWorldEventListener (\w+) = new WorldEventListenerAdapter\(\)',
+     r'private final WorldEventListenerAdapter \1 = new WorldEventListenerAdapter()'),
+    (r'import net\.minecraft\.world\.IWorldEventListener;', 'import buildcraft.lib.world.WorldEventListeners;'),
+    # 1.12.2 sound names had a BLOCK_/ITEM_/ENTITY_ prefix ("BLOCK_LEVER_CLICK" -> "LEVER_CLICK")
+    (r'\bSoundEvents\.(?:BLOCK|ITEM|ENTITY)_(\w+)', r'SoundEvents.\1'),
+    (r'\bBlockPos\.getAllInBox\(', 'BlockPos.betweenClosed('),
+    (r'\bBlockPos\.getAllInBoxMutable\(', 'BlockPos.betweenClosed('),
+    (r'\bworld\.spawnParticle\(EnumParticleTypes\.', 'world.addParticle(ParticleTypes.'),
+    (r'import net\.minecraft\.util\.EnumParticleTypes;', 'import net.minecraft.core.particles.ParticleTypes;'),
+    (r'\bCapabilityEnergy\.ENERGY\b', 'CapUtil.CAP_RF'),
+    (r'\bCapabilityItemHandler\.ITEM_HANDLER_CAPABILITY\b', 'CapUtil.CAP_ITEMS'),
+    (r'\bCapabilityFluidHandler\.FLUID_HANDLER_CAPABILITY\b', 'CapUtil.CAP_FLUIDS'),
+    (r'import net\.minecraftforge\.(energy\.CapabilityEnergy|items\.CapabilityItemHandler|fluids\.capability\.CapabilityFluidHandler);',
+     'import buildcraft.lib.misc.CapUtil;'),
+    (r'\bnew ChunkPos\(([\w.()]+)\)', r'ChunkPos.containing(\1)'),
     (r'\.getFrontOffsetX\(\)', '.getStepX()'),
     (r'\.getFrontOffsetY\(\)', '.getStepY()'),
     (r'\.getFrontOffsetZ\(\)', '.getStepZ()'),
@@ -255,11 +329,12 @@ METHODS = [
     (r'\bModList\.instance\(\)', 'ModList.get()'),
     (r'\bModList\.get\(\)\.activeModContainer\(\)', 'ModLoadingContext.get().getActiveContainer()'),
     # entities / players
-    (r'\b(player|entityPlayer|entity|placer|playerIn|thePlayer|ep|living|entityLiving|livingBase)\.world\b(?!\s*\()',
+    # (reads only: assignments to these fields need hand porting, to setLevel / setPos)
+    (r'\b(player|entityPlayer|entity|placer|playerIn|thePlayer|ep|living|entityLiving|livingBase)\.world\b(?!\s*\()(?!\s*=[^=])',
      r'\1.level()'),
-    (r'\b(player|entityPlayer|entity|placer|playerIn|thePlayer|ep|living)\.posX\b', r'\1.getX()'),
-    (r'\b(player|entityPlayer|entity|placer|playerIn|thePlayer|ep|living)\.posY\b', r'\1.getY()'),
-    (r'\b(player|entityPlayer|entity|placer|playerIn|thePlayer|ep|living)\.posZ\b', r'\1.getZ()'),
+    (r'\b(player|entityPlayer|entity|placer|playerIn|thePlayer|ep|living)\.posX\b(?!\s*=[^=])', r'\1.getX()'),
+    (r'\b(player|entityPlayer|entity|placer|playerIn|thePlayer|ep|living)\.posY\b(?!\s*=[^=])', r'\1.getY()'),
+    (r'\b(player|entityPlayer|entity|placer|playerIn|thePlayer|ep|living)\.posZ\b(?!\s*=[^=])', r'\1.getZ()'),
     (r'\.openContainer\b', '.containerMenu'),
     (r'\.windowId\b', '.containerId'),
     (r'\.getServerHandler\(\)\.player\b', '.player()'),
@@ -287,6 +362,35 @@ METHODS = [
     (r'\.makeCategory\(', '.addCategory('),
     (r'\.addCrashSection\(', '.setDetail('),
 ]
+
+
+SWAPPED_CALLS = {
+    # 1.12.2 name -> 26.3 name, for two-argument calls whose arguments swapped
+    'Direction.getFacingFromAxis': 'Direction.fromAxisAndDirection',
+}
+
+
+def rewrite_swapped_calls(text):
+    for old, new in SWAPPED_CALLS.items():
+        out = []
+        pos = 0
+        pattern = re.compile(re.escape(old) + r'\(')
+        while True:
+            m = pattern.search(text, pos)
+            if not m:
+                out.append(text[pos:])
+                break
+            res = split_call(text, m.end() - 1)
+            if res is None or len(res[1]) != 2:
+                out.append(text[pos:m.end()])
+                pos = m.end()
+                continue
+            end, args = res
+            out.append(text[pos:m.start()])
+            out.append('%s(%s, %s)' % (new, args[1].strip(), args[0].strip()))
+            pos = end
+        text = ''.join(out)
+    return text
 
 
 def rewrite_identifiers(text):
@@ -407,6 +511,49 @@ def rewrite_nbt_more(text):
         pos = end
 
 
+ITEM_USE_RE = re.compile(
+    r'public (?:InteractionResult|EnumActionResult) (onItemUse|onItemUseFirst)\(\s*'
+    r'(?:(?:ItemStack) (\w+),\s*)?'
+    r'Player (\w+),\s*Level (\w+),\s*BlockPos (\w+),\s*(?:InteractionHand (\w+),\s*)?Direction (\w+),\s*'
+    r'float (\w+),\s*float (\w+),\s*float (\w+)\s*(?:,\s*InteractionHand (\w+)\s*)?\)\s*\{')
+
+
+def rewrite_item_use(text):
+    """onItemRightClick -> use; onItemUse(player, world, pos, hand, side, hitX...) -> useOn(UseOnContext), unpacking the
+    context into the 1.12.2 parameter names so the body stays the same."""
+    text = re.sub(r'public ActionResult<ItemStack> onItemRightClick\(\s*Level (\w+),\s*Player (\w+),\s*InteractionHand (\w+)\s*\)',
+                  r'public InteractionResult use(Level \1, Player \2, InteractionHand \3)', text)
+    if 'public InteractionResult use(Level' in text:
+        text = re.sub(r'return new ActionResult<>\(\s*(InteractionResult\.\w+)\s*,[^;]*\);', r'return \1;', text)
+        text = re.sub(r'return ActionResult\.newResult\(\s*(InteractionResult\.\w+)\s*,[^;]*\);', r'return \1;', text)
+
+    def repl(m):
+        name = m.group(1)
+        stack = m.group(2)
+        player, world, pos = m.group(3), m.group(4), m.group(5)
+        hand = m.group(6) or m.group(11) or 'hand'
+        side, hx, hy, hz = m.group(7), m.group(8), m.group(9), m.group(10)
+        if name == 'onItemUse':
+            head = 'public InteractionResult useOn(UseOnContext context) {'
+        else:
+            head = 'public InteractionResult onItemUseFirst(ItemStack %s, UseOnContext context) {' % (stack or 'stack')
+        unpack = ('\n        Player %s = context.getPlayer();'
+                  '\n        Level %s = context.getLevel();'
+                  '\n        BlockPos %s = context.getClickedPos();'
+                  '\n        InteractionHand %s = context.getHand();'
+                  '\n        Direction %s = context.getClickedFace();'
+                  '\n        float %s = (float) (context.getClickLocation().x - %s.getX());'
+                  '\n        float %s = (float) (context.getClickLocation().y - %s.getY());'
+                  '\n        float %s = (float) (context.getClickLocation().z - %s.getZ());') % (
+            player, world, pos, hand, side, hx, pos, hy, pos, hz, pos)
+        return head + unpack
+    new = ITEM_USE_RE.sub(repl, text)
+    if new != text and 'import net.minecraft.world.item.context.UseOnContext;' not in new:
+        new = new.replace('import net.minecraft.world.item.ItemStack;',
+                          'import net.minecraft.world.item.ItemStack;\nimport net.minecraft.world.item.context.UseOnContext;', 1)
+    return new
+
+
 def rewrite_set_block_state(text):
     """setBlockState(pos, state) -> setBlockAndUpdate(pos, state); setBlockState(pos, state, flags) -> setBlock(...);
     setBlockToAir(pos) -> removeBlock(pos, false)."""
@@ -495,8 +642,12 @@ def port_file(path):
         text = rewrite_nbt_getters(text)
         text = rewrite_nbt_more(text)
     text = rewrite_capabilities(text)
+    if 'onItemRightClick' in text or 'onItemUse' in text:
+        text = rewrite_item_use(text)
     if '.setBlockState(' in text or '.setBlockToAir(' in text:
         text = rewrite_set_block_state(text)
+    if 'Direction.getFacingFromAxis(' in text:
+        text = rewrite_swapped_calls(text)
     if 'new Identifier(' in text:
         text = rewrite_identifiers(text)
 
@@ -522,6 +673,12 @@ def port_file(path):
     dist_import = 'import net.neoforged.api.distmarker.Dist;'
     if '@OnlyIn(Dist.' in text and dist_import not in text:
         text = text.replace('import net.neoforged.api.distmarker.OnlyIn;', dist_import + '\nimport net.neoforged.api.distmarker.OnlyIn;', 1)
+
+    # Forge's Constants.NBT became Tag's own constants.
+    if 'Constants.' not in text:
+        text = text.replace('import net.minecraftforge.common.util.Constants;\n', '')
+    if re.search(r'(?<![\w.])Tag\.TAG_', text) and not re.search(r'^import net\.minecraft\.nbt\.(Tag|\*);', text, re.M):
+        text = re.sub(r'^(package [\w.]+;\s*\n)', r'\1\nimport net.minecraft.nbt.Tag;\n', text, count=1, flags=re.M)
 
     # Drop duplicate imports created by the renames.
     seen = set()

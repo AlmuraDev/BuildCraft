@@ -6,20 +6,20 @@
 
 package buildcraft.lib.list;
 
+import buildcraft.api.core.NbtStacks;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.core.NonNullList;
 
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -102,8 +102,9 @@ public final class ListHandler {
                     }
                 }
                 if (!anyHandled) {
-                    if (type == Type.TYPE && target.getHasSubtypes()) {
-                        return StackUtil.isMatchingItem(compare, target, false, false);
+                    if (type == Type.TYPE) {
+                        // 1.12.2 matched the other subtypes (damage values) of the item here: same item on 26.3
+                        return compare.getItem() == target.getItem();
                     }
                 }
             } else {
@@ -130,7 +131,7 @@ public final class ListHandler {
             if (data != null && data.contains("st")) {
                 ListTag l = data.getListOrEmpty("st");
                 for (int i = 0; i < l.size(); i++) {
-                    line.stacks.set(i, new ItemStack(l.getCompoundOrEmpty(i)));
+                    line.stacks.set(i, NbtStacks.readItemStack(l.getCompoundOrEmpty(i)));
                 }
 
                 line.precise = data.getBooleanOr("Fp", false);
@@ -147,7 +148,7 @@ public final class ListHandler {
             for (ItemStack stack1 : stacks) {
                 CompoundTag stack = new CompoundTag();
                 if (stack1 != null) {
-                    stack1.writeToNBT(stack);
+                    stack.merge(NbtStacks.writeItemStack(stack1));
                 }
                 stackList.add(stack);
             }
@@ -200,9 +201,9 @@ public final class ListHandler {
                 }
             }
             if (handlersCustom.size() > 0) {
-                for (Item i : ForgeRegistries.ITEMS) {
+                for (Item i : BuiltInRegistries.ITEM) {
                     NonNullList<ItemStack> examples = NonNullList.create();
-                    i.getSubItems(CreativeTabs.SEARCH, examples);
+                    StackUtil.addSubItems(i, examples);
                     for (ItemStack s : examples) {
                         for (ListMatchHandler mh : handlersCustom) {
                             if (mh.matches(type, firstStack, s, false)) {
@@ -223,7 +224,7 @@ public final class ListHandler {
     }
 
     public static boolean hasItems(@Nonnull ItemStack stack) {
-        if (!stack.hasTagCompound()) return false;
+        if (!NBTUtilBC.hasItemData(stack)) return false;
         for (Line l : getLines(stack)) {
             if (l.hasItems()) return true;
         }
@@ -231,7 +232,7 @@ public final class ListHandler {
     }
 
     public static boolean isDefault(@Nonnull ItemStack stack) {
-        if (!stack.hasTagCompound()) return true;
+        if (!NBTUtilBC.hasItemData(stack)) return true;
         for (Line l : getLines(stack)) {
             if (!l.isDefault()) return false;
         }
@@ -274,15 +275,14 @@ public final class ListHandler {
                 lineList.add(saving.toNBT());
             }
             data.put("lines", lineList);
-        } else if (stackList.hasTagCompound()) {
+            NBTUtilBC.setItemData(stackList, data);
+        } else if (NBTUtilBC.hasItemData(stackList)) {
             CompoundTag data = NBTUtilBC.getItemData(stackList);
             // No non-default lines, we can remove the old NBT data
             data.remove("written");
             data.remove("lines");
-            if (data.isEmpty()) {
-                // We can safely remove the
-                stackList.setTagCompound(null);
-            }
+            // (setItemData removes the data altogether if nothing is left)
+            NBTUtilBC.setItemData(stackList, data);
         }
     }
 

@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
+import buildcraft.api.core.NbtStacks;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 import buildcraft.lib.net.PacketBufferBC;
@@ -24,7 +24,7 @@ public class NetworkedFluidStackCache extends NetworkedObjectCache<FluidStack> {
 
     public NetworkedFluidStackCache() {
         // Use water for our base stack as it might not be too bad of an assumption
-        super(new FluidStack(FluidRegistry.WATER, FLUID_AMOUNT));
+        super(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, FLUID_AMOUNT));
     }
 
     @Override
@@ -35,7 +35,7 @@ public class NetworkedFluidStackCache extends NetworkedObjectCache<FluidStack> {
                 if (o == null) {
                     return 0;
                 }
-                return Objects.hash(o.getFluid(), o.tag);
+                return FluidStack.hashFluidAndComponents(o);
             }
 
             @Override
@@ -43,8 +43,7 @@ public class NetworkedFluidStackCache extends NetworkedObjectCache<FluidStack> {
                 if (a == null || b == null) {
                     return a == b;
                 }
-                return a.getFluid() == b.getFluid() //
-                    && Objects.equals(a.tag, b.tag);
+                return FluidStack.isSameFluidSameComponents(a, b);
             }
         });
     }
@@ -56,24 +55,13 @@ public class NetworkedFluidStackCache extends NetworkedObjectCache<FluidStack> {
 
     @Override
     protected void writeObject(FluidStack obj, PacketBufferBC buffer) {
-        Fluid f = obj.getFluid();
-        buffer.writeUtf(FluidRegistry.getFluidName(f));
-        if (obj.tag == null) {
-            buffer.writeBoolean(false);
-        } else {
-            buffer.writeBoolean(true);
-            buffer.writeNbt(obj.tag);
-        }
+        buffer.writeNbt(NbtStacks.writeFluidStack(obj.copyWithAmount(FLUID_AMOUNT)));
     }
 
     @Override
     protected FluidStack readObject(PacketBufferBC buffer) throws IOException {
-        Fluid fluid = FluidRegistry.getFluid(buffer.readUtf(255));
-        FluidStack stack = new FluidStack(fluid, FLUID_AMOUNT);
-        if (buffer.readBoolean()) {
-            stack.tag = buffer.readNbt();
-        }
-        return stack;
+        FluidStack stack = NbtStacks.readFluidStack(buffer.readNbt());
+        return stack == null ? new FluidStack(net.minecraft.world.level.material.Fluids.WATER, FLUID_AMOUNT) : stack;
     }
 
     @Override

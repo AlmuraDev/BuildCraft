@@ -4,7 +4,15 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core;
 
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.registries.Registries;
+
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
 import buildcraft.api.items.FluidItemDrops;
+import buildcraft.api.items.IMapLocation.MapLocationType;
 
 import buildcraft.lib.BCLib;
 import buildcraft.lib.item.ItemBC_Neptune;
@@ -21,8 +29,6 @@ import buildcraft.core.item.ItemWrench_Neptune;
 
 public class BCCoreItems {
 
-    private static final RegistrationHelper HELPER = new RegistrationHelper();
-
     public static ItemWrench_Neptune wrench;
     public static ItemBC_Neptune gearWood;
     public static ItemBC_Neptune gearStone;
@@ -37,22 +43,36 @@ public class BCCoreItems {
     public static ItemFragileFluidContainer fragileFluidShard;
     public static ItemGoggles goggles;
 
-    public static void preInit() {
-        wrench = HELPER.addItem(new ItemWrench_Neptune("item.wrench"));
-        gearWood = HELPER.addItem(new ItemBC_Neptune("item.gear.wood"));
-        gearStone = HELPER.addItem(new ItemBC_Neptune("item.gear.stone"));
-        gearIron = HELPER.addItem(new ItemBC_Neptune("item.gear.iron"));
-        gearGold = HELPER.addItem(new ItemBC_Neptune("item.gear.gold"));
-        gearDiamond = HELPER.addItem(new ItemBC_Neptune("item.gear.diamond"));
-        paintbrush = HELPER.addItem(new ItemPaintbrush_BC8("item.paintbrush"));
-        list = HELPER.addItem(new ItemList_BC8("item.list"));
-        mapLocation = HELPER.addItem(new ItemMapLocation("item.map_location"));
-        markerConnector = HELPER.addItem(new ItemMarkerConnector("item.marker_connector"));
-        volumeBox = HELPER.addItem(new ItemVolumeBox("item.volume_box"));
-        fragileFluidShard = HELPER.addItem(new ItemFragileFluidContainer("item.fragile_fluid_shard"));
+    public static void preInit(IEventBus modBus) {
+        DeferredRegister<DataComponentType<?>> components =
+            RegistrationHelper.createRegister(Registries.DATA_COMPONENT_TYPE, BCCore.MODID, modBus);
+        components.register("map_location_type", () -> MapLocationType.COMPONENT);
+        components.register("paint_colour", () -> ItemPaintbrush_BC8.COLOUR);
+        components.register("fluid", () -> ItemFragileFluidContainer.FLUID);
+        modBus.addListener((RegisterCapabilitiesEvent event) -> {
+            if (fragileFluidShard != null) {
+                fragileFluidShard.registerCapabilities(event);
+            }
+        });
+
+        RegistrationHelper helper = new RegistrationHelper(BCCore.MODID, modBus);
+        helper.addItem("item.wrench", ItemWrench_Neptune::new, i -> wrench = i);
+        helper.addItem("item.gear.wood", ItemBC_Neptune::new, i -> gearWood = i);
+        helper.addItem("item.gear.stone", ItemBC_Neptune::new, i -> gearStone = i);
+        helper.addItem("item.gear.iron", ItemBC_Neptune::new, i -> gearIron = i);
+        helper.addItem("item.gear.gold", ItemBC_Neptune::new, i -> gearGold = i);
+        helper.addItem("item.gear.diamond", ItemBC_Neptune::new, i -> gearDiamond = i);
+        helper.addItem("item.paintbrush", ItemPaintbrush_BC8::new, i -> paintbrush = i);
+        helper.addItem("item.list", ItemList_BC8::new, i -> list = i);
+        helper.addItem("item.map_location", ItemMapLocation::new, i -> mapLocation = i);
+        helper.addItem("item.marker_connector", ItemMarkerConnector::new, i -> markerConnector = i);
+        helper.addItem("item.volume_box", ItemVolumeBox::new, i -> volumeBox = i);
+        helper.addItem("item.fragile_fluid_shard", ItemFragileFluidContainer::new, i -> {
+            fragileFluidShard = i;
+            FluidItemDrops.item = i;
+        });
         if (BCLib.DEV) {
-            goggles = HELPER.addItem(new ItemGoggles("item.goggles"));
+            helper.addItem("item.goggles", ItemGoggles::new, i -> goggles = i);
         }
-        FluidItemDrops.item = fragileFluidShard;
     }
 }

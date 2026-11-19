@@ -34,6 +34,7 @@ public class CreativeTabManager {
     private static final Map<String, CreativeTabBC> tabMap = new LinkedHashMap<>();
     private static final List<Item> vanillaMisc = new ArrayList<>();
     private static final List<Item> vanillaMaterials = new ArrayList<>();
+    private static final Map<String, String> tabOverrides = new java.util.HashMap<>();
 
     public static CreativeTabBC createTab(String name) {
         return tabMap.computeIfAbsent(name, CreativeTabBC::new);
@@ -52,16 +53,25 @@ public class CreativeTabManager {
         }
     }
 
+    /** Puts the item with the given tag id into another tab than its tag names (core moves lib's guide and debugger
+     * into BuildCraft's main tab). Must be called before items are registered. */
+    public static void overrideTab(String tagId, String tabName) {
+        tabOverrides.put(tagId, tabName);
+    }
+
     /** Adds the item to the tab its tag names (items without a tab tag aren't shown). */
     public static void addToTab(Item item) {
         if (!(item instanceof IItemBuildCraft itemBC) || itemBC.id().isEmpty()) {
             return;
         }
         String id = itemBC.id();
-        if (!TagManager.hasTag(id, EnumTagType.CREATIVE_TAB)) {
-            return;
+        String name = tabOverrides.get(id);
+        if (name == null) {
+            if (!TagManager.hasTag(id, EnumTagType.CREATIVE_TAB)) {
+                return;
+            }
+            name = TagManager.getTag(id, EnumTagType.CREATIVE_TAB);
         }
-        String name = TagManager.getTag(id, EnumTagType.CREATIVE_TAB);
         switch (name) {
             case "vanilla.misc" -> vanillaMisc.add(item);
             case "vanilla.materials" -> vanillaMaterials.add(item);

@@ -8,8 +8,8 @@ package buildcraft.robotics.zone;
 
 import io.netty.buffer.ByteBuf;
 
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import buildcraft.lib.net.IMessage;
+import buildcraft.lib.net.IMessageHandler;
 
 import buildcraft.lib.misc.MessageUtil;
 
@@ -40,7 +40,7 @@ public class MessageZoneMapRequest implements IMessage {
                 new MessageZoneMapResponse(
                         message.key,
                         ZonePlannerMapDataServer.INSTANCE.getChunk(
-                                ctx.getServerHandler().player.world,
+                                ctx.player().level(),
                                 message.key
                         )
                 )

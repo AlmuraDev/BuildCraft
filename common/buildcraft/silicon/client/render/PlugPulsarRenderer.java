@@ -6,10 +6,11 @@
 
 package buildcraft.silicon.client.render;
 
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.transport.pluggable.IPlugDynamicRenderer;
 
@@ -19,7 +20,7 @@ import buildcraft.lib.client.model.MutableQuad;
 import buildcraft.silicon.BCSiliconModels;
 import buildcraft.silicon.plug.PluggablePulsar;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public enum PlugPulsarRenderer implements IPlugDynamicRenderer<PluggablePulsar> {
     INSTANCE;
 

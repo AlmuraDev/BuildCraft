@@ -6,6 +6,9 @@
 
 package buildcraft.lib.net;
 
+import buildcraft.api.core.NbtStacks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 import com.google.common.base.Charsets;
 
 import io.netty.buffer.ByteBuf;
@@ -260,7 +263,7 @@ public class PacketBufferBC extends FriendlyByteBuf {
     }
 
     @Override
-    public PacketBufferBC writeEnumValue(Enum<?> value) {
+    public PacketBufferBC writeEnum(Enum<?> value) {
         Enum<?>[] possible = value.getDeclaringClass().getEnumConstants();
         if (possible == null) throw new IllegalArgumentException("Not an enum " + value.getClass());
         if (possible.length == 0) throw new IllegalArgumentException("Tried to write an enum value without any values! How did you do this?");
@@ -270,7 +273,7 @@ public class PacketBufferBC extends FriendlyByteBuf {
     }
 
     @Override
-    public <E extends Enum<E>> E readEnumValue(Class<E> enumClass) {
+    public <E extends Enum<E>> E readEnum(Class<E> enumClass) {
         // No need to lookup the declaring class as you cannot refer to sub-classes of Enum.
         E[] enums = enumClass.getEnumConstants();
         if (enums == null) throw new IllegalArgumentException("Not an enum " + enumClass);
@@ -291,5 +294,17 @@ public class PacketBufferBC extends FriendlyByteBuf {
             array[i] = readByte();
         }
         return new String(array, Charsets.UTF_8);
+    }
+
+    /** Writes a stack as NBT (this buffer has no registry access of its own; {@link NbtStacks} supplies it). */
+    public PacketBufferBC writeItemStack(ItemStack stack) {
+        writeNbt(stack.isEmpty() ? new CompoundTag() : NbtStacks.writeItemStack(stack));
+        return this;
+    }
+
+    /** Reads a stack written by {@link #writeItemStack(ItemStack)}. */
+    public ItemStack readItemStack() {
+        CompoundTag nbt = (CompoundTag) readNbt();
+        return nbt == null || nbt.isEmpty() ? ItemStack.EMPTY : NbtStacks.readItemStack(nbt);
     }
 }

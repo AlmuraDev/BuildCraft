@@ -10,21 +10,22 @@ import java.util.List;
 import java.util.Locale;
 
 import net.minecraft.block.material.Material;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.properties.PropertyBool;
-import net.minecraft.block.properties.PropertyEnum;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.IStringSerializable;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import buildcraft.api.core.BCRenderLayer;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.core.Direction;
+import net.minecraft.util.StringRepresentable;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.transport.pipe.ICustomPipeConnection;
 
@@ -37,7 +38,7 @@ import buildcraft.factory.tile.TileHeatExchange;
 
 public class BlockHeatExchange extends BlockBCTile_Neptune implements ICustomPipeConnection, IBlockWithFacing {
 
-    public enum EnumExchangePart implements IStringSerializable {
+    public enum EnumExchangePart implements StringRepresentable {
         START,
         MIDDLE,
         END;
@@ -45,22 +46,26 @@ public class BlockHeatExchange extends BlockBCTile_Neptune implements ICustomPip
         private final String lowerCaseName = name().toLowerCase(Locale.ROOT);
 
         @Override
+        public String getSerializedName() {
+            return getName();
+        }
+
         public String getName() {
             return lowerCaseName;
         }
     }
 
-    public static final IProperty<EnumExchangePart> PROP_PART = PropertyEnum.create("part", EnumExchangePart.class);
-    public static final IProperty<Boolean> PROP_CONNECTED_Y = PropertyBool.create("connected_y");
-    public static final IProperty<Boolean> PROP_CONNECTED_LEFT = PropertyBool.create("connected_left");
-    public static final IProperty<Boolean> PROP_CONNECTED_RIGHT = PropertyBool.create("connected_right");
+    public static final Property<EnumExchangePart> PROP_PART = EnumProperty.create("part", EnumExchangePart.class);
+    public static final Property<Boolean> PROP_CONNECTED_Y = BooleanProperty.create("connected_y");
+    public static final Property<Boolean> PROP_CONNECTED_LEFT = BooleanProperty.create("connected_left");
+    public static final Property<Boolean> PROP_CONNECTED_RIGHT = BooleanProperty.create("connected_right");
 
     public BlockHeatExchange(Material material, String id) {
         super(material, id);
     }
 
     @Override
-    protected void addProperties(List<IProperty<?>> properties) {
+    protected void addProperties(List<Property<?>> properties) {
         super.addProperties(properties);
         properties.add(PROP_PART);
         properties.add(PROP_CONNECTED_Y);
@@ -69,8 +74,8 @@ public class BlockHeatExchange extends BlockBCTile_Neptune implements ICustomPip
     }
 
     @Override
-    public IBlockState getActualState(IBlockState state, IBlockAccess world, BlockPos pos) {
-        TileEntity tile = world.getTileEntity(pos);
+    public BlockState getActualState(BlockState state, BlockGetter world, BlockPos pos) {
+        BlockEntity tile = world.getBlockEntity(pos);
         if (tile instanceof TileHeatExchange) {
             TileHeatExchange exchange = (TileHeatExchange) tile;
             EnumExchangePart part;
@@ -81,23 +86,23 @@ public class BlockHeatExchange extends BlockBCTile_Neptune implements ICustomPip
             } else {
                 part = EnumExchangePart.MIDDLE;
             }
-            EnumFacing thisFacing = state.getValue(PROP_FACING);
-            state = state.withProperty(PROP_PART, part);
-            state = state.withProperty(PROP_CONNECTED_Y, false);
+            Direction thisFacing = state.getValue(PROP_FACING);
+            state = state.setValue(PROP_PART, part);
+            state = state.setValue(PROP_CONNECTED_Y, false);
 
-            boolean connectLeft = doesNeighbourConnect(world, pos, thisFacing, thisFacing.rotateY());
-            state = state.withProperty(PROP_CONNECTED_LEFT, connectLeft);
+            boolean connectLeft = doesNeighbourConnect(world, pos, thisFacing, thisFacing.getClockWise());
+            state = state.setValue(PROP_CONNECTED_LEFT, connectLeft);
 
-            boolean connectRight = doesNeighbourConnect(world, pos, thisFacing, thisFacing.rotateYCCW());
-            state = state.withProperty(PROP_CONNECTED_RIGHT, connectRight);
+            boolean connectRight = doesNeighbourConnect(world, pos, thisFacing, thisFacing.getCounterClockWise());
+            state = state.setValue(PROP_CONNECTED_RIGHT, connectRight);
         }
-        state = state.withProperty(PROP_CONNECTED_Y, false);
+        state = state.setValue(PROP_CONNECTED_Y, false);
         return state;
     }
 
-    private static boolean doesNeighbourConnect(IBlockAccess world, BlockPos pos, EnumFacing thisFacing,
-        EnumFacing dir) {
-        IBlockState neighbour = world.getBlockState(pos.offset(dir));
+    private static boolean doesNeighbourConnect(BlockGetter world, BlockPos pos, Direction thisFacing,
+        Direction dir) {
+        BlockState neighbour = world.getBlockState(pos.offset(dir));
         if (neighbour.getBlock() == BCFactoryBlocks.heatExchange) {
             return neighbour.getValue(PROP_FACING) == thisFacing;
         }
@@ -105,8 +110,8 @@ public class BlockHeatExchange extends BlockBCTile_Neptune implements ICustomPip
     }
 
     @Override
-    public boolean rotateBlock(World world, BlockPos pos, EnumFacing axis) {
-        TileEntity tile = world.getTileEntity(pos);
+    public boolean rotateBlock(Level world, BlockPos pos, Direction axis) {
+        BlockEntity tile = world.getBlockEntity(pos);
         if (tile instanceof TileHeatExchange) {
             TileHeatExchange exchange = (TileHeatExchange) tile;
             return exchange.rotate();
@@ -115,38 +120,38 @@ public class BlockHeatExchange extends BlockBCTile_Neptune implements ICustomPip
     }
 
     @Override
-    public EnumActionResult attemptRotation(World world, BlockPos pos, IBlockState state, EnumFacing sideWrenched) {
-        TileEntity tile = world.getTileEntity(pos);
+    public InteractionResult attemptRotation(Level world, BlockPos pos, BlockState state, Direction sideWrenched) {
+        BlockEntity tile = world.getBlockEntity(pos);
         if (tile instanceof TileHeatExchange) {
             TileHeatExchange exchange = (TileHeatExchange) tile;
-            return exchange.rotate() ? EnumActionResult.PASS : EnumActionResult.FAIL;
+            return exchange.rotate() ? InteractionResult.PASS : InteractionResult.FAIL;
         }
-        return EnumActionResult.FAIL;
+        return InteractionResult.FAIL;
     }
 
     @Override
-    public TileBC_Neptune createTileEntity(World world, IBlockState state) {
+    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
         return new TileHeatExchange();
     }
 
     @Override
-    public boolean isOpaqueCube(IBlockState state) {
+    public boolean isOpaqueCube(BlockState state) {
         return false;
     }
 
     @Override
-    public boolean isFullCube(IBlockState state) {
+    public boolean isFullCube(BlockState state) {
         return false;
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
-    public BlockRenderLayer getBlockLayer() {
-        return BlockRenderLayer.CUTOUT;
+    @OnlyIn(Dist.CLIENT)
+    public BCRenderLayer getBlockLayer() {
+        return BCRenderLayer.CUTOUT;
     }
 
     @Override
-    public float getExtension(World world, BlockPos pos, EnumFacing face, IBlockState state) {
+    public float getExtension(Level world, BlockPos pos, Direction face, BlockState state) {
         return 0;
     }
 }

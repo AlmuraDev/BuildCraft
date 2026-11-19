@@ -7,11 +7,16 @@ package buildcraft.core.marker;
 import java.util.List;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
 import buildcraft.lib.marker.MarkerSavedData;
+import buildcraft.lib.misc.data.NbtSavedData;
 
 public class PathSavedData extends MarkerSavedData<PathSubCache, PathConnection> {
     public static final String NAME = "buildcraft_marker_path";
+    public static final SavedDataType<PathSavedData> TYPE =
+        NbtSavedData.type(Identifier.fromNamespaceAndPath("buildcraftcore", "marker_path"), PathSavedData::new);
 
     public PathSavedData(String name) {
         super(name);

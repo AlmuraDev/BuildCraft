@@ -6,6 +6,7 @@
 
 package buildcraft.lib.misc;
 
+import buildcraft.lib.misc.NBTUtilBC;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
@@ -58,14 +59,10 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentTranslation;
 
-import net.minecraftforge.common.util.Constants;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 import buildcraft.api.core.BCLog;
 
@@ -78,7 +75,7 @@ public class JsonUtil {
     public static final JsonDeserializer<FluidStack> FLUID_STACK_DESERIALIZER = (json, type, ctx) -> {
         if (json.isJsonPrimitive() && json.getAsJsonPrimitive().isString()) {
             String name = json.getAsString();
-            Fluid fluid = FluidRegistry.getFluid(name);
+            Fluid fluid = FluidUtilBC.getFluidByName(name);
             if (fluid == null) {
                 throw failAndListFluids(name);
             } else {
@@ -86,14 +83,14 @@ public class JsonUtil {
             }
         } else if (json.isJsonObject()) {
             JsonObject obj = json.getAsJsonObject();
-            String id = GsonHelper.getString(obj, "id");
-            Fluid fluid = FluidRegistry.getFluid(id);
+            String id = GsonHelper.getAsString(obj, "id");
+            Fluid fluid = FluidUtilBC.getFluidByName(id);
             if (fluid == null) {
                 throw failAndListFluids(id);
             }
             int amount = 1;
             if (obj.has("amount")) {
-                amount = GsonHelper.getInt(obj, "amount");
+                amount = GsonHelper.getAsInt(obj, "amount");
             }
             // TODO: NBT
             return new FluidStack(fluid, amount);
@@ -103,7 +100,8 @@ public class JsonUtil {
     };
 
     private static JsonSyntaxException failAndListFluids(String name) {
-        Set<String> knownFluids = FluidRegistry.getRegisteredFluids().keySet();
+        Set<String> knownFluids = BuiltInRegistries.FLUID.keySet().stream().map(Object::toString)
+            .collect(java.util.stream.Collectors.toSet());
         String msg = "Unknown fluid '" + name + "'.";
         msg += "\nKnown types:";
         for (String known : new TreeSet<>(knownFluids)) {
@@ -116,32 +114,29 @@ public class JsonUtil {
         if (json.isJsonPrimitive() && json.getAsJsonPrimitive().isString()) {
             String name = json.getAsString();
             Identifier id = Identifier.parse(name);
-            if (!ForgeRegistries.ITEMS.containsKey(id)) {
+            if (!BuiltInRegistries.ITEM.containsKey(id)) {
                 throw new JsonSyntaxException("Unknown item '" + name + "'");
             } else {
-                return new ItemStack(ForgeRegistries.ITEMS.getValue(id));
+                return new ItemStack(BuiltInRegistries.ITEM.getValue(id));
             }
         } else if (json.isJsonObject()) {
             JsonObject obj = json.getAsJsonObject();
-            String id = GsonHelper.getString(obj, "id");
+            String id = GsonHelper.getAsString(obj, "id");
             Identifier loc = Identifier.parse(id);
-            if (!ForgeRegistries.ITEMS.containsKey(loc)) {
+            if (!BuiltInRegistries.ITEM.containsKey(loc)) {
                 throw new JsonSyntaxException("Unknown item '" + id + "'");
             }
-            Item item = ForgeRegistries.ITEMS.getValue(loc);
+            Item item = BuiltInRegistries.ITEM.getValue(loc);
             int count = 1;
             if (obj.has("count")) {
                 count = JsonUtil.getInt(obj, "count");
             }
-            int meta = 0;
-            if (obj.has("data")) {
-                meta = JsonUtil.getInt(obj, "data");
-            } else if (obj.has("meta")) {
-                BCLog.logger.warn("[lib.recipe] Found deprecated item 'meta' tag inside of " + json);
-                meta = JsonUtil.getInt(obj, "meta");
+            if (obj.has("data") || obj.has("meta")) {
+                // Items have no damage-based variants since the flattening: the item id alone says what it is
+                BCLog.logger.warn("[lib.recipe] Ignoring the 1.12.2 item data/meta tag inside of " + json);
             }
             // TODO: NBT!
-            return new ItemStack(item, count, meta);
+            return new ItemStack(item, count);
         } else {
             throw new JsonSyntaxException("Expected either a string or an object, got " + json);
         }
@@ -245,16 +240,16 @@ public class JsonUtil {
      * for a {@link TextComponentTranslation}, or the prefix plus "_raw" for a raw {@link TextComponentString}. */
     public static Component getTextComponent(JsonObject json, String subPrefix, String localePrefix) {
         if (json.has(subPrefix)) {
-            String str = GsonHelper.getString(json, subPrefix);
+            String str = GsonHelper.getAsString(json, subPrefix);
             Object[] args;
             if (json.has(subPrefix + "_args")) {
                 args = getSubAsStringArray(json, subPrefix + "_args");
             } else {
                 args = new String[0];
             }
-            return new TextComponentTranslation(localePrefix + str, args);
+            return Component.translatable(localePrefix + str, args);
         } else if (json.has(subPrefix + "_raw")) {
-            return new TextComponentString(GsonHelper.getString(json, subPrefix + "_raw"));
+            return Component.literal(GsonHelper.getAsString(json, subPrefix + "_raw"));
         } else {
             throw new JsonSyntaxException(
                 "Expected to find either '" + subPrefix + "' or '" + subPrefix + "_raw', but got neither for " + json);
@@ -273,7 +268,7 @@ public class JsonUtil {
         if (!obj.has(sub)) {
             return _default;
         }
-        String str = GsonHelper.getString(obj, sub).toLowerCase(Locale.ROOT);
+        String str = GsonHelper.getAsString(obj, sub).toLowerCase(Locale.ROOT);
         int index = str.indexOf(':');
         if (index < 0) {
             throw new JsonSyntaxException("Expected 'domain:path', but didn't find a colon!");
@@ -509,38 +504,38 @@ public class JsonUtil {
                 } : null;
             }
         }).registerTypeAdapter(ByteTag.class,
-            (JsonSerializer<ByteTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.getByte()))
+            (JsonSerializer<ByteTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.byteValue()))
             .registerTypeAdapter(ByteTag.class,
                 (JsonDeserializer<
                     ByteTag>) (json, typeOfT, context) -> new ByteTag(json.getAsJsonPrimitive().getAsByte()))
             .registerTypeAdapter(ShortTag.class,
-                (JsonSerializer<ShortTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.getShort()))
+                (JsonSerializer<ShortTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.shortValue()))
             .registerTypeAdapter(ShortTag.class,
                 (JsonDeserializer<
                     ShortTag>) (json, typeOfT, context) -> new ShortTag(json.getAsJsonPrimitive().getAsShort()))
             .registerTypeAdapter(IntTag.class,
-                (JsonSerializer<IntTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.getInt()))
+                (JsonSerializer<IntTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.intValue()))
             .registerTypeAdapter(IntTag.class,
                 (JsonDeserializer<
                     IntTag>) (json, typeOfT, context) -> new IntTag(json.getAsJsonPrimitive().getAsInt()))
             .registerTypeAdapter(LongTag.class,
-                (JsonSerializer<LongTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.getLong()))
+                (JsonSerializer<LongTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.longValue()))
             .registerTypeAdapter(LongTag.class,
                 (JsonDeserializer<
                     LongTag>) (json, typeOfT, context) -> new LongTag(json.getAsJsonPrimitive().getAsLong()))
             .registerTypeAdapter(FloatTag.class,
-                (JsonSerializer<FloatTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.getFloat()))
+                (JsonSerializer<FloatTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.floatValue()))
             .registerTypeAdapter(FloatTag.class,
                 (JsonDeserializer<
                     FloatTag>) (json, typeOfT, context) -> new FloatTag(json.getAsJsonPrimitive().getAsFloat()))
             .registerTypeAdapter(DoubleTag.class,
-                (JsonSerializer<DoubleTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.getDouble()))
+                (JsonSerializer<DoubleTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.doubleValue()))
             .registerTypeAdapter(DoubleTag.class,
                 (JsonDeserializer<DoubleTag>) (json, typeOfT,
                     context) -> new DoubleTag(json.getAsJsonPrimitive().getAsDouble()))
             .registerTypeAdapter(ByteArrayTag.class, (JsonSerializer<ByteArrayTag>) (src, typeOfSrc, context) -> {
                 JsonArray jsonArray = new JsonArray();
-                for (byte element : src.getByteArray()) {
+                for (byte element : src.getAsByteArray()) {
                     jsonArray.add(new JsonPrimitive(element));
                 }
                 return jsonArray;
@@ -550,7 +545,7 @@ public class JsonUtil {
                     ArrayUtils.toPrimitive(StreamSupport.stream(json.getAsJsonArray().spliterator(), false)
                         .map(JsonElement::getAsByte).toArray(Byte[]::new))))
             .registerTypeAdapter(StringTag.class,
-                (JsonSerializer<StringTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.getString()))
+                (JsonSerializer<StringTag>) (src, typeOfSrc, context) -> new JsonPrimitive(src.value()))
             .registerTypeAdapter(StringTag.class,
                 (JsonDeserializer<StringTag>) (json, typeOfT,
                     context) -> new StringTag(json.getAsJsonPrimitive().getAsString()))
@@ -565,7 +560,7 @@ public class JsonUtil {
                 ListTag nbtTagList = new ListTag();
                 StreamSupport.stream(json.getAsJsonArray().spliterator(), false)
                     .map(element -> context.<Tag> deserialize(element, Tag.class))
-                    .forEach(nbtTagList::appendTag);
+                    .forEach(nbtTagList::add);
                 return nbtTagList;
             }).registerTypeAdapter(CompoundTag.class, (JsonSerializer<CompoundTag>) (src, typeOfSrc, context) -> {
                 JsonObject jsonObject = new JsonObject();
@@ -582,7 +577,7 @@ public class JsonUtil {
                 return nbtTagCompound;
             }).registerTypeAdapter(IntArrayTag.class, (JsonSerializer<IntArrayTag>) (src, typeOfSrc, context) -> {
                 JsonArray jsonArray = new JsonArray();
-                for (int element : src.getIntArray()) {
+                for (int element : src.getAsIntArray()) {
                     jsonArray.add(new JsonPrimitive(element));
                 }
                 return jsonArray;

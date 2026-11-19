@@ -13,12 +13,12 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 
 import net.minecraftforge.client.model.ModelLoader;
 
@@ -26,7 +26,7 @@ import buildcraft.core.marker.volume.IFastAddonRenderer;
 
 public class AddonRendererFillerPlanner implements IFastAddonRenderer<AddonFillerPlanner> {
     @Override
-    public void renderAddonFast(AddonFillerPlanner addon, EntityPlayer player, float partialTicks, BufferBuilder vb) {
+    public void renderAddonFast(AddonFillerPlanner addon, Player player, float partialTicks, BufferBuilder vb) {
         if (addon.buildingInfo == null) {
             return;
         }
@@ -34,7 +34,7 @@ public class AddonRendererFillerPlanner implements IFastAddonRenderer<AddonFille
 
         Minecraft.getMinecraft().mcProfiler.startSection("iter");
         List<BlockPos> list = StreamSupport.stream(
-            BlockPos.getAllInBoxMutable(addon.buildingInfo.box.min(), addon.buildingInfo.box.max()).spliterator(),
+            BlockPos.betweenClosed(addon.buildingInfo.box.min(), addon.buildingInfo.box.max()).spliterator(),
             false
         )
             .filter(blockPos ->
@@ -44,18 +44,18 @@ public class AddonRendererFillerPlanner implements IFastAddonRenderer<AddonFille
                     )
                 )
             )
-            .filter(player.world::isAirBlock)
+            .filter(player.level()::isAirBlock)
             .map(BlockPos.MutableBlockPos::toImmutable)
             .collect(Collectors.toCollection(ArrayList::new));
         Minecraft.getMinecraft().mcProfiler.endSection();
 
         Minecraft.getMinecraft().mcProfiler.startSection("sort");
-        list.sort(Comparator.<BlockPos>comparingDouble(p -> player.getPositionVector().squareDistanceTo(new Vec3d(p))).reversed());
+        list.sort(Comparator.<BlockPos>comparingDouble(p -> player.getPositionVector().distanceToSqr(new Vec3(p))).reversed());
         Minecraft.getMinecraft().mcProfiler.endSection();
 
         Minecraft.getMinecraft().mcProfiler.startSection("render");
         for (BlockPos p : list) {
-            AxisAlignedBB bb = new AxisAlignedBB(p, p.add(1, 1, 1)).grow(-0.1);
+            AABB bb = new AABB(p, p.add(1, 1, 1)).grow(-0.1);
             TextureAtlasSprite s = ModelLoader.White.INSTANCE;
 
             vb.pos(bb.minX, bb.maxY, bb.minZ).color(204, 204, 204, 127).tex(s.getMinU(), s.getMinV()).lightmap(240, 0).endVertex();

@@ -87,8 +87,8 @@ public class VolumeUtil {
                     axisJ = Axis.Y;
                     break;
             }
-            Direction faceI = Direction.getFacingFromAxis(AxisDirection.POSITIVE, axisI);
-            Direction faceJ = Direction.getFacingFromAxis(AxisDirection.POSITIVE, axisJ);
+            Direction faceI = Direction.fromAxisAndDirection(axisI, AxisDirection.POSITIVE);
+            Direction faceJ = Direction.fromAxisAndDirection(axisJ, AxisDirection.POSITIVE);
 
             BlockPos coneCenter = start;
             for (int d = 0; d < distance; d++) {
@@ -102,7 +102,7 @@ public class VolumeUtil {
                                 continue;
                             }
                         }
-                        BlockPos posAt = coneCenter.offset(faceI, i).offset(faceJ, j);
+                        BlockPos posAt = coneCenter.relative(faceI, i).relative(faceJ, j);
                         list.add(new VisiblePos(posAt, start));
                     }
                 }

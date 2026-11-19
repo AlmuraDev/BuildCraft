@@ -6,10 +6,12 @@
 
 package buildcraft.lib.client.render;
 
+import buildcraft.lib.misc.NBTUtilBC;
+import net.minecraft.core.registries.BuiltInRegistries;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import javax.vecmath.Vector3f;
+import org.joml.Vector3f;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -38,7 +40,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.ReportedException;
 import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -137,9 +138,9 @@ public class ItemRenderUtil {
             CrashReportCategory category = report.addCategory("Item being rendered");
             category.setDetail("Stack Count", stackCount);
             category.addDetail("Item Class", () -> "" + stack.getItem().getClass());
-            category.addDetail("Item ID", () -> "" + ForgeRegistries.ITEMS.getKey(stack.getItem()));
+            category.addDetail("Item ID", () -> "" + BuiltInRegistries.ITEM.getKey(stack.getItem()));
             category.addDetail("Item Meta", () -> "" + stack.getDamageValue());
-            category.addDetail("Item NBT", () -> "" + stack.getTagCompound());
+            category.addDetail("Item NBT", () -> "" + NBTUtilBC.getItemData(stack));
             throw new ReportedException(report);
         }
     }
@@ -222,7 +223,7 @@ public class ItemRenderUtil {
         if (stack.isEmpty()) {
             seed = 137;
         } else {
-            Identifier regName = stack.getItem().getRegistryName();
+            Identifier regName = BuiltInRegistries.ITEM.getKey(stack.getItem());
             if (regName == null) {
                 seed = 127;
             } else {

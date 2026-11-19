@@ -12,8 +12,6 @@ import io.netty.buffer.ByteBuf;
 
 import net.minecraft.world.entity.player.Player;
 
-import buildcraft.lib.net.IMessage;
-import buildcraft.lib.net.IMessageHandler;
 import net.neoforged.fml.LogicalSide;
 
 import buildcraft.lib.BCLibProxy;
@@ -22,7 +20,7 @@ import buildcraft.lib.misc.MessageUtil;
 
 public class MessageContainer implements IMessage {
 
-    private int windowId;
+    private int containerId;
     private int msgId;
     private PacketBufferBC payload;
 
@@ -42,7 +40,7 @@ public class MessageContainer implements IMessage {
 
     @Override
     public void fromBytes(ByteBuf buf) {
-        windowId = buf.readInt();
+        containerId = buf.readInt();
         msgId = buf.readUnsignedShort();
         int payloadSize = buf.readUnsignedShort();
         ByteBuf read = buf.readBytes(payloadSize);
@@ -51,7 +49,7 @@ public class MessageContainer implements IMessage {
 
     @Override
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(windowId);
+        buf.writeInt(containerId);
         buf.writeShort(msgId);
         int length = payload.readableBytes();
         buf.writeShort(length);
@@ -65,11 +63,12 @@ public class MessageContainer implements IMessage {
             if (player != null && player.containerMenu instanceof ContainerBC_Neptune
                 && player.containerMenu.containerId == id) {
                 ContainerBC_Neptune container = (ContainerBC_Neptune) player.containerMenu;
-                container.readMessage(message.msgId, message.payload, ctx.side, ctx);
+                LogicalSide side = ctx.flow().getReceptionSide();
+                container.readMessage(message.msgId, message.payload, side, ctx);
 
                 // error checking
                 String extra = container.getClass() + ", id = " + container.getIdAllocator().getNameFor(message.msgId);
-                MessageUtil.ensureEmpty(message.payload, ctx.side == LogicalSide.CLIENT, extra);
+                MessageUtil.ensureEmpty(message.payload, side == LogicalSide.CLIENT, extra);
             }
             return null;
         } catch (IOException e) {

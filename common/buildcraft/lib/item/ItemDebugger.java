@@ -6,6 +6,9 @@
 
 package buildcraft.lib.item;
 
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.InteractionResult;
@@ -18,12 +21,20 @@ import buildcraft.lib.debug.BCAdvDebugging;
 import buildcraft.lib.debug.IAdvDebugTarget;
 
 public class ItemDebugger extends ItemBC_Neptune {
-    public ItemDebugger(String id) {
-        super(id);
+    public ItemDebugger(Item.Properties properties, String id) {
+        super(properties, id);
     }
 
     @Override
-    public InteractionResult onItemUseFirst(Player player, Level world, BlockPos pos, Direction side, float hitX, float hitY, float hitZ, InteractionHand hand) {
+    public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
+        Player player = context.getPlayer();
+        Level world = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        InteractionHand hand = context.getHand();
+        Direction side = context.getClickedFace();
+        float hitX = (float) (context.getClickLocation().x - pos.getX());
+        float hitY = (float) (context.getClickLocation().y - pos.getY());
+        float hitZ = (float) (context.getClickLocation().z - pos.getZ());
         if (world.isClientSide()) {
             return InteractionResult.PASS;
         }

@@ -1,11 +1,10 @@
 package buildcraft.api.enums;
 
 import java.util.Locale;
-import java.util.function.Supplier;
 
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.util.StringRepresentable;
 
 import buildcraft.api.properties.BuildCraftProperties;
@@ -19,7 +18,9 @@ public enum EnumSpring implements StringRepresentable {
     public final int tickRate, chance;
     public BlockState liquidBlock;
     public boolean canGen = true;
-    public Supplier<BlockEntity> tileConstructor;
+    /** The tile type springs of this type create, or null for none. Set by the module that adds the tile (energy, for
+     * oil springs). */
+    public BlockEntityType<?> tileType;
 
     private final String lowerCaseName = name().toLowerCase(Locale.ROOT);
 

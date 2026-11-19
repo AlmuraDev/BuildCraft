@@ -4,6 +4,7 @@
 
 package buildcraft.lib.client.guide.parts.recipe;
 
+import buildcraft.api.core.NbtStacks;
 import java.util.List;
 
 import javax.annotation.Nonnull;
@@ -16,7 +17,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.core.NonNullList;
 
 import net.minecraftforge.common.crafting.IShapedRecipe;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraftforge.oredict.OreDictionary;
 
 import buildcraft.api.core.BCLog;
@@ -39,7 +40,7 @@ public class GuideCraftingFactory implements GuidePartFactory {
         for (Ingredient ingredient : this.input) {
             ListTag list = new ListTag();
             for (ItemStack stack : ingredient.getMatchingStacks()) {
-                list.add(stack.serializeNBT());
+                list.add(NbtStacks.writeItemStack(stack));
             }
             hashNbt.add(list);
         }
@@ -119,7 +120,7 @@ public class GuideCraftingFactory implements GuidePartFactory {
                     }
                     ItemStack stack = (ItemStack) obj;
                     // The lower the ID of an item, the closer it is to minecraft. Hmmm.
-                    if (Item.getIdFromItem(stack.getItem()) < Item.getIdFromItem(best.getItem())) {
+                    if (Item.getId(stack.getItem()) < Item.getId(best.getItem())) {
                         best = stack;
                     }
                 }
@@ -158,7 +159,7 @@ public class GuideCraftingFactory implements GuidePartFactory {
         for (Ingredient ingredient : this.input) {
             ListTag list = new ListTag();
             for (ItemStack stack : ingredient.getMatchingStacks()) {
-                list.add(stack.serializeNBT());
+                list.add(NbtStacks.writeItemStack(stack));
             }
             nbtThis.add(list);
         }
@@ -166,7 +167,7 @@ public class GuideCraftingFactory implements GuidePartFactory {
         for (Ingredient ingredient : other.input) {
             ListTag list = new ListTag();
             for (ItemStack stack : ingredient.getMatchingStacks()) {
-                list.add(stack.serializeNBT());
+                list.add(NbtStacks.writeItemStack(stack));
             }
             nbtThat.add(list);
         }

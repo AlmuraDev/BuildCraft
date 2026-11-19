@@ -8,15 +8,15 @@ package buildcraft.factory.tile;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.init.Items;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IWorldEventListener;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.BlockPos;
+import buildcraft.lib.world.WorldEventListeners;
+import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
 
-import net.minecraftforge.fluids.Fluid;
+import net.minecraft.world.level.material.Fluid;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.core.SafeTimeTracker;
@@ -35,12 +35,12 @@ import buildcraft.factory.BCFactoryBlocks;
 public class TileMiningWell extends TileMiner {
     private boolean shouldCheck = true;
     private final SafeTimeTracker tracker = new SafeTimeTracker(256);
-    private final IWorldEventListener worldEventListener = new WorldEventListenerAdapter() {
+    private final WorldEventListenerAdapter worldEventListener = new WorldEventListenerAdapter() {
         @Override
-        public void notifyBlockUpdate(@Nonnull World world,
+        public void notifyBlockUpdate(@Nonnull Level world,
                                       @Nonnull BlockPos pos,
-                                      @Nonnull IBlockState oldState,
-                                      @Nonnull IBlockState newState,
+                                      @Nonnull BlockState oldState,
+                                      @Nonnull BlockState newState,
                                       int flags) {
             if (pos.getX() == TileMiningWell.this.pos.getX() &&
                 pos.getY() <= TileMiningWell.this.pos.getY() &&
@@ -65,7 +65,7 @@ public class TileMiningWell extends TileMiner {
                 progress = 0;
                 world.sendBlockBreakProgress(currentPos.hashCode(), currentPos, -1);
                 BlockUtil.breakBlockAndGetDrops(
-                    (WorldServer) world,
+                    (ServerLevel) world,
                     currentPos,
                     new ItemStack(Items.DIAMOND_PICKAXE),
                     getOwner()
@@ -74,7 +74,7 @@ public class TileMiningWell extends TileMiner {
                 );
                 nextPos();
             } else {
-                if (!world.isAirBlock(currentPos)) {
+                if (!world.isEmptyBlock(currentPos)) {
                     world.sendBlockBreakProgress(currentPos.hashCode(), currentPos, (int) ((progress * 9) / target));
                 }
             }
@@ -87,7 +87,7 @@ public class TileMiningWell extends TileMiner {
     }
 
     private boolean canBreak() {
-        if (world.isAirBlock(currentPos) || BlockUtil.isUnbreakableBlock(world, currentPos, getOwner())) {
+        if (world.isEmptyBlock(currentPos) || BlockUtil.isUnbreakableBlock(world, currentPos, getOwner())) {
             return false;
         }
 
@@ -108,7 +108,7 @@ public class TileMiningWell extends TileMiner {
             if (canBreak()) {
                 updateLength();
                 return;
-            } else if (!world.isAirBlock(currentPos) && world.getBlockState(currentPos).getBlock() != BCFactoryBlocks.tube) {
+            } else if (!world.isEmptyBlock(currentPos) && world.getBlockState(currentPos).getBlock() != BCFactoryBlocks.tube) {
                 break;
             }
         }
@@ -119,16 +119,16 @@ public class TileMiningWell extends TileMiner {
     @Override
     public void validate() {
         super.validate();
-        if (!world.isRemote) {
-            world.addEventListener(worldEventListener);
+        if (!world.isClientSide()) {
+            WorldEventListeners.add(world, worldEventListener);
         }
     }
 
     @Override
     public void invalidate() {
         super.invalidate();
-        if (!world.isRemote) {
-            world.removeEventListener(worldEventListener);
+        if (!world.isClientSide()) {
+            WorldEventListeners.remove(world, worldEventListener);
             if (currentPos != null) {
                 world.sendBlockBreakProgress(currentPos.hashCode(), currentPos, -1);
             }

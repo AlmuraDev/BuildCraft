@@ -19,16 +19,15 @@ import com.google.common.base.Predicates;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.storage.MapStorage;
-import net.minecraft.world.storage.WorldSavedData;
+import net.minecraft.world.level.saveddata.SavedData;
 
-import net.minecraftforge.common.util.Constants;
 
 import buildcraft.api.transport.EnumWirePart;
 import buildcraft.api.transport.IWireEmitter;
@@ -37,14 +36,14 @@ import buildcraft.api.transport.pluggable.PipePluggable;
 
 import buildcraft.lib.net.MessageManager;
 
-public class WorldSavedDataWireSystems extends WorldSavedData {
+public class WorldSavedDataWireSystems extends SavedData {
     public static final String DATA_NAME = "buildcraft_wire_systems";
-    public World world;
+    public Level world;
     public final Map<WireSystem, Boolean> wireSystems = new HashMap<>();
     public boolean gatesChanged = true;
     public boolean structureChanged = true;
     public final List<WireSystem> changedSystems = new ArrayList<>();
-    public final List<EntityPlayerMP> changedPlayers = new ArrayList<>();
+    public final List<ServerPlayer> changedPlayers = new ArrayList<>();
     public final Map<WireSystem.WireElement, IWireEmitter> emittersCache = new HashMap<>();
 
     private final Map<WireSystem.WireElement, List<WireSystem>> elementsToWireSystemsIndex = new HashMap<>();
@@ -114,11 +113,11 @@ public class WorldSavedDataWireSystems extends WorldSavedData {
     public IWireEmitter getEmitter(WireSystem.WireElement element) {
         if (element.type == WireSystem.WireElement.Type.EMITTER_SIDE) {
             if (!emittersCache.containsKey(element)) {
-                if (!world.isBlockLoaded(element.blockPos)) {
+                if (!world.isLoaded(element.blockPos)) {
                     // Almura: don't load the chunk to find it (it used to, logging "Ghost loading ..."); see isEmitterEmitting
                     return null;
                 }
-                TileEntity tile = world.getTileEntity(element.blockPos);
+                BlockEntity tile = world.getBlockEntity(element.blockPos);
                 if (tile instanceof IPipeHolder) {
                     IPipeHolder holder = (IPipeHolder) tile;
                     PipePluggable plug = holder.getPluggable(element.emitterSide);
@@ -135,15 +134,15 @@ public class WorldSavedDataWireSystems extends WorldSavedData {
         return null;
     }
 
-    public boolean isEmitterEmitting(WireSystem.WireElement element, EnumDyeColor color) {
-        if (!world.isBlockLoaded(element.blockPos)) {
+    public boolean isEmitterEmitting(WireSystem.WireElement element, DyeColor color) {
+        if (!world.isLoaded(element.blockPos)) {
             // Almura: don't load the emitter's chunk just to ask (it used to, logging "Ghost loading ..."). A gate in an unloaded chunk
             // can't change what it emits, so its last known state holds; one never seen counts as off until its chunk loads and the gate
             // ticks, which marks the gates changed if it emits anything.
             IWireEmitter cached = emittersCache.get(element);
             return cached != null && cached.isEmitting(color);
         }
-        TileEntity tile = world.getTileEntity(element.blockPos);
+        BlockEntity tile = world.getBlockEntity(element.blockPos);
         if(tile instanceof IPipeHolder) {
             IPipeHolder holder = (IPipeHolder) tile;
             if (holder.getPluggable(element.emitterSide) instanceof IWireEmitter) {
@@ -166,7 +165,7 @@ public class WorldSavedDataWireSystems extends WorldSavedData {
             // loading) every emitter's chunk. Gates set it again whenever what they emit changes.
             gatesChanged = false;
         }
-        world.getPlayers(EntityPlayerMP.class, Predicates.alwaysTrue()).forEach(player -> {
+        world.getPlayers(ServerPlayer.class, Predicates.alwaysTrue()).forEach(player -> {
             Map<Integer, WireSystem> changedWires = this.wireSystems.keySet().stream()
                     .filter(wireSystem -> wireSystem.isPlayerWatching(player) && (structureChanged || changedPlayers.contains(player)))
                     .collect(Collectors.toMap(ws -> ws.networkId, Function.identity()));
@@ -193,32 +192,32 @@ public class WorldSavedDataWireSystems extends WorldSavedData {
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
-        NBTTagList entriesList = new NBTTagList();
+    public CompoundTag writeToNBT(CompoundTag nbt) {
+        ListTag entriesList = new ListTag();
         wireSystems.forEach((wireSystem, powered) -> {
-            NBTTagCompound entry = new NBTTagCompound();
-            entry.setTag("wireSystem", wireSystem.writeToNBT());
-            entry.setBoolean("powered", powered);
-            entriesList.appendTag(entry);
+            CompoundTag entry = new CompoundTag();
+            entry.put("wireSystem", wireSystem.writeToNBT());
+            entry.putBoolean("powered", powered);
+            entriesList.add(entry);
         });
-        nbt.setTag("entries", entriesList);
+        nbt.put("entries", entriesList);
         return nbt;
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         wireSystems.clear();
         this.elementsToWireSystemsIndex.clear();
 
-        NBTTagList entriesList = nbt.getTagList("entries", Constants.NBT.TAG_COMPOUND);
-        for(int i = 0; i < entriesList.tagCount(); i++) {
-            NBTTagCompound entry = entriesList.getCompoundTagAt(i);
-            this.addWireSystem(new WireSystem(entry.getCompoundTag("wireSystem")), entry.getBoolean("powered"));
+        ListTag entriesList = nbt.getListOrEmpty("entries");
+        for(int i = 0; i < entriesList.size(); i++) {
+            CompoundTag entry = entriesList.getCompoundOrEmpty(i);
+            this.addWireSystem(new WireSystem(entry.getCompoundOrEmpty("wireSystem")), entry.getBooleanOr("powered", false));
         }
     }
 
-    public static WorldSavedDataWireSystems get(World world) {
-        if(world.isRemote) {
+    public static WorldSavedDataWireSystems get(Level world) {
+        if(world.isClientSide()) {
             throw new UnsupportedOperationException("Attempted to get WorldSavedDataWireSystems on the client!");
         }
         MapStorage storage = world.getPerWorldStorage();

@@ -11,16 +11,17 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTUtil;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ITickable;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.core.Direction;
+import buildcraft.lib.tile.ITickable;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
 
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.mj.IMjReceiver;
@@ -71,7 +72,7 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
 
     @Override
     public void update() {
-        if (world.isRemote) {
+        if (world.isClientSide()) {
             lastLength = currentLength;
             if (Math.abs(wantedLength - currentLength) <= 0.01) {
                 currentLength = wantedLength;
@@ -83,7 +84,7 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
 
         battery.tick(getWorld(), getPos());
 
-        if (world.getTotalWorldTime() % 10 == offset) {
+        if (world.getGameTime() % 10 == offset) {
             sendNetworkUpdate(NET_LED_STATUS);
         }
 
@@ -102,7 +103,7 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
         for (int y = pos.getY() - 1; y > pos.getY() - BCCoreConfig.miningMaxDepth; y--) {
             BlockPos blockPos = new BlockPos(pos.getX(), y, pos.getZ());
             if (world.getBlockState(blockPos).getBlock() == BCFactoryBlocks.tube) {
-                world.setBlockToAir(blockPos);
+                world.removeBlock(blockPos, false);
             } else {
                 break;
             }
@@ -116,14 +117,14 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
             for (int y = pos.getY() - 1; y > pos.getY() - BCCoreConfig.miningMaxDepth; y--) {
                 BlockPos blockPos = new BlockPos(pos.getX(), y, pos.getZ());
                 if (world.getBlockState(blockPos).getBlock() == BCFactoryBlocks.tube) {
-                    world.setBlockToAir(blockPos);
+                    world.removeBlock(blockPos, false);
                 } else {
                     break;
                 }
             }
             for (int y = pos.getY() - 1; y > newY; y--) {
                 BlockPos blockPos = new BlockPos(pos.getX(), y, pos.getZ());
-                world.setBlockState(blockPos, BCFactoryBlocks.tube.getDefaultState());
+                world.setBlockAndUpdate(blockPos, BCFactoryBlocks.tube.defaultBlockState());
             }
             currentLength = wantedLength = newLength;
             sendNetworkUpdate(NET_WANTED_Y);
@@ -145,53 +146,53 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
     }
 
     public boolean isComplete() {
-        return world.isRemote ? isComplete : currentPos == null;
+        return world.isClientSide() ? isComplete : currentPos == null;
     }
 
     @Override
-    protected void migrateOldNBT(int version, NBTTagCompound nbt) {
+    protected void migrateOldNBT(int version, CompoundTag nbt) {
         super.migrateOldNBT(version, nbt);
         if (version == BCVersion.BEFORE_RECORDS.dataVersion || version == BCVersion.v7_2_0_pre_12.dataVersion) {
-            NBTTagCompound oldBattery = nbt.getCompoundTag("battery");
-            int energy = oldBattery.getInteger("energy");
+            CompoundTag oldBattery = nbt.getCompoundOrEmpty("battery");
+            int energy = oldBattery.getIntOr("energy", 0);
             battery.extractPower(0, Integer.MAX_VALUE);
             battery.addPower(energy * 100, false);
         }
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public CompoundTag writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
         if (currentPos != null) {
-            nbt.setTag("currentPos", NBTUtil.createPosTag(currentPos));
+            nbt.put("currentPos", NbtUtils.createPosTag(currentPos));
         }
-        nbt.setInteger("wantedLength", wantedLength);
-        nbt.setInteger("progress", progress);
-        nbt.setTag("battery", battery.serializeNBT());
+        nbt.putInt("wantedLength", wantedLength);
+        nbt.putInt("progress", progress);
+        nbt.put("battery", battery.serializeNBT());
         return nbt;
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         super.readFromNBT(nbt);
-        if (nbt.hasKey("currentPos")) {
-            currentPos = NBTUtil.getPosFromTag(nbt.getCompoundTag("currentPos"));
+        if (nbt.contains("currentPos")) {
+            currentPos = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("currentPos"));
         }
-        wantedLength = nbt.getInteger("wantedLength");
-        progress = nbt.getInteger("progress");
+        wantedLength = nbt.getIntOr("wantedLength", 0);
+        progress = nbt.getIntOr("progress", 0);
         // TODO: remove in next version
-        if (nbt.hasKey("mj_battery")) {
-            nbt.setTag("battery", nbt.getTag("mj_battery"));
+        if (nbt.contains("mj_battery")) {
+            nbt.put("battery", nbt.get("mj_battery"));
         }
-        battery.deserializeNBT(nbt.getCompoundTag("battery"));
+        battery.deserializeNBT(nbt.getCompoundOrEmpty("battery"));
     }
 
     // Networking
 
     @Override
-    public void writePayload(int id, PacketBufferBC buffer, Side side) {
+    public void writePayload(int id, PacketBufferBC buffer, LogicalSide side) {
         super.writePayload(id, buffer, side);
-        if (side == Side.SERVER) {
+        if (side == LogicalSide.SERVER) {
             if (id == NET_RENDER_DATA) {
                 writePayload(NET_LED_STATUS, buffer, side);
                 buffer.writeInt(wantedLength);
@@ -205,9 +206,9 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
     }
 
     @Override
-    public void readPayload(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+    public void readPayload(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         super.readPayload(id, buffer, side, ctx);
-        if (side == Side.CLIENT) {
+        if (side == LogicalSide.CLIENT) {
             if (id == NET_RENDER_DATA) {
                 readPayload(NET_LED_STATUS, buffer, side, ctx);
                 currentLength = lastLength = wantedLength = buffer.readInt();
@@ -221,7 +222,7 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
     }
 
     @Override
-    public void getDebugInfo(List<String> left, List<String> right, EnumFacing side) {
+    public void getDebugInfo(List<String> left, List<String> right, Direction side) {
         left.add("battery = " + battery.getDebugString());
         left.add("current = " + currentPos);
         left.add("wantedLength = " + wantedLength);
@@ -233,13 +234,13 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
 
     @Nonnull
     @Override
-    @SideOnly(Side.CLIENT)
-    public AxisAlignedBB getRenderBoundingBox() {
+    @OnlyIn(Dist.CLIENT)
+    public AABB getRenderBoundingBox() {
         return INFINITE_EXTENT_AABB;
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public double getMaxRenderDistanceSquared() {
         return Double.MAX_VALUE;
     }
@@ -247,12 +248,12 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
     // Rendering
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public boolean hasFastRenderer() {
         return true;
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public float getPercentFilledForRender() {
         float val = battery.getStored() / (float) battery.getCapacity();
         return val < 0 ? 0 : val > 1 ? 1 : val;

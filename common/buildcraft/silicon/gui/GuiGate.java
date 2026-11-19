@@ -1,6 +1,6 @@
 package buildcraft.silicon.gui;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.lib.expression.FunctionContext;
 import buildcraft.lib.gui.GuiBC8;
@@ -14,7 +14,7 @@ import buildcraft.silicon.gate.GateLogic;
 
 public class GuiGate extends GuiBC8<ContainerGate> {
 
-    public static final ResourceLocation GUI_DEFINITION = new ResourceLocation("buildcraftsilicon:gui/gate.json");
+    public static final Identifier GUI_DEFINITION = Identifier.parse("buildcraftsilicon:gui/gate.json");
 
     public GuiGate(ContainerGate container) {
         super(container, GUI_DEFINITION);

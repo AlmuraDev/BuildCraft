@@ -8,11 +8,10 @@ package buildcraft.lib.misc;
 
 import java.util.Map;
 
-import javax.vecmath.AxisAngle4f;
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Point3d;
-import javax.vecmath.Point3f;
-import javax.vecmath.Vector3f;
+import org.joml.AxisAngle4f;
+import org.joml.Matrix4f;
+import org.joml.Vector3d;
+import org.joml.Vector3f;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -28,36 +27,36 @@ public class MatrixUtil {
         ImmutableMap.Builder<Direction, Matrix4f> builder = ImmutableMap.builder();
         for (Direction face : Direction.values()) {
             Matrix4f mat = new Matrix4f();
-            mat.setIdentity();
+            mat.identity();
 
             if (face == Direction.WEST) {
                 builder.put(face, mat);
                 continue;
             }
-            mat.setTranslation(new Vector3f(0.5f, 0.5f, 0.5f));
+            mat.setTranslation(0.5f, 0.5f, 0.5f);
             Matrix4f m2 = new Matrix4f();
-            m2.setIdentity();
+            m2.identity();
 
             if (face.getAxis() == Axis.Y) {
-                AxisAngle4f axisAngle = new AxisAngle4f(0, 0, 1, (float) Math.PI * 0.5f * -face.getStepY());
-                m2.setRotation(axisAngle);
+                AxisAngle4f axisAngle = new AxisAngle4f((float) Math.PI * 0.5f * -face.getStepY(), 0, 0, 1);
+                m2.set(axisAngle);
                 mat.mul(m2);
 
-                m2.setIdentity();
-                m2.setRotation(new AxisAngle4f(1, 0, 0, (float) Math.PI * (1 + face.getStepY() * 0.5f)));
+                m2.identity();
+                m2.set(new AxisAngle4f((float) Math.PI * (1 + face.getStepY() * 0.5f), 1, 0, 0));
                 mat.mul(m2);
             } else {
                 int ang;
                 if (face == Direction.EAST) ang = 2;
                 else if (face == Direction.NORTH) ang = 3;
                 else ang = 1;
-                AxisAngle4f axisAngle = new AxisAngle4f(0, 1, 0, (float) Math.PI * 0.5f * ang);
-                m2.setRotation(axisAngle);
+                AxisAngle4f axisAngle = new AxisAngle4f((float) Math.PI * 0.5f * ang, 0, 1, 0);
+                m2.set(axisAngle);
                 mat.mul(m2);
             }
 
-            m2.setIdentity();
-            m2.setTranslation(new Vector3f(-0.5f, -0.5f, -0.5f));
+            m2.identity();
+            m2.setTranslation(-0.5f, -0.5f, -0.5f);
             mat.mul(m2);
             builder.put(face, mat);
         }
@@ -82,10 +81,8 @@ public class MatrixUtil {
     }
 
     public static AABB multiply(AABB box, Matrix4f matrix) {
-        Point3f min = new Point3f(new Point3d(box.minX, box.minY, box.minZ));
-        Point3f max = new Point3f(new Point3d(box.maxX, box.maxY, box.maxZ));
-        matrix.transform(min);
-        matrix.transform(max);
+        Vector3f min = matrix.transformPosition(new Vector3f((float) box.minX, (float) box.minY, (float) box.minZ));
+        Vector3f max = matrix.transformPosition(new Vector3f((float) box.maxX, (float) box.maxY, (float) box.maxZ));
         return new AABB(min.x, min.y, min.z, max.x, max.y, max.z);
     }
 

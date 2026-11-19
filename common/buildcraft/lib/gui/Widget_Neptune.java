@@ -47,7 +47,7 @@ public abstract class Widget_Neptune<C extends ContainerBC_Neptune> implements I
 
     @Override
     public IMessage receivePayload(IPayloadContext ctx, PacketBufferBC buffer) throws IOException {
-        if (ctx.side == LogicalSide.CLIENT) {
+        if (ctx.flow().getReceptionSide() == LogicalSide.CLIENT) {
             return handleWidgetDataClient(ctx, buffer);
         } else {
             return handleWidgetDataServer(ctx, buffer);

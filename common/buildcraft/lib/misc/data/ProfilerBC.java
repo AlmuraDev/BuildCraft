@@ -12,7 +12,7 @@ public class ProfilerBC {
 
     @OnlyIn(Dist.CLIENT)
     public static ProfilerBC getClient() {
-        return new ProfilerBC(Minecraft.getInstance().mcProfiler);
+        return new ProfilerBC(net.minecraft.util.profiling.Profiler.get());
     }
 
     private final ProfilerFiller profiler;
@@ -23,7 +23,7 @@ public class ProfilerBC {
 
     public IProfilerSection start(String name) {
         profiler.push(name);
-        return profiler::endSection;
+        return profiler::pop;
     }
 
     public IProfilerSection start(String... names) {

@@ -27,12 +27,14 @@ public class DebuggingTools {
     private static class EventHook {
         @SubscribeEvent
         public void worldLoadEvent(LevelEvent.Load load) {
-            load.getWorld().addEventListener(new WorldListener());
+            if (load.getLevel() instanceof net.minecraft.world.level.Level level) {
+                buildcraft.lib.world.WorldEventListeners.add(level, new WorldListener());
+            }
         }
     }
 
     private static class WorldListener extends WorldEventListenerAdapter {
-        @Override
+        // (1.12.2 told world listeners about render updates; 26.3 doesn't, so this is never called)
         public void markBlockRangeForRenderUpdate(int x1, int y1, int z1, int x2, int y2, int z2) {
             StackTraceElement[] elements = new Throwable().getStackTrace();
             String[] bc = new String[elements.length];

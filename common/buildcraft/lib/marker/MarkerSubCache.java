@@ -22,6 +22,7 @@ import com.google.common.collect.ImmutableList;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
 import net.neoforged.fml.LogicalSide;
@@ -31,7 +32,6 @@ import net.neoforged.api.distmarker.OnlyIn;
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
 
-import buildcraft.lib.client.render.laser.LaserData_BC8.LaserType;
 import buildcraft.lib.net.MessageManager;
 import buildcraft.lib.net.MessageMarker;
 import buildcraft.lib.tile.TileMarker;
@@ -40,7 +40,7 @@ public abstract class MarkerSubCache<C extends MarkerConnection<C>> {
     public static final boolean DEBUG_FULL = BCDebugging.shouldDebugComplex("lib.marker.full");
 
     public final int cacheId;
-    public final int dimensionId;
+    public final ResourceKey<Level> dimensionId;
     public final boolean isServer;
     private final Map<BlockPos, C> posToConnection = new ConcurrentHashMap<>();
     private final Map<C, Set<BlockPos>> connectionToPos = new ConcurrentHashMap<>();
@@ -48,7 +48,7 @@ public abstract class MarkerSubCache<C extends MarkerConnection<C>> {
 
     public MarkerSubCache(Level world, int cacheId) {
         this.isServer = !world.isClientSide();
-        this.dimensionId = world.provider.getDimension();
+        this.dimensionId = world.dimension();
         this.cacheId = cacheId;
     }
 
@@ -290,9 +290,6 @@ public abstract class MarkerSubCache<C extends MarkerConnection<C>> {
     public abstract boolean canConnect(BlockPos a, BlockPos b);
 
     public abstract ImmutableList<BlockPos> getValidConnections(BlockPos from);
-
-    @OnlyIn(Dist.CLIENT)
-    public abstract LaserType getPossibleLaserType();
 
     @OnlyIn(Dist.CLIENT)
     public final void handleMessageMain(MessageMarker message) {

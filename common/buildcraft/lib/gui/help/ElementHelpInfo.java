@@ -6,23 +6,16 @@
 
 package buildcraft.lib.gui.help;
 
-import java.util.List;
 
-import net.minecraft.client.Minecraft;
 
-import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-import buildcraft.lib.gui.BuildCraftGui;
 import buildcraft.lib.gui.IGuiElement;
-import buildcraft.lib.gui.elem.GuiElementContainerHelp;
-import buildcraft.lib.gui.elem.GuiElementText;
 import buildcraft.lib.gui.pos.IGuiArea;
-import buildcraft.lib.misc.LocaleUtil;
-import buildcraft.lib.misc.StringUtilBC;
 
-/** Defines some information used when displaying help text about a specific {@link IGuiElement}. If you want to display
+/** Defines some information (common, so tanks and other server-side objects can hold it; the GUI side lays it out
+ * in {@link buildcraft.lib.gui.ledger.LedgerHelp}) used when displaying help text about a specific {@link IGuiElement}. If you want to display
  * help at a particular position, but the target is not an {@link IGuiElement} then you should use
  * {@link DummyHelpElement}. */
 public class ElementHelpInfo {
@@ -52,27 +45,6 @@ public class ElementHelpInfo {
     @OnlyIn(Dist.CLIENT)
     public final HelpPosition target(IGuiArea target) {
         return new HelpPosition(this, target);
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public void addGuiElements(GuiElementContainerHelp container) {
-        BuildCraftGui gui = container.gui;
-        int y = 20;
-        for (int i = 0; i < localeKeys.length; i++) {
-            String key = localeKeys[i];
-            if (key == null) {
-                y += Minecraft.getInstance().font.FONT_HEIGHT + 5;
-                continue;
-            }
-            String localized = isPreTranslated ? key : LocaleUtil.localize(key);
-            List<String> lines = StringUtilBC.splitIntoLines(localized);
-
-            for (String line : lines) {
-                GuiElementText elemText = new GuiElementText(gui, container.offset(0, y), line, 0);
-                container.add(elemText);
-                y += elemText.getHeight() + 5;
-            }
-        }
     }
 
     /** Stores an {@link ElementHelpInfo} information, as well as the target area which the help element relates to. */

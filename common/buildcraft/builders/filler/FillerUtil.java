@@ -6,8 +6,8 @@
 
 package buildcraft.builders.filler;
 
-import net.minecraft.util.Rotation;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.core.BlockPos;
 
 import buildcraft.api.filler.IFillerPattern;
 import buildcraft.api.statements.IStatementParameter;
@@ -32,6 +32,6 @@ public class FillerUtil {
         if (inverted) {
             filledTemplate.getTemplate().invert();
         }
-        return filledTemplate.getTemplate().new BuildingInfo(BlockPos.ORIGIN, Rotation.NONE);
+        return filledTemplate.getTemplate().new BuildingInfo(BlockPos.ZERO, Rotation.NONE);
     }
 }

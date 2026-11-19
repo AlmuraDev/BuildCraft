@@ -37,9 +37,6 @@ public abstract class MarkerConnection<C extends MarkerConnection<C>> {
 
     public abstract Collection<BlockPos> getMarkerPositions();
 
-    @OnlyIn(Dist.CLIENT)
-    public abstract void renderInWorld();
-
     public void getDebugInfo(BlockPos caller, List<String> left) {
         Collection<BlockPos> positions = getMarkerPositions();
         List<BlockPos> list = new ArrayList<>(positions);

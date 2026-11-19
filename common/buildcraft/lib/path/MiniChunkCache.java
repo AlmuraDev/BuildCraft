@@ -6,6 +6,8 @@
 
 package buildcraft.lib.path;
 
+import net.minecraft.resources.ResourceKey;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -24,18 +26,18 @@ import buildcraft.lib.misc.WorkerThreadUtil;
 import buildcraft.lib.path.task.TaskMiniChunkManager;
 
 public class MiniChunkCache {
-    private static Map<Integer, MiniChunkCache> worldCaches = new HashMap<>();
+    private static Map<ResourceKey<Level>, MiniChunkCache> worldCaches = new HashMap<>();
 
-    public final int dimId;
+    public final ResourceKey<Level> dimId;
     private final Map<BlockPos, MiniChunkGraph> cache = new ConcurrentHashMap<>();
     final Map<BlockPos, Future<MiniChunkGraph>> tempData = new ConcurrentHashMap<>();
 
-    private MiniChunkCache(int dimId) {
+    private MiniChunkCache(ResourceKey<Level> dimId) {
         this.dimId = dimId;
     }
 
     public static Future<MiniChunkGraph> requestGraph(Level world, BlockPos pos) {
-        int dimId = world.provider.getDimension();
+        ResourceKey<Level> dimId = world.dimension();
         if (!worldCaches.containsKey(dimId)) {
             worldCaches.put(dimId, new MiniChunkCache(dimId));
         }
@@ -43,7 +45,7 @@ public class MiniChunkCache {
     }
 
     public static MiniChunkGraph getGraphIfExists(Level world, BlockPos pos) {
-        int dimId = world.provider.getDimension();
+        ResourceKey<Level> dimId = world.dimension();
         if (!worldCaches.containsKey(dimId)) {
             worldCaches.put(dimId, new MiniChunkCache(dimId));
         }
@@ -67,7 +69,7 @@ public class MiniChunkCache {
         pos = minPos;
         MiniChunkGraph existing = cache.get(pos);
         if (existing != null) {
-            return Futures.immediateCheckedFuture(existing);
+            return Futures.immediateFuture(existing);
         }
         if (!world.isLoaded(pos)) return Futures.immediateFailedFuture(new Throwable("The block " + pos + " is not loaded!"));
         synchronized (this) {

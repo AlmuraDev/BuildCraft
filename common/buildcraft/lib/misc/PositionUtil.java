@@ -172,7 +172,7 @@ public class PositionUtil {
         if (from.getOpposite() == to) {
             return Rotation.CLOCKWISE_180;
         }
-        if (from.rotateAround(axis) == to) {
+        if (from.getClockWise(axis) == to) {
             return Rotation.CLOCKWISE_90;
         } else {
             return Rotation.COUNTERCLOCKWISE_90;
@@ -196,7 +196,7 @@ public class PositionUtil {
             // Vanilla gives us 90 for free.
             from = from.getOpposite();
         }
-        return from.rotateAround(axis);
+        return from.getClockWise(axis);
     }
 
     /** Rotates a given vector by the given rotation, in a given axis. This relies on the behaviour of

@@ -25,23 +25,23 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
 
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.util.JsonUtils;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.resources.Identifier;
 
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.common.crafting.JsonContext;
 import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.ModContainer;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraftforge.oredict.ShapedOreRecipe;
 
 import buildcraft.api.BCItems;
@@ -74,7 +74,7 @@ public class BCSiliconRecipes {
     private static Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
     @SubscribeEvent
-    public static void registerRecipes(RegistryEvent.Register<IRecipe> event) {
+    public static void registerRecipes(RegistryEvent.Register<Recipe> event) {
         if (BCSiliconItems.plugGate != null) {
             // You can craft some of the basic gate types in a normal crafting table
             RecipeBuilderShaped builder = new RecipeBuilderShaped();
@@ -105,7 +105,7 @@ public class BCSiliconRecipes {
             builder.add(" m ");
             builder.map('g', ironGateBase);
 
-            builder.map('m', new ItemStack(Items.DYE, 1, EnumDyeColor.BLUE.getDyeDamage()));
+            builder.map('m', new ItemStack(Items.DYE, 1, DyeColor.BLUE.getDyeDamage()));
             makeGateRecipe(builder, EnumGateMaterial.IRON, EnumGateModifier.LAPIS);
 
             builder.map('m', Items.QUARTZ);
@@ -193,7 +193,7 @@ public class BCSiliconRecipes {
         }
 
         if (BCSiliconItems.plugLens != null) {
-            for (EnumDyeColor colour : ColourUtil.COLOURS) {
+            for (DyeColor colour : ColourUtil.COLOURS) {
                 String name = StringUtilBC.formatDirect("lens-regular-%s", colour.getUnlocalizedName());
                 IngredientStack stainedGlass = IngredientStack.of("blockGlass" + ColourUtil.getName(colour));
                 ImmutableSet<IngredientStack> input = ImmutableSet.of(stainedGlass);
@@ -307,7 +307,7 @@ public class BCSiliconRecipes {
 
     private static void scanForJsonRecipes() {
         final boolean[] failed = { false };
-        for (ModContainer mod : Loader.instance().getActiveModList()) {
+        for (ModContainer mod : ModList.get().getActiveModList()) {
             JsonContext ctx = new JsonContext(mod.getModId());
             CraftingHelper.findFiles(mod, "assets/" + mod.getModId() + "/assembly_recipes_pre_mj", null, (root, file) -> {
                 try {
@@ -366,9 +366,9 @@ public class BCSiliconRecipes {
         }
 
         String name = root.relativize(file).toString().replace("\\", "/");
-        ResourceLocation key = new ResourceLocation(ctx.getModId(), name);
+        Identifier key = Identifier.fromNamespaceAndPath(ctx.getModId(), name);
         try (BufferedReader reader = Files.newBufferedReader(file)) {
-            JsonObject json = JsonUtils.fromJson(GSON, reader, JsonObject.class);
+            JsonObject json = GsonHelper.fromJson(GSON, reader, JsonObject.class);
             if (json == null || json.isJsonNull()) throw new JsonSyntaxException("Json is null (empty file?)");
 
             ItemStack output = CraftingHelper.getItemStack(json.getAsJsonObject("result"), ctx);
@@ -379,7 +379,7 @@ public class BCSiliconRecipes {
             json.getAsJsonArray("components").forEach(element -> {
                 JsonObject object = element.getAsJsonObject();
                 ingredients.add(new IngredientStack(CraftingHelper.getIngredient(object.get("ingredient"), ctx),
-                    JsonUtils.getInt(object, "amount", 1)));
+                    GsonHelper.getAsInt(object, "amount", 1)));
             });
 
             AssemblyRecipeRegistry.REGISTRY.put(key,

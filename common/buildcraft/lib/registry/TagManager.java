@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 import net.minecraft.world.item.Item;
 import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 /** Stores several types of "tag" (strings) for BuildCraft. A central place for all of them to init in. Refer to the
  * "static" block for all of the tag ID's
@@ -31,8 +31,8 @@ public class TagManager {
     public static Item getItem(String id) {
         String regTag = getTag(id, EnumTagType.REGISTRY_NAME);
         Identifier loc = Identifier.parse(regTag);
-        if (ForgeRegistries.ITEMS.containsKey(loc)) {
-            return ForgeRegistries.ITEMS.getValue(loc);
+        if (BuiltInRegistries.ITEM.containsKey(loc)) {
+            return BuiltInRegistries.ITEM.getValue(loc);
         } else {
             return null;
         }

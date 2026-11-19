@@ -7,163 +7,113 @@
 package buildcraft.lib.engine;
 
 import java.util.EnumMap;
-import java.util.Locale;
+import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.util.EnumBlockRenderType;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.BlockItemStateProperties;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.redstone.Orientation;
 
 import buildcraft.api.blocks.ICustomRotationHandler;
 import buildcraft.api.core.IEngineType;
 
+import net.minecraft.util.StringRepresentable;
+
 import buildcraft.lib.block.BlockBCTile_Neptune;
-import buildcraft.lib.registry.RegistryConfig;
-import buildcraft.lib.tile.TileBC_Neptune;
+import buildcraft.lib.registry.TileTypes;
 
-public abstract class BlockEngineBase_BC8<E extends Enum<E> & IEngineType> extends BlockBCTile_Neptune
-    implements ICustomRotationHandler {
-    private final Map<E, Supplier<? extends TileEngineBase_BC8>> engineTileConstructors =
-        new EnumMap<>(getEngineProperty().getValueClass());
+/** A block holding engines of several types (wood, stone, iron...), each with its own tile. The type is a state property,
+ * so one block serves every engine as on 1.12.2; engine items carry their type in the block state component. Engine
+ * types are added with {@link buildcraft.lib.registry.RegistrationHelper#registerEngineTile}, possibly from other
+ * modules. */
+public abstract class BlockEngineBase_BC8<E extends Enum<E> & IEngineType & StringRepresentable> extends BlockBCTile_Neptune
+    implements ICustomRotationHandler, TileTypes.IStateTileTypes {
+    private final Map<E, BlockEntityType<?>> engineTileTypes = new EnumMap<>(getEngineProperty().getValueClass());
 
-    public BlockEngineBase_BC8(Material material, String id) {
-        super(material, id);
+    public BlockEngineBase_BC8(BlockBehaviour.Properties properties, String id) {
+        super(properties.noOcclusion(), id);
     }
 
     // Engine directly related methods
 
-    public void registerEngine(E type, Supplier<? extends TileEngineBase_BC8> constructor) {
-        if (RegistryConfig.isEnabled("engines", getRegistryName() + "/" + type.name().toLowerCase(Locale.ROOT),
-            getUnlocalizedName(type))) {
-            engineTileConstructors.put(type, constructor);
-        }
+    /** Called by the registration helper once the engine type's tile is registered. */
+    public void bindEngine(E type, BlockEntityType<?> tileType) {
+        engineTileTypes.put(type, tileType);
     }
 
     public boolean isRegistered(E type) {
-        return engineTileConstructors.containsKey(type);
+        return engineTileTypes.containsKey(type);
+    }
+
+    @Override
+    @Nullable
+    public BlockEntityType<?> getTileType(BlockState state) {
+        return engineTileTypes.get(state.getValue(getEngineProperty()));
     }
 
     @Nonnull
     public ItemStack getStack(E type) {
-        return new ItemStack(this, 1, type.ordinal());
+        ItemStack stack = new ItemStack(this);
+        stack.set(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY.with(getEngineProperty(), type));
+        return stack;
     }
 
-    public abstract Property<E> getEngineProperty();
+    /** @return The engine type a stack of this block places. */
+    public E getType(ItemStack stack) {
+        BlockItemStateProperties props = stack.getOrDefault(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY);
+        return props.apply(defaultBlockState()).getValue(getEngineProperty());
+    }
 
-    public abstract E getEngineType(int meta);
+    /** Adds a stack of every registered engine type (for the creative tab). */
+    public void addSubStacks(NonNullList<ItemStack> list) {
+        for (E engine : getEngineProperty().getPossibleValues()) {
+            if (engineTileTypes.containsKey(engine)) {
+                list.add(getStack(engine));
+            }
+        }
+    }
+
+    public abstract EnumProperty<E> getEngineProperty();
 
     public abstract String getUnlocalizedName(E engine);
 
     // BlockState
 
     @Override
-    protected StateDefinition createBlockState() {
-        return new StateDefinition(this, getEngineProperty());
-    }
-
-    @Override
-    public int getMetaFromState(BlockState state) {
-        E type = state.getValue(getEngineProperty());
-        return type.ordinal();
-    }
-
-    @Override
-    public BlockState getStateFromMeta(int meta) {
-        E engineType = getEngineType(meta);
-        return getDefaultState().setValue(getEngineProperty(), engineType);
+    protected void addProperties(List<Property<?>> properties) {
+        super.addProperties(properties);
+        properties.add(getEngineProperty());
     }
 
     // Misc Block Overrides
 
+    /** Engines are drawn by their tile renderer, which animates them. */
     @Override
-    public boolean isOpaqueCube(BlockState state) {
-        return false;
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.INVISIBLE;
     }
 
     @Override
-    public boolean isFullBlock(BlockState state) {
-        return false;
-    }
-
-    @Override
-    public boolean isFullCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    public BlockFaceShape getBlockFaceShape(BlockGetter world, BlockState state, BlockPos pos, Direction side) {
-        BlockEntity tile = world.getBlockEntity(pos);
-        if (tile instanceof TileEngineBase_BC8) {
-            TileEngineBase_BC8 engine = (TileEngineBase_BC8) tile;
-            if (side == engine.currentDirection.getOpposite()) {
-                return BlockFaceShape.SOLID;
-            } else {
-                return BlockFaceShape.UNDEFINED;
-            }
-        }
-        return BlockFaceShape.UNDEFINED;
-    }
-
-    @Override
-    public boolean isSideSolid(BlockState base_state, BlockGetter world, BlockPos pos, Direction side) {
-        BlockEntity tile = world.getBlockEntity(pos);
-        if (tile instanceof TileEngineBase_BC8) {
-            TileEngineBase_BC8 engine = (TileEngineBase_BC8) tile;
-            return side == engine.currentDirection.getOpposite();
-        }
-        return false;
-    }
-
-    @Override
-    public EnumBlockRenderType getRenderType(BlockState state) {
-        return EnumBlockRenderType.ENTITYBLOCK_ANIMATED;
-    }
-
-    @Override
-    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
-        E engineType = state.getValue(getEngineProperty());
-        Supplier<? extends TileEngineBase_BC8> constructor = engineTileConstructors.get(engineType);
-        if (constructor == null) {
-            return null;
-        }
-        TileEngineBase_BC8 tile = constructor.get();
-        tile.setWorld(world);
-        return tile;
-    }
-
-    @Override
-    public void getSubBlocks(CreativeTabs tab, NonNullList<ItemStack> list) {
-        for (E engine : getEngineProperty().getAllowedValues()) {
-            if (engineTileConstructors.containsKey(engine)) {
-                list.add(new ItemStack(this, 1, engine.ordinal()));
-            }
-        }
-    }
-
-    @Override
-    public int damageDropped(BlockState state) {
-        return state.getValue(getEngineProperty()).ordinal();
-    }
-
-    @Override
-    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos) {
-        super.neighborChanged(state, world, pos, block, fromPos);
+    protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, @Nullable Orientation orientation,
+        boolean movedByPiston) {
+        super.neighborChanged(state, world, pos, block, orientation, movedByPiston);
         if (world.isClientSide()) return;
         BlockEntity tile = world.getBlockEntity(pos);
         if (tile instanceof TileEngineBase_BC8) {

@@ -51,7 +51,7 @@ public class TileEngineRedstone_BC8 extends TileEngineBase_BC8 {
                     heat += 4;
                 }
                 if (isPumping && !givenAdvancement) {
-                    givenAdvancement = AdvancementUtil.unlockAdvancement(this.getOwner().getId(), ADVANCEMENT);
+                    givenAdvancement = AdvancementUtil.unlockAdvancement(this.getOwner().id(), ADVANCEMENT);
                 }
             }
         } else {

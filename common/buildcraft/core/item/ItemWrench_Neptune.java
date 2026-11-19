@@ -4,17 +4,19 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core.item;
 
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.Level;
 
 import buildcraft.api.blocks.CustomRotationHelper;
@@ -27,9 +29,8 @@ import buildcraft.lib.misc.SoundUtil;
 public class ItemWrench_Neptune extends ItemBC_Neptune implements IToolWrench {
     private static final Identifier ADVANCEMENT = Identifier.parse("buildcraftcore:wrenched");
 
-    public ItemWrench_Neptune(String id) {
-        super(id);
-        setMaxStackSize(1);
+    public ItemWrench_Neptune(Item.Properties properties, String id) {
+        super(properties.stacksTo(1), id);
     }
 
     @Override
@@ -40,25 +41,29 @@ public class ItemWrench_Neptune extends ItemBC_Neptune implements IToolWrench {
     @Override
     public void wrenchUsed(Player player, InteractionHand hand, ItemStack wrench, HitResult rayTrace) {
         AdvancementUtil.unlockAdvancement(player, ADVANCEMENT);
-        player.swingArm(hand);
+        player.swing(hand, net.minecraft.world.item.component.SwingAnimation.DEFAULT, true);
     }
 
     @Override
-    public boolean doesSneakBypassUse(ItemStack stack, BlockGetter world, BlockPos pos, Player player) {
+    public boolean doesSneakBypassUse(ItemStack stack, LevelReader world, BlockPos pos, Player player) {
         return false;
     }
 
     @Override
-    public InteractionResult onItemUse(Player player, Level world, BlockPos pos, InteractionHand hand, Direction side, float hitX, float hitY, float hitZ) {
+    public InteractionResult useOn(UseOnContext context) {
+        Player player = context.getPlayer();
+        Level world = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        InteractionHand hand = context.getHand();
+        Direction side = context.getClickedFace();
         // FIXME: Disabled world check as it doesn't allow us to swing the player's arm!
         // if (world.isClientSide()) {
         // return InteractionResult.PASS;
         // }
         BlockState state = world.getBlockState(pos);
-        state = state.getActualState(world, pos);
         InteractionResult result = CustomRotationHelper.INSTANCE.attemptRotateBlock(world, pos, state, side);
         if (result == InteractionResult.SUCCESS) {
-            wrenchUsed(player, hand, player.getItemInHand(hand), new HitResult(new Vec3(hitX, hitY, hitZ), side, pos));
+            wrenchUsed(player, hand, player.getItemInHand(hand), new BlockHitResult(context.getClickLocation(), side, pos, false));
         }
         SoundUtil.playSlideSound(world, pos, state, result);
         return result;

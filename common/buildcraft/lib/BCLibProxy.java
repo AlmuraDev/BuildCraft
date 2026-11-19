@@ -104,6 +104,14 @@ public abstract class BCLibProxy {
         throw new IllegalStateException("Cannot send to the server from the server!");
     }
 
+    /** Opens the guide book (client only).
+     *
+     * @param bookName The book to open, or null for the main one. */
+    public void openGuide(@Nullable String bookName) {}
+
+    /** Opens the guide note in the given stack (client only). */
+    public void openGuideNote(net.minecraft.world.item.ItemStack stack) {}
+
     /** @return The server's copy of the given (client) tile in single player, or the tile itself. */
     public <T extends BlockEntity> T getServerTile(T tile) {
         return tile;

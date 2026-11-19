@@ -8,11 +8,11 @@ package buildcraft.factory.client.render;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing.Axis;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Direction.Axis;
 
 import net.minecraftforge.client.model.animation.FastTESR;
 
@@ -76,8 +76,8 @@ public class RenderMiningWell extends FastTESR<TileMiningWell> {
         Minecraft.getMinecraft().mcProfiler.startSection("miner");
 
         buffer.setTranslation(x, y, z);
-        EnumFacing facing = EnumFacing.NORTH;
-        IBlockState state = tile.getWorld().getBlockState(tile.getPos());
+        Direction facing = Direction.NORTH;
+        BlockState state = tile.getWorld().getBlockState(tile.getPos());
         if (state.getBlock() == BCFactoryBlocks.miningWell) {
             facing = state.getValue(BuildCraftProperties.BLOCK_FACING);
         }
@@ -87,18 +87,18 @@ public class RenderMiningWell extends FastTESR<TileMiningWell> {
 
         if (facing.getAxis() == Axis.X) {
             dX = 0;
-            dZ = facing.getAxisDirection().getOffset();
+            dZ = facing.getAxisDirection().getStep();
             ledZ = 0.5;
-            if (facing == EnumFacing.EAST) {
+            if (facing == Direction.EAST) {
                 ledX = 15.8 / 16.0;
             } else {
                 ledX = 0.2 / 16.0;
             }
         } else {
-            dX = -facing.getAxisDirection().getOffset();
+            dX = -facing.getAxisDirection().getStep();
             dZ = 0;
             ledX = 0.5;
-            if (facing == EnumFacing.SOUTH) {
+            if (facing == Direction.SOUTH) {
                 ledZ = 15.8 / 16.0;
             } else {
                 ledZ = 0.2 / 16.0;

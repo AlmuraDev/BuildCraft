@@ -6,6 +6,7 @@
 
 package buildcraft.lib.client.guide.parts.recipe;
 
+import buildcraft.api.core.NbtStacks;
 import java.util.Arrays;
 import java.util.Map.Entry;
 
@@ -27,7 +28,7 @@ public class GuideSmeltingFactory implements GuidePartFactory {
     public GuideSmeltingFactory(ItemStack input, ItemStack output) {
         this.input = StackUtil.asNonNull(input);
         this.output = StackUtil.asNonNull(output);
-        this.hash = Arrays.hashCode(new int[] { input.serializeNBT().hashCode(), output.serializeNBT().hashCode() });
+        this.hash = Arrays.hashCode(new int[] { NbtStacks.writeItemStack(input).hashCode(), NbtStacks.writeItemStack(output).hashCode() });
     }
 
     public static GuideSmeltingFactory create(ItemStack stack) {

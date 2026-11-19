@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 import io.netty.buffer.ByteBuf;
 
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.level.ChunkPos;
 
 public class ZonePlannerMapChunkKey {
     public static final int LEVEL_HEIGHT = 32;
@@ -28,7 +28,7 @@ public class ZonePlannerMapChunkKey {
     }
 
     public ZonePlannerMapChunkKey(ByteBuf buf) {
-        chunkPos = new ChunkPos(buf.readInt(), buf.readInt());
+        chunkPos = ChunkPos.containing(buf.readInt(), buf.readInt());
         dimensionalId = buf.readInt();
         level = buf.readInt();
         hash = Arrays.hashCode(new int[] { chunkPos.x, chunkPos.z, dimensionalId, level });

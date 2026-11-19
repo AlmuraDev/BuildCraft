@@ -1,6 +1,6 @@
 package buildcraft.silicon;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.BCModules;
 import buildcraft.api.transport.pipe.PipeApi;
@@ -49,11 +49,11 @@ public class BCSiliconPlugs {
         // TODO: remove this in 7.99.19!
         // This handles the migration of most of the transport pluggables into silicon
         String modId = BCModules.TRANSPORT.getModId();
-        PipeApi.pluggableRegistry.register(new ResourceLocation(modId, def.identifier.getResourcePath()), def);
+        PipeApi.pluggableRegistry.register(Identifier.fromNamespaceAndPath(modId, def.identifier.getResourcePath()), def);
         return def;
     }
 
-    private static ResourceLocation idFor(String name) {
-        return new ResourceLocation("buildcraftsilicon", name);
+    private static Identifier idFor(String name) {
+        return Identifier.fromNamespaceAndPath("buildcraftsilicon", name);
     }
 }

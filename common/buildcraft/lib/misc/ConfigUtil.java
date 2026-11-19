@@ -26,9 +26,9 @@ public class ConfigUtil {
             ConfigCategory p = cat;
             while (p != null) {
                 p.setLanguageKey("config." + p.getQualifiedName());
-                p = p.parent;
+                p = p.getParent();
             }
-            for (Property prop : cat.values()) {
+            for (Property prop : cat.getOrderedValues()) {
                 prop.setLanguageKey(cat.getLanguagekey() + "." + prop.getName());
             }
         }

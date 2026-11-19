@@ -7,10 +7,10 @@
 package buildcraft.transport.client.render;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.core.Direction;
 
 import net.minecraftforge.client.model.animation.FastTESR;
 
@@ -29,11 +29,11 @@ public class RenderPipeHolder extends FastTESR<TilePipeHolder> {
     @Override
     public void renderTileEntityFast(TilePipeHolder pipe, double x, double y, double z, float partialTicks,
         int destroyStage, float partial, BufferBuilder buffer) {
-        EntityLivingBase viewer = (EntityLivingBase) Minecraft.getMinecraft().getRenderViewEntity();
+        LivingEntity viewer = (LivingEntity) Minecraft.getMinecraft().getRenderViewEntity();
         if (viewer == null) {
             viewer = Minecraft.getMinecraft().player;
         }
-        if (pipe.getDistanceSq(viewer.posX, viewer.posY, viewer.posZ) <= 64) {
+        if (pipe.distanceToSqr(viewer.posX, viewer.posY, viewer.posZ) <= 64) {
             bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
 
             Minecraft.getMinecraft().mcProfiler.startSection("bc");
@@ -56,7 +56,7 @@ public class RenderPipeHolder extends FastTESR<TilePipeHolder> {
 
     private static void renderPluggables(TilePipeHolder pipe, double x, double y, double z, float partialTicks,
         BufferBuilder bb) {
-        for (EnumFacing face : EnumFacing.VALUES) {
+        for (Direction face : Direction.values()) {
             PipePluggable plug = pipe.getPluggable(face);
             if (plug == null) {
                 continue;

@@ -18,6 +18,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
+import net.neoforged.neoforge.common.SoundActions;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 public class SoundUtil {
@@ -45,19 +46,19 @@ public class SoundUtil {
 
     public static void playLeverSwitch(Level world, BlockPos pos, boolean isNowOn) {
         float pitch = isNowOn ? 0.6f : 0.5f;
-        SoundEvent soundEvent = SoundEvents.BLOCK_LEVER_CLICK;
+        SoundEvent soundEvent = SoundEvents.LEVER_CLICK;
         world.playSound(null, pos, soundEvent, SoundSource.BLOCKS, 0.2f, pitch);
     }
 
     public static void playChangeColour(Level world, BlockPos pos, @Nullable DyeColor colour) {
-        SoundType soundType = SoundType.SLIME;
+        SoundType soundType = SoundType.SLIME_BLOCK;
         final SoundEvent soundEvent;
         if (colour == null) {
-            soundEvent = SoundEvents.ITEM_BUCKET_EMPTY;
+            soundEvent = SoundEvents.BUCKET_EMPTY;
         } else {
             // FIXME: is this a good sound? Idk tbh.
             // TODO: Look into configuring this kind of stuff.
-            soundEvent = SoundEvents.ENTITY_SLIME_SQUISH;
+            soundEvent = SoundEvents.SLIME_SQUISH;
         }
         float volume = (soundType.getVolume() + 1.0F) / 2.0F;
         float pitch = soundType.getPitch() * 0.8F;
@@ -81,9 +82,9 @@ public class SoundUtil {
         SoundType soundType = state.getBlock().getSoundType(state, world, pos, null);
         SoundEvent event;
         if (result == InteractionResult.SUCCESS) {
-            event = SoundEvents.BLOCK_PISTON_CONTRACT;
+            event = SoundEvents.PISTON_CONTRACT;
         } else {
-            event = SoundEvents.BLOCK_PISTON_EXTEND;
+            event = SoundEvents.PISTON_EXTEND;
         }
         float volume = (soundType.getVolume() + 1.0F) / 2.0F;
         float pitch = soundType.getPitch() * 0.8F;
@@ -91,12 +92,14 @@ public class SoundUtil {
     }
 
     public static void playBucketEmpty(Level world, BlockPos pos, FluidStack moved) {
-        SoundEvent sound = moved.getFluid().getEmptySound(moved);
+        SoundEvent sound = moved.getFluidType().getSound(SoundActions.BUCKET_EMPTY);
+        if (sound == null) return;
         world.playSound(null, pos, sound, SoundSource.PLAYERS, 1, 1);
     }
 
     public static void playBucketFill(Level world, BlockPos pos, FluidStack moved) {
-        SoundEvent sound = moved.getFluid().getFillSound(moved);
+        SoundEvent sound = moved.getFluidType().getSound(SoundActions.BUCKET_FILL);
+        if (sound == null) return;
         world.playSound(null, pos, sound, SoundSource.PLAYERS, 1, 1);
     }
 }

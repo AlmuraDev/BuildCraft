@@ -8,31 +8,32 @@ import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.EnumParticleTypes;
-import net.minecraft.util.ITickable;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.particles.ParticleTypes;
+import buildcraft.lib.tile.ITickable;
+import net.minecraft.core.NonNullList;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.Level;
 
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.fluids.Fluid;
+import net.neoforged.neoforge.capabilities.BlockCapability;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.neoforge.fluids.FluidStack;
+import buildcraft.api.transfer.IFluidHandler;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.blocks.ICustomRotationHandler;
 import buildcraft.api.core.BCLog;
@@ -83,12 +84,12 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
     private boolean checkNeighbours;
 
     @Override
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         super.readFromNBT(nbt);
 
-        NBTTagCompound nbtSection = nbt.getCompoundTag("section");
-        if (!nbtSection.hasNoTags()) {
-            if (nbtSection.getBoolean("start")) {
+        CompoundTag nbtSection = nbt.getCompoundOrEmpty("section");
+        if (!nbtSection.isEmpty()) {
+            if (nbtSection.getBooleanOr("start", false)) {
                 section = new ExchangeSectionStart(this, nbtSection);
             } else {
                 section = new ExchangeSectionEnd(this, nbtSection);
@@ -98,10 +99,10 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public CompoundTag writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
         if (section != null) {
-            nbt.setTag("section", section.writeToNbt());
+            nbt.put("section", section.writeToNbt());
         }
         return nbt;
     }
@@ -111,7 +112,7 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
         if (checkNeighbours) {
             checkNeighbours = false;
             Deque<TileHeatExchange> exchangers = findAdjacentExchangers();
-            if (world.isRemote) {
+            if (world.isClientSide()) {
                 // Find the start + end sections and link them up
                 if (exchangers.size() > 2) {
                     TileHeatExchange start = exchangers.getFirst();
@@ -189,17 +190,17 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
     }
 
     private Deque<TileHeatExchange> findAdjacentExchangers() {
-        EnumFacing thisFacing = getFacing();
+        Direction thisFacing = getFacing();
         if (thisFacing == null) {
             // Odd. This means that we are getting a property from a different block
             return new ArrayDeque<>();
         }
-        EnumFacing dirToStart = thisFacing.rotateY();
-        EnumFacing dirToEnd = thisFacing.rotateYCCW();
+        Direction dirToStart = thisFacing.getClockWise();
+        Direction dirToEnd = thisFacing.getCounterClockWise();
         Deque<TileHeatExchange> exchangers = new ArrayDeque<>();
         exchangers.add(this);
         for (int i = 1; i < 6; i++) {
-            TileEntity neighbour = getLocalTile(pos.offset(dirToStart, i));
+            BlockEntity neighbour = getLocalTile(pos.offset(dirToStart, i));
             if (neighbour instanceof TileHeatExchange) {
                 TileHeatExchange other = (TileHeatExchange) neighbour;
                 if (other.getFacing() != thisFacing) {
@@ -211,7 +212,7 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
             }
         }
         for (int i = 1; i < 6; i++) {
-            TileEntity neighbour = getLocalTile(pos.offset(dirToEnd, i));
+            BlockEntity neighbour = getLocalTile(pos.offset(dirToEnd, i));
             if (neighbour instanceof TileHeatExchange) {
                 TileHeatExchange other = (TileHeatExchange) neighbour;
                 if (other.getFacing() != thisFacing) {
@@ -234,8 +235,8 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
     }
 
     @Override
-    public void readPayload(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
-        if (side == Side.CLIENT) {
+    public void readPayload(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
+        if (side == LogicalSide.CLIENT) {
             if (id == NET_RENDER_DATA) {
                 readPayload(NET_ID_CHANGE_SECTION, buffer, side, ctx);
             } else if (id == NET_ID_CHANGE_SECTION) {
@@ -258,8 +259,8 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
     }
 
     @Override
-    public void writePayload(int id, PacketBufferBC buffer, Side side) {
-        if (side == Side.SERVER) {
+    public void writePayload(int id, PacketBufferBC buffer, LogicalSide side) {
+        if (side == LogicalSide.SERVER) {
             if (id == NET_RENDER_DATA) {
                 writePayload(NET_ID_CHANGE_SECTION, buffer, side);
             } else if (id == NET_ID_CHANGE_SECTION) {
@@ -277,8 +278,8 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
-    public AxisAlignedBB getRenderBoundingBox() {
+    @OnlyIn(Dist.CLIENT)
+    public AABB getRenderBoundingBox() {
         if (section instanceof ExchangeSectionStart) {
             // Temp
             return BoundingBoxUtil.makeAround(VecUtil.convertCenter(getPos()), 10);
@@ -287,7 +288,7 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
     }
 
     @Override
-    public <T> T getCapability(@Nonnull Capability<T> capability, EnumFacing facing) {
+    public <T> T getCapability(@Nonnull BlockCapability<T, Direction> capability, Direction facing) {
         if (section != null) {
             return section.caps.getCapability(capability, facing);
         }
@@ -296,7 +297,7 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
 
     @Override
     public boolean onActivated(
-        EntityPlayer player, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ
+        Player player, InteractionHand hand, Direction facing, float hitX, float hitY, float hitZ
     ) {
         if (section != null) {
             return section.tankManager.onActivated(player, pos, hand);
@@ -335,27 +336,24 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
         }
     }
 
-    /** Called by {@link Block#rotateBlock(World, BlockPos, EnumFacing)} and
-     * {@link ICustomRotationHandler#attemptRotation(World, BlockPos, IBlockState, EnumFacing)} when the
-     * {@link EnumFacing} is {@link EnumFacing#UP} or {@link EnumFacing#DOWN}.
+    /** Called by {@link Block#rotateBlock(Level, BlockPos, Direction)} and
+     * {@link ICustomRotationHandler#attemptRotation(Level, BlockPos, BlockState, Direction)} when the
+     * {@link Direction} is {@link Direction#UP} or {@link Direction#DOWN}.
      * <p>
      * If this exchanger is not part of a larger structure then this will rotate this block 90 degrees. If this is part
      * of a larger structure then all adjacent heat exchangers will be rotated 180 degrees to swap the start and end
      * blocks. */
     public boolean rotate() {
-        EnumFacing thisFacing = getFacing();
+        Direction thisFacing = getFacing();
         if (thisFacing == null) {
             return false;
         }
         Deque<TileHeatExchange> exchangers = findAdjacentExchangers();
         if (exchangers.size() == 1) {
             // Just this one tile, so rotate this by 90 degrees
-            world.setBlockState(
-                getPos(),
-                getCurrentState().withProperty(
+            world.setBlockAndUpdate(getPos(), getCurrentState().setValue(
                     BlockHeatExchange.PROP_FACING, VanillaRotationHandlers.ROTATE_HORIZONTAL.next(thisFacing)
-                )
-            );
+                ));
         } else {
             // Rotate every heat exchanger 180 degrees
             ExchangeSectionStart start = null;
@@ -367,10 +365,7 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
                     end = (ExchangeSectionEnd) exchange.section;
                 }
                 exchange.section = null;
-                world.setBlockState(
-                    exchange.getPos(),
-                    exchange.getCurrentState().withProperty(BlockHeatExchange.PROP_FACING, thisFacing.getOpposite())
-                );
+                world.setBlockAndUpdate(exchange.getPos(), exchange.getCurrentState().setValue(BlockHeatExchange.PROP_FACING, thisFacing.getOpposite()));
                 exchange.checkNeighbours = true;
                 exchange.markChunkDirty();
             }
@@ -408,8 +403,8 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
     }
 
     @Nullable
-    EnumFacing getFacing() {
-        IBlockState state = getCurrentStateForBlock(BCFactoryBlocks.heatExchange);
+    Direction getFacing() {
+        BlockState state = getCurrentStateForBlock(BCFactoryBlocks.heatExchange);
         if (state == null) {
             return null;
         }
@@ -417,7 +412,7 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
     }
 
     @Override
-    public void getDebugInfo(List<String> left, List<String> right, EnumFacing side) {
+    public void getDebugInfo(List<String> left, List<String> right, Direction side) {
         if (section == null) {
             left.add("section = null");
         } else {
@@ -443,31 +438,31 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
             this.setTile(tile);
         }
 
-        ExchangeSection(TileHeatExchange tile, NBTTagCompound nbt) {
+        ExchangeSection(TileHeatExchange tile, CompoundTag nbt) {
             this(tile);
-            tankInput.readFromNBT(nbt.getCompoundTag("input"));
-            tankOutput.readFromNBT(nbt.getCompoundTag("output"));
+            tankInput.readFromNBT(nbt.getCompoundOrEmpty("input"));
+            tankOutput.readFromNBT(nbt.getCompoundOrEmpty("output"));
         }
 
         FluidSmoother createFluidSmoother(Tank tank, int netId) {
             return new FluidSmoother(w -> getTile().createAndSendMessage(netId, w), tank);
         }
 
-        NBTTagCompound writeToNbt() {
-            NBTTagCompound nbt = new NBTTagCompound();
-            nbt.setTag("input", tankInput.serializeNBT());
-            nbt.setTag("output", tankOutput.serializeNBT());
+        CompoundTag writeToNbt() {
+            CompoundTag nbt = new CompoundTag();
+            nbt.put("input", tankInput.serializeNBT());
+            nbt.put("output", tankOutput.serializeNBT());
             return nbt;
         }
 
         void tick() {
-            World world = getTile().world;
+            Level world = getTile().world;
             smoothedTankInput.tick(world);
             smoothedTankOutput.tick(world);
         }
 
-        void readPayload(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
-            if (side == Side.CLIENT) {
+        void readPayload(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
+            if (side == LogicalSide.CLIENT) {
                 if (id == NET_ID_CHANGE_SECTION) {
                     readPayload(NET_ID_TANK_IN, buffer, side, ctx);
                     readPayload(NET_ID_TANK_OUT, buffer, side, ctx);
@@ -478,13 +473,13 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
                 } else if (id == NET_ID_TANK_OUT) {
                     smoothedTankOutput.handleMessage(getTile().world, buffer);
                 }
-            } else if (side == Side.SERVER) {
+            } else if (side == LogicalSide.SERVER) {
 
             }
         }
 
-        void writePayload(int id, PacketBufferBC buffer, Side side) {
-            if (side == Side.SERVER) {
+        void writePayload(int id, PacketBufferBC buffer, LogicalSide side) {
+            if (side == LogicalSide.SERVER) {
                 if (id == NET_ID_CHANGE_SECTION) {
                     writePayload(NET_ID_TANK_IN, buffer, side);
                     writePayload(NET_ID_TANK_OUT, buffer, side);
@@ -493,12 +488,12 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
                 } else if (id == NET_ID_TANK_OUT) {
                     smoothedTankOutput.writeInit(buffer);
                 }
-            } else if (side == Side.CLIENT) {
+            } else if (side == LogicalSide.CLIENT) {
 
             }
         }
 
-        void getDebugInfo(List<String> left, List<String> right, EnumFacing side) {
+        void getDebugInfo(List<String> left, List<String> right, Direction side) {
             left.add("tank_input = " + tankInput.getDebugString());
             left.add("tank_output = " + tankOutput.getDebugString());
             left.add("smoothed_input: ");
@@ -539,41 +534,41 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
             super(tile);
         }
 
-        ExchangeSectionStart(TileHeatExchange tile, NBTTagCompound nbt) {
+        ExchangeSectionStart(TileHeatExchange tile, CompoundTag nbt) {
             super(tile, nbt);
-            inputCoolantAmountCharge = nbt.getInteger("coolantCharge");
-            inputHeatantAmountCharge = nbt.getInteger("heatantCharge");
+            inputCoolantAmountCharge = nbt.getIntOr("coolantCharge", 0);
+            inputHeatantAmountCharge = nbt.getIntOr("heatantCharge", 0);
         }
 
         @Override
-        NBTTagCompound writeToNbt() {
-            NBTTagCompound nbt = new NBTTagCompound();
-            nbt.setBoolean("start", true);
-            nbt.setInteger("coolantCharge", inputCoolantAmountCharge);
-            nbt.setInteger("heatantCharge", inputHeatantAmountCharge);
+        CompoundTag writeToNbt() {
+            CompoundTag nbt = new CompoundTag();
+            nbt.putBoolean("start", true);
+            nbt.putInt("coolantCharge", inputCoolantAmountCharge);
+            nbt.putInt("heatantCharge", inputHeatantAmountCharge);
             return nbt;
         }
 
         @Override
-        void readPayload(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+        void readPayload(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
             super.readPayload(id, buffer, side, ctx);
-            if (side == Side.CLIENT) {
+            if (side == LogicalSide.CLIENT) {
                 if (id == NET_ID_CHANGE_SECTION) {
                     middleCount = buffer.readUnsignedByte();
                 } else if (id == NET_ID_STATE) {
-                    progressState = buffer.readEnumValue(EnumProgressState.class);
+                    progressState = buffer.readEnum(EnumProgressState.class);
                 }
             }
         }
 
         @Override
-        void writePayload(int id, PacketBufferBC buffer, Side side) {
+        void writePayload(int id, PacketBufferBC buffer, LogicalSide side) {
             super.writePayload(id, buffer, side);
-            if (side == Side.SERVER) {
+            if (side == LogicalSide.SERVER) {
                 if (id == NET_ID_CHANGE_SECTION) {
                     buffer.writeByte(middleCount);
                 } else if (id == NET_ID_STATE) {
-                    buffer.writeEnumValue(progressState);
+                    buffer.writeEnum(progressState);
                 }
             }
         }
@@ -594,9 +589,9 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
             return BuildcraftRecipeRegistry.refineryRecipes.getHeatableRegistry().getRecipeForInput(fluid) != null;
         }
 
-        private IFluidHandler getTankForSide(EnumFacing side) {
-            EnumFacing thisFacing = getTile().getFacing();
-            if (thisFacing == null || side != thisFacing.rotateY()) {
+        private IFluidHandler getTankForSide(Direction side) {
+            Direction thisFacing = getTile().getFacing();
+            if (thisFacing == null || side != thisFacing.getClockWise()) {
                 return null;
             }
             return tankOutput;
@@ -607,7 +602,7 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
             super.tick();
 
             updateProgress();
-            if (getTile().world.isRemote) {
+            if (getTile().world.isClientSide()) {
                 spawnParticles();
                 return;
             }
@@ -716,35 +711,35 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
                 if (end == null) {
                     return;
                 }
-                Vec3d from = VecUtil.convertCenter(getTile().getPos());
+                Vec3 from = VecUtil.convertCenter(getTile().getPos());
                 FluidStack c_in_f = end.smoothedTankInput.getFluidForRender();
                 if (c_in_f != null && c_in_f.getFluid() == FluidRegistry.LAVA) {
-                    EnumFacing facing = getTile().getFacing();
+                    Direction facing = getTile().getFacing();
                     if (facing != null) {
-                        spewForth(from, facing.rotateY(), EnumParticleTypes.SMOKE_LARGE);
+                        spewForth(from, facing.getClockWise(), EnumParticleTypes.SMOKE_LARGE);
                     }
                 }
 
                 FluidStack h_in_f = smoothedTankInput.getFluidForRender();
                 from = VecUtil.convertCenter(end.getTile().getPos());
                 if (h_in_f != null && h_in_f.getFluid() == FluidRegistry.WATER) {
-                    EnumFacing dir = EnumFacing.UP;
+                    Direction dir = Direction.UP;
                     spewForth(from, dir, EnumParticleTypes.CLOUD);
                 }
             }
         }
 
-        private void spewForth(Vec3d from, EnumFacing dir, EnumParticleTypes particle) {
-            Vec3d vecDir = new Vec3d(dir.getDirectionVec());
+        private void spewForth(Vec3 from, Direction dir, EnumParticleTypes particle) {
+            Vec3 vecDir = new Vec3(dir.getUnitVec3i());
             from = from.add(vecDir);
 
             double x = from.x;
             double y = from.y;
             double z = from.z;
 
-            Vec3d motion = VecUtil.scale(vecDir, 0.4);
+            Vec3 motion = VecUtil.scale(vecDir, 0.4);
             int particleCount = Minecraft.getMinecraft().gameSettings.particleSetting;
-            World w = getTile().getWorld();
+            Level w = getTile().getWorld();
             if (particleCount == 2 || w == null) {
                 return;
             }
@@ -805,19 +800,19 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
 
         @Nullable
         private IFluidHandler getFluidAutoOutputTarget() {
-            EnumFacing facing = getTile().getFacing();
+            Direction facing = getTile().getFacing();
             if (facing == null) {
                 return null;
             }
-            TileEntity neighbour = getTile().getNeighbourTile(facing.rotateY());
+            BlockEntity neighbour = getTile().getNeighbourTile(facing.getClockWise());
             if (neighbour == null) {
                 return null;
             }
-            return neighbour.getCapability(CapUtil.CAP_FLUIDS, facing.rotateYCCW());
+            return neighbour.getCapability(CapUtil.CAP_FLUIDS, facing.getCounterClockWise());
         }
 
         @Override
-        void getDebugInfo(List<String> left, List<String> right, EnumFacing side) {
+        void getDebugInfo(List<String> left, List<String> right, Direction side) {
             super.getDebugInfo(left, right, side);
             left.add("progress = " + progress);
             left.add("state = " + progressState);
@@ -839,7 +834,7 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
             super(tile);
         }
 
-        ExchangeSectionEnd(TileHeatExchange tile, NBTTagCompound nbt) {
+        ExchangeSectionEnd(TileHeatExchange tile, CompoundTag nbt) {
             super(tile, nbt);
         }
 
@@ -847,28 +842,28 @@ public class TileHeatExchange extends TileBC_Neptune implements ITickable, IDebu
             return BuildcraftRecipeRegistry.refineryRecipes.getCoolableRegistry().getRecipeForInput(fluid) != null;
         }
 
-        private IFluidHandler getTankForSide(EnumFacing side) {
-            EnumFacing thisFacing = getTile().getFacing();
-            if (thisFacing == null || side != thisFacing.rotateYCCW()) {
+        private IFluidHandler getTankForSide(Direction side) {
+            Direction thisFacing = getTile().getFacing();
+            if (thisFacing == null || side != thisFacing.getCounterClockWise()) {
                 return null;
             }
             return tankInput;
         }
 
         @Override
-        NBTTagCompound writeToNbt() {
-            NBTTagCompound nbt = super.writeToNbt();
-            nbt.setBoolean("start", false);
+        CompoundTag writeToNbt() {
+            CompoundTag nbt = super.writeToNbt();
+            nbt.putBoolean("start", false);
             return nbt;
         }
 
         @Nullable
         IFluidHandler getFluidAutoOutputTarget() {
-            TileEntity neighbour = getTile().getNeighbourTile(EnumFacing.UP);
+            BlockEntity neighbour = getTile().getNeighbourTile(Direction.UP);
             if (neighbour == null) {
                 return null;
             }
-            return neighbour.getCapability(CapUtil.CAP_FLUIDS, EnumFacing.DOWN);
+            return neighbour.getCapability(CapUtil.CAP_FLUIDS, Direction.DOWN);
         }
     }
 

@@ -6,6 +6,7 @@
 
 package buildcraft.lib.misc;
 
+import buildcraft.api.core.NbtStacks;
 import javax.annotation.Nonnull;
 
 import net.minecraft.world.item.ItemStack;
@@ -44,7 +45,7 @@ public class ItemStackKey {
         if (baseStack.getDamageValue() != other.baseStack.getDamageValue()) {
             return false;
         }
-        return baseStack.serializeNBT().equals(other.baseStack.serializeNBT());
+        return NbtStacks.writeItemStack(baseStack).equals(NbtStacks.writeItemStack(other.baseStack));
     }
 
     @Override

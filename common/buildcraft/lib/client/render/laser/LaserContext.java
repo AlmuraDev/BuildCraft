@@ -6,10 +6,9 @@
 
 package buildcraft.lib.client.render.laser;
 
-import javax.vecmath.Matrix4f;
-import javax.vecmath.Point3f;
-import javax.vecmath.Vector3f;
-import javax.vecmath.Vector4f;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
 import net.minecraft.world.phys.Vec3;
 
@@ -21,7 +20,7 @@ import buildcraft.lib.client.model.MutableQuad;
 
 public class LaserContext {
     public final Matrix4f matrix = new Matrix4f();
-    private final Point3f point = new Point3f();
+    private final Vector3f point = new Vector3f();
     private final Vector4f normal = new Vector4f();
     private final ILaserRenderer renderer;
     public final double length;

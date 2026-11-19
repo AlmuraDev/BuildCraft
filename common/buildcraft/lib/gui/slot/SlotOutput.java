@@ -19,7 +19,7 @@ public class SlotOutput extends SlotBase {
     }
 
     @Override
-    public boolean isItemValid(@Nonnull ItemStack itemstack) {
+    public boolean mayPlace(@Nonnull ItemStack itemstack) {
         return false;
     }
 }

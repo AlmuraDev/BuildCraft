@@ -12,14 +12,14 @@ import javax.annotation.Nonnull;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.Rotation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 import buildcraft.api.core.InvalidInputDataException;
 import buildcraft.api.schematics.ISchematicBlock;
@@ -32,7 +32,7 @@ import buildcraft.lib.misc.NBTUtilBC;
 import buildcraft.transport.BCTransportBlocks;
 
 public class SchematicBlockPipe implements ISchematicBlock {
-    private NBTTagCompound tileNbt;
+    private CompoundTag tileNbt;
     private Rotation tileRotation = Rotation.NONE;
 
     public static boolean predicate(SchematicBlockContext context) {
@@ -41,7 +41,7 @@ public class SchematicBlockPipe implements ISchematicBlock {
 
     @Override
     public void init(SchematicBlockContext context) {
-        TileEntity tileEntity = context.world.getTileEntity(context.pos);
+        BlockEntity tileEntity = context.world.getBlockEntity(context.pos);
         if (tileEntity == null) {
             throw new IllegalStateException();
         }
@@ -54,11 +54,11 @@ public class SchematicBlockPipe implements ISchematicBlock {
         try {
             ImmutableList.Builder<ItemStack> builder = ImmutableList.builder();
             PipeDefinition definition = PipeRegistry.INSTANCE.loadDefinition(
-                tileNbt.getCompoundTag("pipe").getString("def")
+                tileNbt.getCompoundOrEmpty("pipe").getStringOr("def", "")
             );
-            EnumDyeColor color = NBTUtilBC.readEnum(
-                tileNbt.getCompoundTag("pipe").getTag("col"),
-                EnumDyeColor.class
+            DyeColor color = NBTUtilBC.readEnum(
+                tileNbt.getCompoundOrEmpty("pipe").get("col"),
+                DyeColor.class
             );
             Item item = (Item) PipeApi.pipeRegistry.getItemForPipe(definition);
             if (item != null) {
@@ -85,15 +85,15 @@ public class SchematicBlockPipe implements ISchematicBlock {
     }
 
     @Override
-    public boolean canBuild(World world, BlockPos blockPos) {
-        return world.isAirBlock(blockPos);
+    public boolean canBuild(Level world, BlockPos blockPos) {
+        return world.isEmptyBlock(blockPos);
     }
 
     @SuppressWarnings("Duplicates")
     @Override
-    public boolean build(World world, BlockPos blockPos) {
-        if (world.setBlockState(blockPos, BCTransportBlocks.pipeHolder.getDefaultState(), 11)) {
-            TileEntity tileEntity = TileEntity.create(world, tileNbt);
+    public boolean build(Level world, BlockPos blockPos) {
+        if (world.setBlock(blockPos, BCTransportBlocks.pipeHolder.defaultBlockState(), 11)) {
+            BlockEntity tileEntity = BlockEntity.create(world, tileNbt);
             if (tileEntity != null) {
                 tileEntity.setWorld(world);
                 world.setTileEntity(blockPos, tileEntity);
@@ -108,9 +108,9 @@ public class SchematicBlockPipe implements ISchematicBlock {
 
     @SuppressWarnings("Duplicates")
     @Override
-    public boolean buildWithoutChecks(World world, BlockPos blockPos) {
-        if (world.setBlockState(blockPos, BCTransportBlocks.pipeHolder.getDefaultState(), 0)) {
-            TileEntity tileEntity = TileEntity.create(world, tileNbt);
+    public boolean buildWithoutChecks(Level world, BlockPos blockPos) {
+        if (world.setBlock(blockPos, BCTransportBlocks.pipeHolder.defaultBlockState(), 0)) {
+            BlockEntity tileEntity = BlockEntity.create(world, tileNbt);
             if (tileEntity != null) {
                 tileEntity.setWorld(world);
                 world.setTileEntity(blockPos, tileEntity);
@@ -124,21 +124,21 @@ public class SchematicBlockPipe implements ISchematicBlock {
     }
 
     @Override
-    public boolean isBuilt(World world, BlockPos blockPos) {
+    public boolean isBuilt(Level world, BlockPos blockPos) {
         return world.getBlockState(blockPos).getBlock() == BCTransportBlocks.pipeHolder;
     }
 
     @Override
-    public NBTTagCompound serializeNBT() {
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setTag("tileNbt", tileNbt);
-        nbt.setTag("tileRotation", NBTUtilBC.writeEnum(tileRotation));
+    public CompoundTag serializeNBT() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.put("tileNbt", tileNbt);
+        nbt.put("tileRotation", NBTUtilBC.writeEnum(tileRotation));
         return nbt;
     }
 
     @Override
-    public void deserializeNBT(NBTTagCompound nbt) throws InvalidInputDataException {
-        tileNbt = nbt.getCompoundTag("tileNbt");
-        tileRotation = NBTUtilBC.readEnum(nbt.getTag("tileRotation"), Rotation.class);
+    public void deserializeNBT(CompoundTag nbt) throws InvalidInputDataException {
+        tileNbt = nbt.getCompoundOrEmpty("tileNbt");
+        tileRotation = NBTUtilBC.readEnum(nbt.get("tileRotation"), Rotation.class);
     }
 }

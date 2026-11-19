@@ -67,7 +67,7 @@ import buildcraft.lib.cache.TileCacheRet;
 import buildcraft.lib.cache.TileCacheType;
 import buildcraft.lib.block.BlockBCTile_Neptune;
 import buildcraft.lib.cap.CapabilityHelper;
-import buildcraft.lib.client.render.DetachedRenderer.IDetachedRenderer;
+import buildcraft.lib.debug.IDetachedRenderer;
 import buildcraft.lib.debug.BCAdvDebugging;
 import buildcraft.lib.debug.IAdvDebugTarget;
 import buildcraft.lib.delta.DeltaManager;

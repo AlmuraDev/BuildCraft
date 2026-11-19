@@ -11,13 +11,13 @@ import java.util.Map;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.chunk.IChunkProvider;
 
 public class FakeChunkProvider implements IChunkProvider {
     private final FakeWorld world;
-    public final Map<ChunkPos, Chunk> chunks = new HashMap<>();
+    public final Map<ChunkPos, LevelChunk> chunks = new HashMap<>();
 
     public FakeChunkProvider(FakeWorld world) {
         this.world = world;
@@ -25,10 +25,10 @@ public class FakeChunkProvider implements IChunkProvider {
 
     @Nullable
     @Override
-    public Chunk getLoadedChunk(int x, int z) {
+    public LevelChunk getLoadedChunk(int x, int z) {
         ChunkPos chunkPos = new ChunkPos(x, z);
         if (!chunks.containsKey(chunkPos)) {
-            chunks.put(chunkPos, new Chunk(world, x, z) {
+            chunks.put(chunkPos, new LevelChunk(world, x, z) {
                 @Override
                 public void generateSkylightMap() {
                 }
@@ -38,7 +38,7 @@ public class FakeChunkProvider implements IChunkProvider {
     }
 
     @Override
-    public Chunk provideChunk(int x, int z) {
+    public LevelChunk provideChunk(int x, int z) {
         return getLoadedChunk(x, z);
     }
 

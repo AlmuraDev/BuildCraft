@@ -25,7 +25,7 @@ public final class GuideBook {
     private static GuideBook deserialize(Identifier name, JsonObject json, JsonDeserializationContext ctx) {
         Identifier itemIcon = Identifier.parse("buildcraftcore:guide_main");
         Component title = JsonUtil.getTextComponent(json, "title", "");
-        boolean addAll = GsonHelper.getBoolean(json, "all_entries", true);
+        boolean addAll = GsonHelper.getAsBoolean(json, "all_entries", true);
         return new GuideBook(name, itemIcon, title, addAll);
     }
 

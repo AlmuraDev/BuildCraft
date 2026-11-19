@@ -8,7 +8,7 @@ package buildcraft.lib.client.guide.world;
 
 import java.util.List;
 
-import javax.vecmath.Vector3f;
+import org.joml.Vector3f;
 
 import com.google.common.collect.ImmutableList;
 

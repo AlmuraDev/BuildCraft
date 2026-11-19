@@ -6,6 +6,8 @@
 
 package buildcraft.lib.misc;
 
+import buildcraft.api.core.NbtStacks;
+import net.minecraft.core.registries.BuiltInRegistries;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -459,7 +461,7 @@ public class GuiUtil {
             // Temp workaround for headcrumbs
             // TODO: Remove this after https://github.com/BuildCraft/BuildCraft/issues/4268 is fixed from their side! */
             Item item = stack.getItem();
-            String info = item.getRegistryName() + " " + item.getClass() + " (" + stack.serializeNBT() + ")";
+            String info = BuiltInRegistries.ITEM.getKey(item) + " " + item.getClass() + " (" + NbtStacks.writeItemStack(stack) + ")";
             BCLog.logger.warn("[lib.guide] Found null display name! " + info);
             name = "!!NULL stack.getHoverName(): " + info;
         }

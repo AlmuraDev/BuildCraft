@@ -15,7 +15,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 public enum EnumAddonSlot {
@@ -57,17 +56,17 @@ public enum EnumAddonSlot {
 
     public static Pair<VolumeBox, EnumAddonSlot> getSelectingVolumeBoxAndSlot(Player player,
                                                                               List<VolumeBox> volumeBoxes) {
-        Vec3 start = player.getPositionVector().add(0, player.getEyeHeight(), 0);
-        Vec3 end = start.add(player.getLookVec().scale(4));
+        Vec3 start = player.position().add(0, player.getEyeHeight(), 0);
+        Vec3 end = start.add(player.getLookAngle().scale(4));
         VolumeBox bestVolumeBox = null;
         EnumAddonSlot bestSlot = null;
         double bestDist = Double.MAX_VALUE;
 
         for (VolumeBox volumeBox : volumeBoxes) {
             for (EnumAddonSlot slot : values()) {
-                HitResult ray = slot.getBoundingBox(volumeBox).calculateIntercept(start, end);
-                if (ray != null) {
-                    double dist = ray.hitVec.distanceTo(start);
+                java.util.Optional<Vec3> ray = slot.getBoundingBox(volumeBox).clip(start, end);
+                if (ray.isPresent()) {
+                    double dist = ray.get().distanceTo(start);
                     if (bestDist > dist) {
                         bestDist = dist;
                         bestVolumeBox = volumeBox;

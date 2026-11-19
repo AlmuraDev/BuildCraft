@@ -30,7 +30,6 @@ import net.minecraft.nbt.LongTag;
 import net.minecraft.nbt.ShortTag;
 import net.minecraft.nbt.StringTag;
 
-import net.minecraftforge.common.util.Constants;
 
 import buildcraft.api.core.InvalidInputDataException;
 
@@ -60,48 +59,48 @@ public class NbtSquishMap {
 
     public void addTag(Tag nbt) {
         if (nbt instanceof StringTag) {
-            String val = ((StringTag) nbt).getString();
+            String val = ((StringTag) nbt).value();
             if (!strings.contains(val)) {
                 strings.add(val);
             }
         } else if (nbt instanceof ByteTag) {
-            byte val = ((ByteTag) nbt).getByte();
+            byte val = ((ByteTag) nbt).byteValue();
             if (!bytes.contains(val)) {
                 bytes.add(val);
             }
         } else if (nbt instanceof ShortTag) {
-            short val = ((ShortTag) nbt).getShort();
+            short val = ((ShortTag) nbt).shortValue();
             if (!shorts.contains(val)) {
                 shorts.add(val);
             }
         } else if (nbt instanceof IntTag) {
-            int val = ((IntTag) nbt).getInt();
+            int val = ((IntTag) nbt).intValue();
             if (!ints.contains(val)) {
                 ints.add(val);
             }
         } else if (nbt instanceof LongTag) {
-            long val = ((LongTag) nbt).getLong();
+            long val = ((LongTag) nbt).longValue();
             if (!longs.contains(val)) {
                 longs.add(val);
             }
         } else if (nbt instanceof FloatTag) {
-            float val = ((FloatTag) nbt).getFloat();
+            float val = ((FloatTag) nbt).floatValue();
             if (!floats.contains(val)) {
                 floats.add(val);
             }
         } else if (nbt instanceof DoubleTag) {
-            double val = ((DoubleTag) nbt).getDouble();
+            double val = ((DoubleTag) nbt).doubleValue();
             if (!doubles.contains(val)) {
                 doubles.add(val);
             }
         } else if (nbt instanceof ByteArrayTag) {
-            byte[] val = ((ByteArrayTag) nbt).getByteArray();
+            byte[] val = ((ByteArrayTag) nbt).getAsByteArray();
             TByteArrayList array = new TByteArrayList(val);
             if (!byteArrays.contains(array)) {
                 byteArrays.add(array);
             }
         } else if (nbt instanceof IntArrayTag) {
-            int[] val = ((IntArrayTag) nbt).getIntArray();
+            int[] val = ((IntArrayTag) nbt).getAsIntArray();
             TIntArrayList array = new TIntArrayList(val);
             if (!intArrays.contains(array)) {
                 intArrays.add(array);
@@ -133,51 +132,51 @@ public class NbtSquishMap {
     public int indexOfTag(Tag nbt) {
         int offset = 0;
         if (nbt instanceof ByteTag) {
-            return bytes.indexOf(((ByteTag) nbt).getByte());
+            return bytes.indexOf(((ByteTag) nbt).byteValue());
         } else {
             offset += bytes.size();
         }
         if (nbt instanceof ShortTag) {
-            return offset + shorts.indexOf(((ShortTag) nbt).getShort());
+            return offset + shorts.indexOf(((ShortTag) nbt).shortValue());
         } else {
             offset += shorts.size();
         }
         if (nbt instanceof IntTag) {
-            return offset + ints.indexOf(((IntTag) nbt).getInt());
+            return offset + ints.indexOf(((IntTag) nbt).intValue());
         } else {
             offset += ints.size();
         }
         if (nbt instanceof LongTag) {
-            return offset + longs.indexOf(((LongTag) nbt).getLong());
+            return offset + longs.indexOf(((LongTag) nbt).longValue());
         } else {
             offset += longs.size();
         }
         if (nbt instanceof FloatTag) {
-            return offset + floats.indexOf(((FloatTag) nbt).getFloat());
+            return offset + floats.indexOf(((FloatTag) nbt).floatValue());
         } else {
             offset += floats.size();
         }
         if (nbt instanceof DoubleTag) {
-            return offset + doubles.indexOf(((DoubleTag) nbt).getDouble());
+            return offset + doubles.indexOf(((DoubleTag) nbt).doubleValue());
         } else {
             offset += doubles.size();
         }
         if (nbt instanceof ByteArrayTag) {
-            byte[] val = ((ByteArrayTag) nbt).getByteArray();
+            byte[] val = ((ByteArrayTag) nbt).getAsByteArray();
             TByteArrayList array = new TByteArrayList(val);
             return offset + byteArrays.indexOf(array);
         } else {
             offset += byteArrays.size();
         }
         if (nbt instanceof IntArrayTag) {
-            int[] val = ((IntArrayTag) nbt).getIntArray();
+            int[] val = ((IntArrayTag) nbt).getAsIntArray();
             TIntArrayList array = new TIntArrayList(val);
             return offset + intArrays.indexOf(array);
         } else {
             offset += intArrays.size();
         }
         if (nbt instanceof StringTag) {
-            return offset + strings.indexOf(((StringTag) nbt).getString());
+            return offset + strings.indexOf(((StringTag) nbt).value());
         } else {
             offset += strings.size();
         }

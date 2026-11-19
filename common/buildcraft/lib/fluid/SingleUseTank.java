@@ -6,14 +6,14 @@
  */
 package buildcraft.lib.fluid;
 
+import buildcraft.lib.misc.FluidUtilBC;
 import javax.annotation.Nonnull;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-import net.minecraftforge.common.util.Constants;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
+import buildcraft.api.core.NbtStacks;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 public class SingleUseTank extends Tank {
@@ -72,17 +72,19 @@ public class SingleUseTank extends Tank {
     public void writeTankToNBT(CompoundTag nbt) {
         super.writeTankToNBT(nbt);
         if (acceptedFluid != null) {
-            nbt.put(NBT_ACCEPTED_FLUID, acceptedFluid.writeToNBT(new CompoundTag()));
+            nbt.put(NBT_ACCEPTED_FLUID, NbtStacks.writeFluidStack(acceptedFluid));
         }
     }
 
     @Override
     public void readTankFromNBT(CompoundTag nbt) {
         super.readTankFromNBT(nbt);
-        if (nbt.contains(NBT_ACCEPTED_FLUID)) {
-            setAcceptedFluid(FluidRegistry.getFluid(nbt.getStringOr(NBT_ACCEPTED_FLUID, "")));
+        if (nbt.get(NBT_ACCEPTED_FLUID) instanceof net.minecraft.nbt.StringTag) {
+            // Older saves held just the fluid's (1.12.2) name
+            Fluid fluid = FluidUtilBC.getFluidByName(nbt.getStringOr(NBT_ACCEPTED_FLUID, ""));
+            acceptedFluid = fluid == null ? null : new FluidStack(fluid, 1);
         } else {
-            acceptedFluid = FluidStack.loadFluidStackFromNBT(nbt.getCompoundOrEmpty(NBT_ACCEPTED_FLUID));
+            acceptedFluid = NbtStacks.readFluidStack(nbt.getCompoundOrEmpty(NBT_ACCEPTED_FLUID));
         }
     }
 }

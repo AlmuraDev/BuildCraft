@@ -4,6 +4,7 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core.marker;
 
+import net.minecraft.server.level.ServerLevel;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
@@ -11,23 +12,20 @@ import com.google.common.collect.ImmutableList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
-import buildcraft.lib.client.render.laser.LaserData_BC8.LaserType;
 import buildcraft.lib.marker.MarkerCache;
 import buildcraft.lib.marker.MarkerSubCache;
 import buildcraft.lib.net.MessageMarker;
 
 import buildcraft.core.BCCoreConfig;
-import buildcraft.core.client.BuildCraftLaserManager;
 
 public class PathSubCache extends MarkerSubCache<PathConnection> {
     public PathSubCache(Level world) {
         super(world, MarkerCache.CACHES.indexOf(PathCache.INSTANCE));
-        PathSavedData data = (PathSavedData) world.getPerWorldStorage().getOrLoadData(PathSavedData.class, PathSavedData.NAME);
-        if (data == null) {
-            data = new PathSavedData();
-            world.getPerWorldStorage().setData(PathSavedData.NAME, data);
+        // Only the server saves markers; the client learns them from the server.
+        if (world instanceof ServerLevel server) {
+            PathSavedData data = server.getDataStorage().computeIfAbsent(PathSavedData.TYPE);
+            data.loadInto(this);
         }
-        data.loadInto(this);
     }
 
     @Override
@@ -84,11 +82,6 @@ public class PathSubCache extends MarkerSubCache<PathConnection> {
             }
         }
         return list.build();
-    }
-
-    @Override
-    public LaserType getPossibleLaserType() {
-        return BuildCraftLaserManager.MARKER_PATH_POSSIBLE;
     }
 
     @Override

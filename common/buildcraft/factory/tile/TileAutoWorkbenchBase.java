@@ -11,15 +11,15 @@ import java.util.Arrays;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.inventory.InventoryCrafting;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ITickable;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.ItemStack;
+import buildcraft.lib.tile.ITickable;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
+import buildcraft.api.transfer.IItemHandlerModifiable;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.mj.IMjConnector;
@@ -52,7 +52,7 @@ public abstract class TileAutoWorkbenchBase extends TileBC_Neptune
 
     private static final long POWER_LOST = POWER_GEN_PASSIVE * 10;
 
-    private static final ResourceLocation ADVANCEMENT_AUTOCRAFT = new ResourceLocation("buildcraftfactory:lazy_crafting");
+    private static final Identifier ADVANCEMENT_AUTOCRAFT = Identifier.parse("buildcraftfactory:lazy_crafting");
 
     // TODO: Store output in the next slot!
     // (Can be used to differentiate between different recipes)
@@ -93,7 +93,7 @@ public abstract class TileAutoWorkbenchBase extends TileBC_Neptune
 
     @Override
     public void update() {
-        if (getWorld().isRemote) {
+        if (getWorld().isClientSide()) {
             return;
         }
         boolean didChange = crafting.tick();
@@ -120,9 +120,9 @@ public abstract class TileAutoWorkbenchBase extends TileBC_Neptune
     }
 
     @Override
-    public void writePayload(int id, PacketBufferBC buffer, Side side) {
+    public void writePayload(int id, PacketBufferBC buffer, LogicalSide side) {
         super.writePayload(id, buffer, side);
-        if (side == Side.SERVER) {
+        if (side == LogicalSide.SERVER) {
             if (id == NET_GUI_TICK) {
                 buffer.writeLong(powerStored);
             } else if (id == NET_GUI_DATA) {
@@ -132,9 +132,9 @@ public abstract class TileAutoWorkbenchBase extends TileBC_Neptune
     }
 
     @Override
-    public void readPayload(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+    public void readPayload(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         super.readPayload(id, buffer, side, ctx);
-        if (side == Side.CLIENT) {
+        if (side == LogicalSide.CLIENT) {
             if (id == NET_GUI_TICK) {
                 powerStoredLast = powerStored;
                 powerStored = buffer.readLong();
@@ -157,7 +157,7 @@ public abstract class TileAutoWorkbenchBase extends TileBC_Neptune
         return MathUtil.interp(partialTicks, powerStoredLast, powerStored) / POWER_REQUIRED;
     }
 
-    public InventoryCrafting getWorkbenchCrafting() {
+    public CraftingContainer getWorkbenchCrafting() {
         return crafting;
     }
 

@@ -8,7 +8,7 @@ package buildcraft.transport.pipe.behaviour;
 
 import java.util.Arrays;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 
 import buildcraft.api.transport.pipe.IPipe;
 import buildcraft.api.transport.pipe.PipeBehaviour;
@@ -21,7 +21,7 @@ public class PipeBehaviourVoid extends PipeBehaviour {
         super(pipe);
     }
 
-    public PipeBehaviourVoid(IPipe pipe, NBTTagCompound nbt) {
+    public PipeBehaviourVoid(IPipe pipe, CompoundTag nbt) {
         super(pipe, nbt);
     }
 
@@ -42,16 +42,16 @@ public class PipeBehaviourVoid extends PipeBehaviour {
         /*
         World world = move.holder.getPipeWorld();
         BlockPos pos = move.holder.getPipePos();
-        if (removed > 0 && (world.getTotalWorldTime() + pos.toLong()) % 23 == 0) {
+        if (removed > 0 && (world.getGameTime() + pos.toLong()) % 23 == 0) {
             SoundType soundType = SoundType.SLIME;
             final SoundEvent soundEvent;
             Fluid f = move.fluid.getFluid();
             if (f == FluidRegistry.LAVA) {
-                soundEvent = SoundEvents.ITEM_BUCKET_EMPTY_LAVA;
+                soundEvent = SoundEvents.BUCKET_EMPTY_LAVA;
             } else if (f == FluidRegistry.WATER) {
-                soundEvent = SoundEvents.ITEM_BUCKET_EMPTY;
+                soundEvent = SoundEvents.BUCKET_EMPTY;
             } else {
-                soundEvent = SoundEvents.ITEM_BOTTLE_FILL_DRAGONBREATH;
+                soundEvent = SoundEvents.BOTTLE_FILL_DRAGONBREATH;
             }
             float volume = (soundType.getVolume() + 1.0F) / 5.0F;
             float pitch = soundType.getPitch() * 0.1F;

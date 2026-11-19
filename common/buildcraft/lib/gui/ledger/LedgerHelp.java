@@ -6,6 +6,10 @@
 
 package buildcraft.lib.gui.ledger;
 
+import buildcraft.lib.gui.help.ElementHelpInfo;
+import buildcraft.lib.misc.StringUtilBC;
+import buildcraft.lib.gui.elem.GuiElementText;
+import net.minecraft.client.Minecraft;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,7 +103,7 @@ public class LedgerHelp extends Ledger_Neptune {
                     if (selected != element && !set) {
                         selected = element;
                         GuiElementContainerHelp container = new GuiElementContainerHelp(gui, positionLedgerInnerStart);
-                        info.info.addGuiElements(container);
+                        addGuiElements(info.info, container);
                         if (openElements.size() == 2) {
                             openElements.remove(1);
                         }
@@ -118,5 +122,26 @@ public class LedgerHelp extends Ledger_Neptune {
             elements.clear();
         }
         GlStateManager.color(1, 1, 1);
+    }
+
+    /** Lays out the help text of an {@link ElementHelpInfo} in the help ledger. */
+    static void addGuiElements(ElementHelpInfo help, GuiElementContainerHelp container) {
+        BuildCraftGui gui = container.gui;
+        int y = 20;
+        for (int i = 0; i < help.localeKeys.length; i++) {
+            String key = help.localeKeys[i];
+            if (key == null) {
+                y += Minecraft.getInstance().font.FONT_HEIGHT + 5;
+                continue;
+            }
+            String localized = help.isPreTranslated ? key : LocaleUtil.localize(key);
+            List<String> lines = StringUtilBC.splitIntoLines(localized);
+
+            for (String line : lines) {
+                GuiElementText elemText = new GuiElementText(gui, container.offset(0, y), line, 0);
+                container.add(elemText);
+                y += elemText.getHeight() + 5;
+            }
+        }
     }
 }

@@ -8,7 +8,7 @@ package buildcraft.lib.fake;
 
 import com.mojang.authlib.GameProfile;
 
-import net.minecraft.tileentity.TileEntitySign;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
 import net.neoforged.neoforge.common.util.FakePlayer;
@@ -18,8 +18,11 @@ public class FakePlayerBC extends FakePlayer {
         super(world, name);
     }
 
-    @Override
-    public void openEditSign(TileEntitySign signTile) {
-        // TODO: Put this in forge!
+    /** Moves the fake player to the given world and position (1.12.2 set its fields directly). */
+    public void moveTo(ServerLevel world, BlockPos pos) {
+        if (level() != world) {
+            setLevel(world);
+        }
+        setPos(pos.getX(), pos.getY(), pos.getZ());
     }
 }

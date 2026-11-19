@@ -16,7 +16,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
 
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.fml.common.FMLCommonHandler;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
@@ -77,8 +76,8 @@ public abstract class NetworkedObjectCache<T> {
      *         make sure that this really is the server thread. */
     public ServerView server() {
         if (DEBUG_LOG) {
-            MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
-            if (!server.isCallingFromMinecraftThread()) {
+            MinecraftServer server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+            if (!server.isSameThread()) {
                 throw new IllegalStateException("");
             }
         }
@@ -89,7 +88,7 @@ public abstract class NetworkedObjectCache<T> {
      *         make sure that this really is the client thread. */
     public ClientView client() {
         if (DEBUG_LOG) {
-            if (!Minecraft.getInstance().isCallingFromMinecraftThread()) {
+            if (!Minecraft.getInstance().isSameThread()) {
                 throw new IllegalStateException("");
             }
         }

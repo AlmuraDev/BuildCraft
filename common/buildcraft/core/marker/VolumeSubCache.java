@@ -4,6 +4,7 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core.marker;
 
+import net.minecraft.server.level.ServerLevel;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -19,23 +20,20 @@ import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-import buildcraft.lib.client.render.laser.LaserData_BC8.LaserType;
 import buildcraft.lib.marker.MarkerCache;
 import buildcraft.lib.marker.MarkerSubCache;
 import buildcraft.lib.net.MessageMarker;
 
 import buildcraft.core.BCCoreConfig;
-import buildcraft.core.client.BuildCraftLaserManager;
 
 public class VolumeSubCache extends MarkerSubCache<VolumeConnection> {
     public VolumeSubCache(Level world) {
         super(world, MarkerCache.CACHES.indexOf(VolumeCache.INSTANCE));
-        VolumeSavedData data = (VolumeSavedData) world.getPerWorldStorage().getOrLoadData(VolumeSavedData.class, VolumeSavedData.NAME);
-        if (data == null) {
-            data = new VolumeSavedData();
-            world.getPerWorldStorage().setData(VolumeSavedData.NAME, data);
+        // Only the server saves markers; the client learns them from the server.
+        if (world instanceof ServerLevel server) {
+            VolumeSavedData data = server.getDataStorage().computeIfAbsent(VolumeSavedData.TYPE);
+            data.loadInto(this);
         }
-        data.loadInto(this);
     }
 
     @Override
@@ -88,7 +86,7 @@ public class VolumeSubCache extends MarkerSubCache<VolumeConnection> {
         for (Direction face : Direction.values()) {
             if (taken.contains(face.getAxis())) continue;
             for (int i = 1; i <= BCCoreConfig.markerMaxDistance; i++) {
-                BlockPos toTry = from.offset(face, i);
+                BlockPos toTry = from.relative(face, i);
                 if (hasLoadedOrUnloadedMarker(toTry)) {
                     if (!canConnect(from, toTry)) break;
                     valids.add(toTry);
@@ -97,12 +95,6 @@ public class VolumeSubCache extends MarkerSubCache<VolumeConnection> {
             }
         }
         return valids.build();
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public LaserType getPossibleLaserType() {
-        return BuildCraftLaserManager.MARKER_VOLUME_POSSIBLE;
     }
 
     @Override

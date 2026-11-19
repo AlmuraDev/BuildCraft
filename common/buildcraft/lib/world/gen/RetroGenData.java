@@ -21,25 +21,24 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
-import net.minecraftforge.common.util.Constants;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
 
-public class RetroGenData extends SavedData {
+import buildcraft.lib.misc.data.NbtSavedData;
+
+public class RetroGenData extends NbtSavedData {
     public static final boolean DEBUG = BCDebugging.shouldDebugLog("lib.gen.retro");
     public static final String NAME = "buildcraft_world_gen";
     private final Map<ChunkPos, Set<String>> gennedChunks = new HashMap<>();
 
-    public RetroGenData() {
-        this(NAME);
-    }
+    public static final SavedDataType<RetroGenData> TYPE =
+        NbtSavedData.type(Identifier.fromNamespaceAndPath("buildcraftlib", NAME), RetroGenData::new);
 
-    public RetroGenData(String name) {
-        super(name);
-    }
+    public RetroGenData() {}
 
     @Override
     public void readFromNBT(CompoundTag nbt) {
@@ -48,7 +47,7 @@ public class RetroGenData extends SavedData {
         ListTag registry = nbt.getListOrEmpty("registry");
         String[] names = new String[registry.size()];
         for (int i = 0; i < registry.size(); i++) {
-            names[i] = registry.getStringTagAt(i);
+            names[i] = registry.getStringOr(i, "");
         }
 
         if (DEBUG) {

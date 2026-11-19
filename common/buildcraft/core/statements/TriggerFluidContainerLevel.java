@@ -59,14 +59,14 @@ public class TriggerFluidContainerLevel extends BCStatement implements ITriggerE
 
     @Override
     public boolean isTriggerActive(BlockEntity tile, Direction side, IStatementContainer statementContainer, IStatementParameter[] parameters) {
-        IFluidHandler handler = tile.getCapability(CapUtil.CAP_FLUIDS, side.getOpposite());
+        IFluidHandler handler = CapUtil.getCapability(tile, CapUtil.CAP_FLUIDS, side.getOpposite());
         if (handler == null) {
             return false;
         }
         FluidStack searchedFluid = null;
 
         if (parameters != null && parameters.length >= 1 && parameters[0] != null && !parameters[0].getItemStack() .isEmpty()) {
-            searchedFluid = FluidUtil.getFluidContained(parameters[0].getItemStack());
+            searchedFluid = FluidUtilBC.getFluidContained(parameters[0].getItemStack());
             if (searchedFluid != null) {
                 searchedFluid.setAmount(1);
             }

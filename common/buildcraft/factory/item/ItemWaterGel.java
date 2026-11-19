@@ -6,18 +6,18 @@
 
 package buildcraft.factory.item;
 
-import net.minecraft.block.Block;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
-import net.minecraft.init.SoundEvents;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.SoundCategory;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.item.ItemStack;
+import buildcraft.api.core.ActionResult;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.Level;
 
 import buildcraft.lib.item.ItemBC_Neptune;
 
@@ -33,33 +33,33 @@ public class ItemWaterGel extends ItemBC_Neptune {
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand) {
-        ItemStack stack = player.getHeldItem(hand);
-        Vec3d start = player.getPositionVector().addVector(0, player.getEyeHeight(), 0);
-        Vec3d look = player.getLookVec();
-        Vec3d end = start.add(look.scale(7));
-        RayTraceResult ray = world.rayTraceBlocks(start, end, true, false, true);
+    public InteractionResult use(Level world, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        Vec3 start = player.getPositionVector().add(0, player.getEyeHeight(), 0);
+        Vec3 look = player.getLookVec();
+        Vec3 end = start.add(look.scale(7));
+        HitResult ray = world.rayTraceBlocks(start, end, true, false, true);
 
         if (ray == null || ray.getBlockPos() == null) {
-            return new ActionResult<>(EnumActionResult.FAIL, stack);
+            return InteractionResult.FAIL;
         }
 
         Block b = world.getBlockState(ray.getBlockPos()).getBlock();
         if (b != Blocks.WATER) {
-            return new ActionResult<>(EnumActionResult.FAIL, stack);
+            return InteractionResult.FAIL;
         }
 
-        if (!player.capabilities.isCreativeMode) {
+        if (!player.isCreative()) {
             stack.setCount(stack.getCount() - 1);
         }
 
         // Same as ItemSnowball
-        world.playSound(null, player.posX, player.posY, player.posZ,//
-                SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.NEUTRAL,//
+        world.playSound(null, player.getX(), player.getY(), player.getZ(),//
+                SoundEvents.SNOWBALL_THROW, SoundSource.NEUTRAL,//
                 0.5F, 0.4F / (itemRand.nextFloat() * 0.4F + 0.8F));
 
-        if (!world.isRemote) {
-            world.setBlockState(ray.getBlockPos(), BCFactoryBlocks.waterGel.getDefaultState().withProperty(BlockWaterGel.PROP_STAGE, GelStage.SPREAD_0));
+        if (!world.isClientSide()) {
+            world.setBlockAndUpdate(ray.getBlockPos(), BCFactoryBlocks.waterGel.defaultBlockState().setValue(BlockWaterGel.PROP_STAGE, GelStage.SPREAD_0));
             world.scheduleUpdate(ray.getBlockPos(), BCFactoryBlocks.waterGel, 200);
 
             // TODO: Snowball stuff
@@ -70,7 +70,7 @@ public class ItemWaterGel extends ItemBC_Neptune {
         }
 
         // player.addStat(StatList.getObjectUseStats(this));
-        return new ActionResult<>(EnumActionResult.SUCCESS, stack);
+        return InteractionResult.SUCCESS;
     }
 
 }

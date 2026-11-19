@@ -15,18 +15,19 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
 
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.world.GetCollisionBoxesEvent;
 import net.minecraftforge.fml.client.config.GuiUtils;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.schematics.ISchematicBlock;
 
@@ -42,7 +43,7 @@ public enum BCBuildersEventDist {
     INSTANCE;
 
     private static final UUID UUID_SINGLE_SCHEMATIC = new UUID(0xfd3b8c59b0a8b191L, 0x772ec006c1b0ffaaL);
-    private final Map<World, Deque<WeakReference<TileQuarry>>> allQuarries = new WeakHashMap<>();
+    private final Map<Level, Deque<WeakReference<TileQuarry>>> allQuarries = new WeakHashMap<>();
 
     public synchronized void validateQuarry(TileQuarry quarry) {
         Deque<WeakReference<TileQuarry>> quarries =
@@ -81,7 +82,7 @@ public enum BCBuildersEventDist {
                 iter.remove();
                 continue;
             }
-            for (AxisAlignedBB aabb : quarry.getCollisionBoxes()) {
+            for (AABB aabb : quarry.getCollisionBoxes()) {
                 if (event.getAabb().intersects(aabb)) {
                     event.getCollisionBoxesList().add(aabb);
                 }
@@ -90,7 +91,7 @@ public enum BCBuildersEventDist {
     }
 
     @SubscribeEvent
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void onRenderTooltipPostText(RenderTooltipEvent.PostText event) {
         Snapshot snapshot = null;
         ItemStack stack = event.getStack();
@@ -102,7 +103,7 @@ public enum BCBuildersEventDist {
             if (schematicBlock != null) {
                 Blueprint blueprint = new Blueprint();
                 blueprint.size = new BlockPos(1, 1, 1);
-                blueprint.offset = BlockPos.ORIGIN;
+                blueprint.offset = BlockPos.ZERO;
                 blueprint.data = new int[] { 0 };
                 blueprint.palette.add(schematicBlock);
                 blueprint.computeKey();
@@ -142,7 +143,7 @@ public enum BCBuildersEventDist {
         }
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     public void onTickClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END && !Minecraft.getMinecraft().isGamePaused()) {

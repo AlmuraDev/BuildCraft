@@ -113,7 +113,7 @@ public class RenderUtil {
     /** @return true if this thread is the main minecraft thread, used for all client side game logic and (by default)
      *         tile entity rendering. */
     public static boolean isMainRenderThread() {
-        return Minecraft.getInstance().isCallingFromMinecraftThread();
+        return Minecraft.getInstance().isSameThread();
     }
 
     /** @return The first unused {@link Tessellator} for the current thread that uses the given vertex format. (Unused =

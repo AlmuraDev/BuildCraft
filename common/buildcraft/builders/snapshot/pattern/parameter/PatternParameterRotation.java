@@ -8,11 +8,12 @@ package buildcraft.builders.snapshot.pattern.parameter;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 import buildcraft.api.statements.IStatement;
@@ -40,14 +41,14 @@ public enum PatternParameterRotation implements IStatementParameter {
         this.rotationCount = ordinal();
     }
 
-    public static PatternParameterRotation readFromNbt(NBTTagCompound nbt) {
-        int d = nbt.getByte("d");
+    public static PatternParameterRotation readFromNbt(CompoundTag nbt) {
+        int d = nbt.getByteOr("d", (byte) 0);
         return values()[d & 3];
     }
 
     @Override
-    public void writeToNbt(NBTTagCompound nbt) {
-        nbt.setByte("d", (byte) rotationCount);
+    public void writeToNbt(CompoundTag nbt) {
+        nbt.putByte("d", (byte) rotationCount);
     }
 
     @Override
@@ -56,7 +57,7 @@ public enum PatternParameterRotation implements IStatementParameter {
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public ISprite getSprite() {
         return BCBuildersSprites.PARAM_ROTATION[rotationCount];
     }

@@ -6,6 +6,7 @@
 
 package buildcraft.core.client.render;
 
+import buildcraft.lib.debug.IDetachedRenderer;
 import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -24,7 +25,7 @@ import buildcraft.core.marker.volume.ClientVolumeBoxes;
 import buildcraft.core.marker.volume.IFastAddonRenderer;
 import buildcraft.core.marker.volume.Lock;
 
-public enum RenderVolumeBoxes implements DetachedRenderer.IDetachedRenderer {
+public enum RenderVolumeBoxes implements IDetachedRenderer {
     INSTANCE;
 
     @SuppressWarnings("unchecked")
@@ -45,7 +46,8 @@ public enum RenderVolumeBoxes implements DetachedRenderer.IDetachedRenderer {
                     .filter(Lock.Target.TargetUsedByMachine.class::isInstance)
                     .map(Lock.Target.TargetUsedByMachine.class::cast)
                     .map(target -> target.type)
-                    .map(Lock.Target.TargetUsedByMachine.EnumType::getLaserType)
+                    .map(t -> t == Lock.Target.TargetUsedByMachine.EnumType.STRIPES_WRITE
+                        ? BuildCraftLaserManager.STRIPES_WRITE : BuildCraftLaserManager.STRIPES_READ)
                     .findFirst()
                     .orElse(BuildCraftLaserManager.MARKER_VOLUME_CONNECTED);
             }

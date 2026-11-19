@@ -4,7 +4,7 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core;
 
-import net.minecraft.block.material.Material;
+import net.neoforged.bus.api.IEventBus;
 
 import buildcraft.api.enums.EnumEngineType;
 
@@ -28,8 +28,6 @@ import buildcraft.core.tile.TilePowerConsumerTester;
 
 public class BCCoreBlocks {
 
-    private static final RegistrationHelper HELPER = new RegistrationHelper();
-
     public static BlockEngine_BC8 engine;
     public static BlockSpring spring;
     public static BlockDecoration decorated;
@@ -37,27 +35,27 @@ public class BCCoreBlocks {
     public static BlockMarkerPath markerPath;
     public static BlockPowerConsumerTester powerTester;
 
-    public static void preInit() {
-        spring = HELPER.addBlockAndItem(new BlockSpring("block.spring"), ItemBlockSpring::new);
-        decorated = HELPER.addBlockAndItem(new BlockDecoration("block.decorated"), ItemBlockDecorated::new);
-        markerVolume = HELPER.addBlockAndItem(new BlockMarkerVolume(Material.CIRCUITS, "block.marker.volume"));
-        markerPath = HELPER.addBlockAndItem(new BlockMarkerPath(Material.CIRCUITS, "block.marker.path"));
+    public static void preInit(IEventBus modBus) {
+        RegistrationHelper helper = new RegistrationHelper(BCCore.MODID, modBus);
+        helper.addBlockAndItem("block.spring", false, BlockSpring::new, ItemBlockSpring::new, b -> spring = b);
+        helper.addBlockAndItem("block.decorated", false, BlockDecoration::new, ItemBlockDecorated::new, b -> decorated = b);
+        helper.addBlockAndItem("block.marker.volume", BlockMarkerVolume::new, b -> markerVolume = b);
+        helper.addBlockAndItem("block.marker.path", BlockMarkerPath::new, b -> markerPath = b);
         if (BCLib.DEV) {
-            powerTester = HELPER.addBlockAndItem(new BlockPowerConsumerTester(Material.IRON, "block.power_tester"));
+            helper.addBlockAndItem("block.power_tester", BlockPowerConsumerTester::new, b -> powerTester = b);
         }
 
-        engine = HELPER.addBlockAndItem(new BlockEngine_BC8(Material.IRON, "block.engine.bc"), ItemEngine_BC8::new);
-        if (engine != null) {
-            engine.registerEngine(EnumEngineType.WOOD, TileEngineRedstone_BC8::new);
-            engine.registerEngine(EnumEngineType.CREATIVE, TileEngineCreative::new);
-        }
+        helper.addBlockAndItem("block.engine.bc", false, BlockEngine_BC8::new, ItemEngine_BC8<EnumEngineType>::new,
+            b -> engine = b);
+        helper.registerEngineTile("tile.engine.wood", "engine", EnumEngineType.WOOD, TileEngineRedstone_BC8::new,
+            () -> engine);
+        helper.registerEngineTile("tile.engine.creative", "engine", EnumEngineType.CREATIVE, TileEngineCreative::new,
+            () -> engine);
 
-        HELPER.registerTile(TileMarkerVolume.class, "tile.marker.volume");
-        HELPER.registerTile(TileMarkerPath.class, "tile.marker.path");
-        HELPER.registerTile(TileEngineRedstone_BC8.class, "tile.engine.wood");
-        HELPER.registerTile(TileEngineCreative.class, "tile.engine.creative");
+        helper.registerTile("tile.marker.volume", TileMarkerVolume::new, () -> markerVolume);
+        helper.registerTile("tile.marker.path", TileMarkerPath::new, () -> markerPath);
         if (BCLib.DEV) {
-            HELPER.registerTile(TilePowerConsumerTester.class, "tile.power_tester");
+            helper.registerTile("tile.power_tester", TilePowerConsumerTester::new, () -> powerTester);
         }
     }
 }

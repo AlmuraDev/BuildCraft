@@ -18,7 +18,10 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.ChunkPos;
 
@@ -27,6 +30,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import buildcraft.api.IBuildCraftMod;
 import buildcraft.api.core.BCDebugging;
@@ -242,6 +246,15 @@ public class MessageManager {
 
     public static void sendToDimension(IMessage message, ServerLevel level) {
         PacketDistributor.sendToPlayersInDimension(level, toPayload(message));
+    }
+
+    /** Sends to every player in the given dimension of the running server (if it has that dimension). */
+    public static void sendToDimension(IMessage message, ResourceKey<Level> dimension) {
+        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        ServerLevel level = server == null ? null : server.getLevel(dimension);
+        if (level != null) {
+            sendToDimension(message, level);
+        }
     }
 
     /** Only callable on the client. */

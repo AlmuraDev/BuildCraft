@@ -9,6 +9,7 @@ package buildcraft.lib.item;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import net.minecraft.world.item.Item;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
@@ -44,9 +45,9 @@ public class ItemPluggableSimple extends ItemBC_Neptune implements IItemPluggabl
     private final IPlacementPredicate canPlace;
     private final IPluggableCreator creator;
 
-    public ItemPluggableSimple(String id, PluggableDefinition definition, IPluggableCreator creator,
+    public ItemPluggableSimple(Item.Properties properties, String id, PluggableDefinition definition, IPluggableCreator creator,
         @Nullable IPlacementPredicate canPlace) {
-        super(id);
+        super(properties, id);
         this.definition = definition;
         this.creator = creator;
         if (creator == null) {
@@ -55,16 +56,18 @@ public class ItemPluggableSimple extends ItemBC_Neptune implements IItemPluggabl
         this.canPlace = canPlace == null ? ALWAYS_CAN : canPlace;
     }
 
-    public ItemPluggableSimple(String id, PluggableDefinition definition, @Nullable IPlacementPredicate canPlace) {
-        this(id, definition, definition.creator, canPlace);
+    public ItemPluggableSimple(Item.Properties properties, String id, PluggableDefinition definition,
+        @Nullable IPlacementPredicate canPlace) {
+        this(properties, id, definition, definition.creator, canPlace);
     }
 
-    public ItemPluggableSimple(String id, PluggableDefinition definition, @Nonnull IPluggableCreator creator) {
-        this(id, definition, creator, null);
+    public ItemPluggableSimple(Item.Properties properties, String id, PluggableDefinition definition,
+        @Nonnull IPluggableCreator creator) {
+        this(properties, id, definition, creator, null);
     }
 
-    public ItemPluggableSimple(String id, PluggableDefinition definition) {
-        this(id, definition, definition.creator, null);
+    public ItemPluggableSimple(Item.Properties properties, String id, PluggableDefinition definition) {
+        this(properties, id, definition, definition.creator, null);
     }
 
     @Override

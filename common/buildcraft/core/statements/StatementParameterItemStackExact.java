@@ -6,6 +6,7 @@
 
 package buildcraft.core.statements;
 
+import buildcraft.api.core.NbtStacks;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
@@ -70,14 +71,14 @@ public class StatementParameterItemStackExact implements IStatementParameter {
     public void writeToNbt(CompoundTag compound) {
         if (stack != null) {
             CompoundTag tagCompound = new CompoundTag();
-            stack.writeToNBT(tagCompound);
+            tagCompound.merge(NbtStacks.writeItemStack(stack));
             compound.put("stack", tagCompound);
         }
     }
 
     public static StatementParameterItemStackExact readFromNbt(CompoundTag nbt) {
         StatementParameterItemStackExact param = new StatementParameterItemStackExact();
-        param.stack = new ItemStack(nbt.getCompoundOrEmpty("stack"));
+        param.stack = NbtStacks.readItemStack(nbt.getCompoundOrEmpty("stack"));
         return param;
     }
 
@@ -108,7 +109,7 @@ public class StatementParameterItemStackExact implements IStatementParameter {
     @Override
     public String getDescription() {
         if (stack != null) {
-            return stack.getHoverName();
+            return stack.getHoverName().getString();
         } else {
             return "";
         }

@@ -6,6 +6,7 @@
 
 package buildcraft.core.marker.volume;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,7 +15,6 @@ import java.util.stream.IntStream;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.Identifier;
 import net.minecraft.core.BlockPos;
@@ -24,12 +24,10 @@ import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
-import buildcraft.lib.client.render.laser.LaserData_BC8;
 import buildcraft.lib.misc.MessageUtil;
 import buildcraft.lib.misc.NBTUtilBC;
 import buildcraft.lib.net.PacketBufferBC;
 
-import buildcraft.core.client.BuildCraftLaserManager;
 
 public class Lock {
     public Cause cause;
@@ -117,27 +115,27 @@ public class Lock {
 
             @Override
             public CompoundTag writeToNBT(CompoundTag nbt) {
-                nbt.put("pos", NbtUtils.createPosTag(pos));
-                nbt.putString("block", Block.REGISTRY.getNameForObject(block).toString());
+                nbt.put("pos", NBTUtilBC.writeLegacyPosTag(pos));
+                nbt.putString("block", BuiltInRegistries.BLOCK.getKey(block).toString());
                 return nbt;
             }
 
             @Override
             public void readFromNBT(CompoundTag nbt) {
-                pos = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("pos"));
-                block = Block.REGISTRY.getObject(Identifier.parse(nbt.getStringOr("block", "")));
+                pos = NBTUtilBC.readBlockPos(nbt.get("pos"));
+                block = BuiltInRegistries.BLOCK.getValue(Identifier.parse(nbt.getStringOr("block", "")));
             }
 
             @Override
             public void toBytes(FriendlyByteBuf buf) {
                 MessageUtil.writeBlockPos(buf, pos);
-                buf.writeUtf(Block.REGISTRY.getNameForObject(block).toString());
+                buf.writeUtf(BuiltInRegistries.BLOCK.getKey(block).toString());
             }
 
             @Override
             public void fromBytes(FriendlyByteBuf buf) {
                 pos = MessageUtil.readBlockPos(buf);
-                block = Block.REGISTRY.getObject(Identifier.parse(buf.readUtf(1024)));
+                block = BuiltInRegistries.BLOCK.getValue(Identifier.parse(buf.readUtf(1024)));
             }
 
             @Override
@@ -274,24 +272,10 @@ public class Lock {
                 type = new PacketBufferBC(buf).readEnum(EnumType.class);
             }
 
+            /** The laser each type draws is picked by the client (RenderVolumeBoxes). */
             public enum EnumType {
-                STRIPES_WRITE {
-                    @OnlyIn(Dist.CLIENT)
-                    @Override
-                    public LaserData_BC8.LaserType getLaserType() {
-                        return BuildCraftLaserManager.STRIPES_WRITE;
-                    }
-                },
-                STRIPES_READ {
-                    @OnlyIn(Dist.CLIENT)
-                    @Override
-                    public LaserData_BC8.LaserType getLaserType() {
-                        return BuildCraftLaserManager.STRIPES_READ;
-                    }
-                };
-
-                @OnlyIn(Dist.CLIENT)
-                public abstract LaserData_BC8.LaserType getLaserType();
+                STRIPES_WRITE,
+                STRIPES_READ
             }
         }
 

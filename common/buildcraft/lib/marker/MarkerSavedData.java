@@ -12,21 +12,24 @@ import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.saveddata.SavedData;
+import buildcraft.lib.misc.data.NbtSavedData;
 
 import buildcraft.api.core.BCLog;
 
 import buildcraft.lib.misc.NBTUtilBC;
 
-public abstract class MarkerSavedData<S extends MarkerSubCache<C>, C extends MarkerConnection<C>> extends SavedData {
+public abstract class MarkerSavedData<S extends MarkerSubCache<C>, C extends MarkerConnection<C>> extends NbtSavedData {
     protected static final boolean DEBUG_FULL = MarkerSubCache.DEBUG_FULL;
 
     protected final List<BlockPos> markerPositions = new ArrayList<>();
     protected final List<List<BlockPos>> markerConnections = new ArrayList<>();
     private S subCache;
 
+    /** Only used in debug logging (1.12.2 saved the data under this name). */
+    protected final String mapName;
+
     public MarkerSavedData(String name) {
-        super(name);
+        this.mapName = name;
     }
 
     @Override
