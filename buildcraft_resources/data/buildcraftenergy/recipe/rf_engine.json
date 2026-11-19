@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "w": "minecraft:redstone",
+    "g": "#c:glass_blocks/colorless",
+    "G": "#c:gears/iron",
+    "p": "minecraft:piston"
+  },
+  "pattern": [
+    "www",
+    " g ",
+    "GpG"
+  ],
+  "result": {
+    "id": "buildcraftcore:engine",
+    "components": {
+      "minecraft:block_state": {
+        "type": "rf"
+      }
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "buildcraftcore:engine_enabled",
+      "engine": "rf"
+    }
+  ]
+}

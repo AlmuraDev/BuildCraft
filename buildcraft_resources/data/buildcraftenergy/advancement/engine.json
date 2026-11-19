@@ -1,0 +1,53 @@
+{
+  "display": {
+    "icon": {
+      "id": "buildcraftcore:engine"
+    },
+    "title": {
+      "translate": "advancements.buildcraftcore.engine.title"
+    },
+    "description": {
+      "translate": "advancements.buildcraftcore.engine.description"
+    }
+  },
+  "parent": "buildcraftcore:guide",
+  "criteria": {
+    "redstone_engine": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "buildcraftcore:engine"
+          }
+        ]
+      }
+    },
+    "strirling_engine": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "buildcraftcore:engine"
+          }
+        ]
+      }
+    },
+    "combustion_engine": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "buildcraftcore:engine"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "redstone_engine",
+      "strirling_engine",
+      "combustion_engine"
+    ]
+  ]
+}

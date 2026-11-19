@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2017 SpaceToad and the BuildCraft team
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not
+ * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/
+ */
+
+package buildcraft.energy.client;
+
+import buildcraft.energy.BCEnergyModels;
+import buildcraft.energy.BCEnergyProxy;
+
+/** Energy's client proxy, created by name from {@link BCEnergyProxy} so the server never loads it.
+ * TODO(26.3 GUIs batch): the engine and dynamo GUIs. */
+public class BCEnergyClientProxy extends BCEnergyProxy {
+    @Override
+    public void fmlPreInit() {
+        super.fmlPreInit();
+        BCEnergyModels.fmlPreInit();
+    }
+}

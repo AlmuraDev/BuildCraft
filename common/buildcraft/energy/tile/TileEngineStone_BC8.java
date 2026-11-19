@@ -8,10 +8,11 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 
@@ -26,6 +27,7 @@ import buildcraft.lib.delta.DeltaInt;
 import buildcraft.lib.delta.DeltaManager.EnumNetworkVisibility;
 import buildcraft.lib.engine.EngineConnector;
 import buildcraft.lib.engine.TileEngineBase_BC8;
+import buildcraft.lib.misc.FuelUtil;
 import buildcraft.lib.misc.InventoryUtil;
 import buildcraft.lib.tile.item.ItemHandlerManager.EnumAccess;
 import buildcraft.lib.tile.item.ItemHandlerSimple;
@@ -49,13 +51,14 @@ public class TileEngineStone_BC8 extends TileEngineBase_BC8 {
 
     private boolean isForceInserting = false;
 
-    public TileEngineStone_BC8() {
+    public TileEngineStone_BC8(BlockPos pos, BlockState state) {
+        super(pos, state);
         invFuel = itemManager.addInvHandler("fuel", 1, this::isValidFuel, EnumAccess.BOTH, EnumPipePart.VALUES);
     }
 
     private boolean isValidFuel(int slot, ItemStack stack) {
         // Always allow inserting container items if they aren't fuel
-        return isForceInserting || getItemBurnTime(stack) > 0;
+        return isForceInserting || stack.has(net.minecraft.core.component.DataComponents.COOKING_FUEL);
     }
 
     // TileEntity overrides
@@ -126,14 +129,14 @@ public class TileEngineStone_BC8 extends TileEngineBase_BC8 {
     @Override
     public void burn() {
         if (burnTime == 0 && isRedstonePowered) {
-            burnTime = totalBurnTime = getItemBurnTime(invFuel.getStackInSlot(0));
+            burnTime = totalBurnTime = FuelUtil.getBurnTime(this, invFuel.getStackInSlot(0));
 
             if (burnTime > 0) {
                 deltaFuelLeft.setValue(100);
                 deltaFuelLeft.addDelta(0, totalBurnTime, -100);
 
                 ItemStack fuel = invFuel.extractItem(0, 1, false);
-                ItemStack container = fuel.getItem().getContainerItem(fuel);
+                ItemStack container = FuelUtil.getRemainder(fuel);
                 if (!container.isEmpty()) {
                     if (invFuel.getStackInSlot(0).isEmpty()) {
                         isForceInserting = false;
@@ -149,10 +152,6 @@ public class TileEngineStone_BC8 extends TileEngineBase_BC8 {
                 }
             }
         }
-    }
-
-    private static int getItemBurnTime(ItemStack itemstack) {
-        return AbstractFurnaceBlockEntity.getItemBurnTime(itemstack);
     }
 
     @Override

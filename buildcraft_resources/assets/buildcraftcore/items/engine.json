@@ -12,10 +12,31 @@
         }
       },
       {
+        "when": "stone",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcraftcore:block/engine/stone"
+        }
+      },
+      {
+        "when": "iron",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcraftcore:block/engine/iron"
+        }
+      },
+      {
         "when": "creative",
         "model": {
           "type": "minecraft:model",
           "model": "buildcraftcore:block/engine/creative"
+        }
+      },
+      {
+        "when": "rf",
+        "model": {
+          "type": "minecraft:model",
+          "model": "buildcraftcore:block/engine/rf"
         }
       }
     ],

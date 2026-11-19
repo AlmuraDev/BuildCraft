@@ -66,6 +66,11 @@ public class BCCore {
             RegistrationHelper.createRegister(Registries.FEATURE_TYPE, MODID, modBus);
         features.register("water_spring", () -> WaterSpringFeature.CODEC);
 
+        DeferredRegister<com.mojang.serialization.MapCodec<? extends net.neoforged.neoforge.common.conditions.ICondition>> conditions =
+            RegistrationHelper.createRegister(net.neoforged.neoforge.registries.NeoForgeRegistries.Keys.CONDITION_CODECS,
+                MODID, modBus);
+        conditions.register("engine_enabled", () -> buildcraft.core.recipe.EngineEnabledCondition.CODEC);
+
         BCCoreProxy.getProxy().fmlPreInit();
 
         NeoForge.EVENT_BUS.register(BCCoreEventDist.INSTANCE);

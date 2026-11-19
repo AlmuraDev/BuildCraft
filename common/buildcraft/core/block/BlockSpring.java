@@ -16,6 +16,8 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+
+import buildcraft.lib.registry.TileTypes;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
@@ -27,7 +29,7 @@ import buildcraft.api.properties.BuildCraftProperties;
 import buildcraft.lib.block.BlockBCBase_Neptune;
 import buildcraft.lib.misc.data.XorShift128Random;
 
-public class BlockSpring extends BlockBCBase_Neptune implements EntityBlock {
+public class BlockSpring extends BlockBCBase_Neptune implements EntityBlock, TileTypes.IStateTileTypes {
     public static final EnumProperty<EnumSpring> SPRING_TYPE = BuildCraftProperties.SPRING_TYPE;
 
     public static final XorShift128Random rand = new XorShift128Random();
@@ -55,6 +57,11 @@ public class BlockSpring extends BlockBCBase_Neptune implements EntityBlock {
     @Override
     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
         generateSpringBlock(world, pos, state);
+    }
+
+    @Override
+    public BlockEntityType<?> getTileType(BlockState state) {
+        return state.getValue(SPRING_TYPE).tileType;
     }
 
     @Nullable

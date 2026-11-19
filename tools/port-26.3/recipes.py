@@ -93,6 +93,14 @@ def ingredient(value, warnings, where):
             return '#c:unknown/' + ore
         return '#' + tag
     item = value['item']
+    if item == 'forge:bucketfilled':
+        # 1.12.2's universal bucket holding a fluid: the fluid's buckets, in every heat value (BCEnergyFluids)
+        fluid = value.get('nbt', {}).get('FluidName')
+        if fluid is None:
+            warnings.append('%s: filled bucket without a fluid' % where)
+            return 'minecraft:bucket'
+        return ['buildcraftenergy:bucket_' + fluid] + ['buildcraftenergy:bucket_%s_heat_%d' % (fluid, h)
+                                                       for h in (1, 2)]
     if item.startswith('#') and ':' not in item:
         if item[1:] in CONSTANTS:
             return ingredient(CONSTANTS[item[1:]], warnings, where)
@@ -123,8 +131,15 @@ def result(value, warnings, where):
     return out
 
 
-def conditions(data):
-    out = []
+# Conditions 26.3 needs that 1.12.2 handled at runtime (disabled objects): "mod/file.json" -> conditions
+EXTRA_CONDITIONS = {
+    'buildcraftenergy/rf_engine.json': [{'type': 'buildcraftcore:engine_enabled', 'engine': 'rf'}],
+    'buildcraftenergy/mj_dynamo.json': [{'type': 'neoforge:item_exists', 'item': 'buildcraftenergy:mj_dynamo'}],
+}
+
+
+def conditions(data, where=None):
+    out = list(EXTRA_CONDITIONS.get(where, []))
     for c in data.get('conditions', []):
         if c.get('type') == 'minecraft:item_exists':
             out.append({'type': 'neoforge:item_exists', 'item': c['item']})
@@ -153,7 +168,7 @@ def convert(data, warnings, where):
         return None
     if 'group' in data:
         out['group'] = data['group']
-    conds = conditions(data)
+    conds = conditions(data, where)
     if conds:
         out['neoforge:conditions'] = conds
     return out
@@ -228,6 +243,9 @@ LOOT = {
         'marker_volume': self_drop('buildcraftcore:marker_volume'),
         'marker_path': self_drop('buildcraftcore:marker_path'),
         'power_tester': self_drop('buildcraftcore:power_tester'),
+    },
+    'buildcraftenergy': {
+        'mj_dynamo': self_drop('buildcraftenergy:mj_dynamo'),
     },
 }
 

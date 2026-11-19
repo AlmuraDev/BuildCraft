@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "w": "#c:cobblestones",
+    "g": "#c:glass_blocks/colorless",
+    "G": "#c:gears/stone",
+    "p": "minecraft:piston"
+  },
+  "pattern": [
+    "www",
+    " g ",
+    "GpG"
+  ],
+  "result": {
+    "id": "buildcraftcore:engine",
+    "components": {
+      "minecraft:block_state": {
+        "type": "stone"
+      }
+    }
+  }
+}

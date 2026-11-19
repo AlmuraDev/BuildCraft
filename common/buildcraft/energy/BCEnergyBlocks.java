@@ -6,12 +6,11 @@
 
 package buildcraft.energy;
 
-import net.minecraft.block.material.Material;
+import net.neoforged.bus.api.IEventBus;
 
 import buildcraft.api.enums.EnumEngineType;
 import buildcraft.api.enums.EnumSpring;
 
-import buildcraft.lib.item.ItemBlockBC_Neptune;
 import buildcraft.lib.registry.RegistrationHelper;
 
 import buildcraft.core.BCCoreBlocks;
@@ -24,32 +23,33 @@ import buildcraft.energy.tile.TileSpringOil;
 
 public class BCEnergyBlocks {
 
-    private static final RegistrationHelper HELPER = new RegistrationHelper();
-
     public static BlockDynamoMJ mjDynamo;
 
-    public static void preInit() {
+    public static void preInit(IEventBus modBus) {
+        RegistrationHelper helper = new RegistrationHelper(BCEnergy.MODID, modBus);
 
-        if (BCCoreBlocks.engine != null) {
-            BCCoreBlocks.engine.registerEngine(EnumEngineType.STONE, TileEngineStone_BC8::new);
-            BCCoreBlocks.engine.registerEngine(EnumEngineType.IRON, TileEngineIron_BC8::new);
-            if (BCEnergyConfig.enableRfEngine) {
-                BCCoreBlocks.engine.registerEngine(EnumEngineType.RF, TileEngineRF::new);
-            }
+        // The engines are states of core's engine block
+        helper.registerEngineTile("tile.engine.stone", "engine", EnumEngineType.STONE, TileEngineStone_BC8::new,
+            () -> BCCoreBlocks.engine);
+        helper.registerEngineTile("tile.engine.iron", "engine", EnumEngineType.IRON, TileEngineIron_BC8::new,
+            () -> BCCoreBlocks.engine);
+        if (BCEnergyConfig.enableRfEngine) {
+            helper.registerEngineTile("tile.engine.rf", "engine", EnumEngineType.RF, TileEngineRF::new,
+                () -> BCCoreBlocks.engine);
         }
 
         if (BCEnergyConfig.enableMjDynamo) {
-            mjDynamo = HELPER.addForcedBlock(new BlockDynamoMJ(Material.IRON, "block.mj_dynamo"));
-            HELPER.addForcedItem(new ItemBlockBC_Neptune(mjDynamo));
-            HELPER.registerTile(TileDynamoMJ.class, "tile.mj_dynamo");
+            helper.addBlockAndItem("block.mj_dynamo", true, BlockDynamoMJ::new, b -> mjDynamo = b);
+            helper.registerTile("tile.mj_dynamo", TileDynamoMJ::new, () -> mjDynamo);
         }
 
-        EnumSpring.OIL.liquidBlock = BCEnergyFluids.crudeOil[0].getBlock().defaultBlockState();
-        EnumSpring.OIL.tileConstructor = TileSpringOil::new;
+        // The oil spring is a state of core's spring block
+        helper.registerStateTile("tile.spring.oil", TileSpringOil::new, () -> BCCoreBlocks.spring,
+            type -> EnumSpring.OIL.tileType = type);
+    }
 
-        HELPER.registerTile(TileSpringOil.class, "tile.spring.oil");
-        HELPER.registerTile(TileEngineStone_BC8.class, "tile.engine.stone");
-        HELPER.registerTile(TileEngineIron_BC8.class, "tile.engine.iron");
-        HELPER.registerTile(TileEngineRF.class, "tile.engine.rf");
+    /** Common setup: the fluid blocks exist now. */
+    public static void init() {
+        EnumSpring.OIL.liquidBlock = BCEnergyFluids.crudeOil[0].getBlock().defaultBlockState();
     }
 }

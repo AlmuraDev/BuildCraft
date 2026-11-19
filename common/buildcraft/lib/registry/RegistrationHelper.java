@@ -240,6 +240,25 @@ public final class RegistrationHelper {
         });
     }
 
+    /** Registers a tile type for a block that picks its tile type by state itself (see
+     * {@link TileTypes.IStateTileTypes}), such as core's spring block, whose oil spring tile belongs to energy.
+     *
+     * @param setter Given the type once it exists, so the block can create it. */
+    public <T extends TileBC_Neptune> void registerStateTile(String tagId, BlockEntityType.BlockEntitySupplier<T> factory,
+        Supplier<? extends Block> block, Consumer<BlockEntityType<T>> setter) {
+        Identifier name = registryName(tagId);
+        tileTasks.add(() -> {
+            Block b = block.get();
+            if (b == null) {
+                return;
+            }
+            BlockEntityType<T> type = new BlockEntityType<>(factory, b);
+            currentEvent.register(Registries.BLOCK_ENTITY_TYPE, name, () -> type);
+            TileTypes.addType(type);
+            setter.accept(type);
+        });
+    }
+
     /** Registers the tile of one engine type, created by the given engine block (which may belong to another module,
      * as BuildCraft's engines all share core's engine block). Engines can be disabled in the "engines" category of the
      * object config ("buildcraftcore:engine/stone").

@@ -1,78 +1,69 @@
 /* Copyright (c) 2016 SpaceToad and the BuildCraft team
- * 
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.energy;
 
 import java.util.function.Consumer;
 
-import net.minecraftforge.fluids.FluidRegistry;
-import net.neoforged.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraft.core.registries.Registries;
 
-import buildcraft.lib.BCLib;
-import buildcraft.lib.registry.MigrationManager;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+import buildcraft.lib.registry.RegistrationHelper;
 import buildcraft.lib.registry.RegistryConfig;
 import buildcraft.lib.registry.TagManager;
 import buildcraft.lib.registry.TagManager.EnumTagType;
 import buildcraft.lib.registry.TagManager.TagEntry;
 
 import buildcraft.core.BCCore;
+import buildcraft.energy.generation.OilWellFeature;
 
-//@formatter:off
-@Mod(
-    modid = BCEnergy.MODID,
-    name = "BuildCraft Energy",
-    version = BCLib.VERSION,
-    dependencies = "required-after:buildcraftcore@[" + BCLib.VERSION + "]"
-)
-//@formatter:on
+@Mod(BCEnergy.MODID)
 public class BCEnergy {
     public static final String MODID = "buildcraftenergy";
 
-    static {
-        FluidRegistry.enableUniversalBucket();
-    }
-
-    @Mod.Instance(MODID)
     public static BCEnergy INSTANCE;
+    public static IEventBus MOD_BUS;
 
-    @Mod.EventHandler
-    public static void preInit(FMLPreInitializationEvent evt) {
+    public BCEnergy(IEventBus modBus, ModContainer container) {
+        INSTANCE = this;
+        MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
         BCEnergyConfig.preInit();
-        BCEnergyEntities.preInit();
-        BCEnergyFluids.preInit();
-        BCEnergyBlocks.preInit();
-        BCEnergyItems.preInit();
+        BCEnergyFluids.preInit(modBus);
+        BCEnergyBlocks.preInit(modBus);
+        BCEnergyItems.preInit(modBus);
 
-        NetworkRegistry.INSTANCE.registerGuiHandler(INSTANCE, BCEnergyProxy.getProxy());
+        DeferredRegister<com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.levelgen.feature.Feature>> features =
+            RegistrationHelper.createRegister(Registries.FEATURE_TYPE, MODID, modBus);
+        features.register("oil_well", () -> OilWellFeature.CODEC);
 
         BCEnergyProxy.getProxy().fmlPreInit();
+
+        NeoForge.EVENT_BUS.addListener((ServerStartedEvent event) -> BCEnergyConfig.validateBiomeNames(event.getServer()));
+
+        modBus.addListener(BCEnergy::init);
+        modBus.addListener(BCEnergy::postInit);
     }
 
-    @Mod.EventHandler
-    public static void init(FMLInitializationEvent evt) {
-        BCEnergyRecipes.init();
-        BCEnergyWorldGen.init();
-        BCEnergyProxy.getProxy().fmlInit();
+    private static void init(FMLCommonSetupEvent evt) {
+        evt.enqueueWork(() -> {
+            BCEnergyBlocks.init();
+            BCEnergyRecipes.init();
+            BCEnergyProxy.getProxy().fmlInit();
+        });
     }
 
-    @Mod.EventHandler
-    public static void postInit(FMLPostInitializationEvent evt) {
-        BCEnergyProxy.getProxy().fmlPostInit();
-        BCEnergyConfig.validateBiomeNames();
-        registerMigrations();
-    }
-
-    private static void registerMigrations() {
-        /** 7.99.0 */
-        // Fluid registration changed from "fluid_block_[FLUID]" to "fluid_block_heat_[HEAT]_[FLUID]"
-        MigrationManager.INSTANCE.addBlockMigration(BCEnergyFluids.crudeOil[0].getBlock(), "fluid_block_oil");
-        MigrationManager.INSTANCE.addBlockMigration(BCEnergyFluids.fuelLight[0].getBlock(), "fluid_block_fuel");
+    private static void postInit(FMLLoadCompleteEvent evt) {
+        evt.enqueueWork(() -> BCEnergyProxy.getProxy().fmlPostInit());
     }
 
     static {

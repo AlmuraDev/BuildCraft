@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import javax.annotation.Nonnull;
 
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -82,7 +83,8 @@ public class TileDynamoMJ extends TileBC_Neptune implements ITickable, IEngineLi
     /** The model variables, used to keep track of the various state-based variables. */
     public final ModelVariableData clientModelData = new ModelVariableData();
 
-    public TileDynamoMJ() {
+    public TileDynamoMJ(BlockPos pos, BlockState state) {
+        super(pos, state);
         mjBattery = new MjBattery(MAX_MJ);
         mjConnector = new MjBatteryReceiver(mjBattery);
         mjCaps = new MjCapabilityHelper(mjConnector);
@@ -168,7 +170,7 @@ public class TileDynamoMJ extends TileBC_Neptune implements ITickable, IEngineLi
                     // makeTileCache();
                     sendNetworkUpdate(NET_RENDER_DATA);
                     redrawBlock();
-                    world.notifyNeighborsRespectDebug(getPos(), getBlockType(), true);
+                    world.updateNeighborsAt(getPos(), getBlockState().getBlock());
                     return InteractionResult.SUCCESS;
                 }
                 return InteractionResult.FAIL;
@@ -209,13 +211,13 @@ public class TileDynamoMJ extends TileBC_Neptune implements ITickable, IEngineLi
 
     protected Biome getBiome() {
         // TODO: Cache this!
-        return world.getBiome(getPos());
+        return world.getBiome(getPos()).value();
     }
 
     /** @return The heat of the current biome, in celsius. */
     protected float getBiomeHeat() {
         Biome biome = getBiome();
-        float temp = biome.getTemperature(getPos());
+        float temp = biome.getBaseTemperature();
         return Math.max(0, Math.min(30, temp * 15f));
     }
 
@@ -277,7 +279,7 @@ public class TileDynamoMJ extends TileBC_Neptune implements ITickable, IEngineLi
     @Override
     public void onNeighbourBlockChanged(Block block, BlockPos nehighbour) {
         super.onNeighbourBlockChanged(block, nehighbour);
-        isRedstonePowered = world.isBlockIndirectlyGettingPowered(getPos()) > 0;
+        isRedstonePowered = world.getBestNeighborSignal(getPos()) > 0;
     }
 
     @Override
@@ -450,7 +452,7 @@ public class TileDynamoMJ extends TileBC_Neptune implements ITickable, IEngineLi
     @Deprecated
     public IEnergyStorage getReceiverToPower(BlockEntity tile, Direction side) {
         if (tile == null) return null;
-        IEnergyStorage rec = tile.getCapability(CapUtil.CAP_RF, side.getOpposite());
+        IEnergyStorage rec = CapUtil.getCapability(tile, CapUtil.CAP_RF, side.getOpposite());
         if (rec != null && rec.canReceive()) {
             return rec;
         } else {
@@ -489,7 +491,7 @@ public class TileDynamoMJ extends TileBC_Neptune implements ITickable, IEngineLi
             return null;
         }
 
-        IEnergyStorage recv = next.getCapability(CapUtil.CAP_RF, side.getOpposite());
+        IEnergyStorage recv = CapUtil.getCapability(next, CapUtil.CAP_RF, side.getOpposite());
         if (recv != null && recv.canReceive()) {
             return recv;
         } else {
@@ -498,10 +500,11 @@ public class TileDynamoMJ extends TileBC_Neptune implements ITickable, IEngineLi
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getCapability(@Nonnull BlockCapability<T, Direction> capability, Direction facing) {
         if (facing == currentDirection) {
             if (CapUtil.CAP_RF == capability) {
-                return CapUtil.CAP_RF .cast(rf);
+                return (T) rf;
             } else {
                 return super.getCapability(capability, facing);
             }

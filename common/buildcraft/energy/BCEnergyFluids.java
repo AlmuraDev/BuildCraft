@@ -9,15 +9,19 @@ package buildcraft.energy;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.world.level.material.MapColor;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.material.MapColor;
 
-import buildcraft.api.BCModules;
+import net.neoforged.bus.api.IEventBus;
 
 import buildcraft.lib.fluid.BCFluid;
-import buildcraft.lib.fluid.BCFluidBlock;
 import buildcraft.lib.fluid.FluidManager;
 
+/** Oil and its products, each in three heat values (the factory module is always present on 26.3, so all of them are
+ * registered). Registry names are 1.12.2's: fluids "oil", "oil_heat_1", blocks "fluid_block_oil_heat_0".
+ * <p>
+ * The textures are baked from the grey heat textures by tools/port-26.3/fluid_textures.py (1.12.2 recoloured them at
+ * runtime); keep its table in step with this one. */
 public class BCEnergyFluids {
     public static BCFluid[] crudeOil;
     /** All 3 fuels (no residue) */
@@ -37,11 +41,9 @@ public class BCEnergyFluids {
     public static BCFluid[] fuelDense;
     public static BCFluid[] oilResidue;
 
-    public static BCFluid tar;
-
     public static final List<BCFluid> allFluids = new ArrayList<>();
 
-    public static void preInit() {
+    public static void preInit(IEventBus modBus) {
         int[][] data = { //@formatter:off
             // Tabular form of all the fluid values
             // density, viscosity, boil, spread,  tex_light,   tex_dark, sticky, flammable
@@ -56,43 +58,29 @@ public class BCEnergyFluids {
             {      650,       900,    1,      9, 0xF6_D7_00, 0xC4_B7_00,      0,         1 },// Mixed Light Fuels
             {      300,       500,    0,     10, 0xFA_F6_30, 0xE0_D9_00,      0,         1 },// Gas Fuel
         };//@formatter:on
-        if (BCModules.FACTORY.isLoaded()) {
-            int index = 0;
+        int index = 0;
 
-            // Add all of the fluid states
-            crudeOil = defineFluids(data[index++], "oil");
-            oilResidue = defineFluids(data[index++], "oil_residue");
-            oilHeavy = defineFluids(data[index++], "oil_heavy");
-            oilDense = defineFluids(data[index++], "oil_dense");
-            oilDistilled = defineFluids(data[index++], "oil_distilled");
-            fuelDense = defineFluids(data[index++], "fuel_dense");
-            fuelMixedHeavy = defineFluids(data[index++], "fuel_mixed_heavy");
-            fuelLight = defineFluids(data[index++], "fuel_light");
-            fuelMixedLight = defineFluids(data[index++], "fuel_mixed_light");
-            fuelGaseous = defineFluids(data[index++], "fuel_gaseous");
-        } else {
-            crudeOil = new BCFluid[] { defineFluid(data[0], 0, "oil") };
-            oilResidue = new BCFluid[0];
-            oilHeavy = new BCFluid[0];
-            oilDense = new BCFluid[0];
-            oilDistilled = new BCFluid[0];
-            fuelDense = new BCFluid[0];
-            fuelMixedHeavy = new BCFluid[0];
-            fuelLight = new BCFluid[] { defineFluid(data[7], 0, "fuel_light") };
-            fuelMixedLight = new BCFluid[0];
-            fuelGaseous = new BCFluid[0];
-        }
+        crudeOil = defineFluids(modBus, data[index++], "oil");
+        oilResidue = defineFluids(modBus, data[index++], "oil_residue");
+        oilHeavy = defineFluids(modBus, data[index++], "oil_heavy");
+        oilDense = defineFluids(modBus, data[index++], "oil_dense");
+        oilDistilled = defineFluids(modBus, data[index++], "oil_distilled");
+        fuelDense = defineFluids(modBus, data[index++], "fuel_dense");
+        fuelMixedHeavy = defineFluids(modBus, data[index++], "fuel_mixed_heavy");
+        fuelLight = defineFluids(modBus, data[index++], "fuel_light");
+        fuelMixedLight = defineFluids(modBus, data[index++], "fuel_mixed_light");
+        fuelGaseous = defineFluids(modBus, data[index++], "fuel_gaseous");
     }
 
-    private static BCFluid[] defineFluids(int[] data, String name) {
+    private static BCFluid[] defineFluids(IEventBus modBus, int[] data, String name) {
         BCFluid[] arr = new BCFluid[3];
         for (int h = 0; h < 3; h++) {
-            arr[h] = defineFluid(data, h, name);
+            arr[h] = defineFluid(modBus, data, h, name);
         }
         return arr;
     }
 
-    private static BCFluid defineFluid(int[] data, int heat, String name) {
+    private static BCFluid defineFluid(IEventBus modBus, int[] data, int heat, String name) {
         final int density = data[0];
         final int baseViscosity = data[1];
         final int boilPoint = data[2];
@@ -100,7 +88,7 @@ public class BCEnergyFluids {
         final int texLight = data[4];
         final int texDark = data[5];
         final boolean sticky = BCEnergyConfig.oilIsSticky && data[6] == 1;
-        final boolean flammable = BCEnergyConfig.enableOilBurn ? data[7] == 1 : false;
+        final boolean flammable = BCEnergyConfig.enableOilBurn && data[7] == 1;
 
         String fullName = name + (heat == 0 ? "" : "_heat_" + heat);
         int tempAdjustedViscosity = baseViscosity * (4 - heat) / 4;
@@ -120,34 +108,33 @@ public class BCEnergyFluids {
         def.setGaseous(def.getDensity() < 0);
         def.setColour(texLight, texDark);
         def.setHeatable(true);
-        FluidManager.register(def);
-
-        BCFluidBlock block = (BCFluidBlock) def.getBlock();
-        block.setLightOpacity(3);
-        block.setSticky(sticky);
+        def.setLightOpacity(3);
+        def.setSticky(sticky);
         // Distance that the fluid will travel: 1->16
         // Higher heat values travel a little further
-        block.setQuantaPerBlock(baseQuanta + (baseQuanta > 6 ? heat : heat / 2));
+        def.setSpreadDistance(baseQuanta + (baseQuanta > 6 ? heat : heat / 2));
+        FluidManager.register(BCEnergy.MODID, modBus, def);
 
         allFluids.add(def);
         return def;
     }
 
     private static MapColor getMapColor(int color) {
-        MapColor bestMapColor = MapColor.BLACK;
+        MapColor bestMapColor = MapColor.COLOR_BLACK;
         int currentDifference = Integer.MAX_VALUE;
 
         int r = (color >> 16) & 0xFF;
         int g = (color >> 8) & 0xFF;
         int b = color & 0xFF;
 
-        for (MapColor mapColor : MapColor.COLORS) {
-            if (mapColor == null || mapColor.colorValue == 0) {
+        for (int id = 1; id < 64; id++) {
+            MapColor mapColor = MapColor.byId(id);
+            if (mapColor == null || mapColor == MapColor.NONE || mapColor.col == 0) {
                 continue;
             }
-            int mr = (mapColor.colorValue >> 16) & 0xFF;
-            int mg = (mapColor.colorValue >> 8) & 0xFF;
-            int mb = mapColor.colorValue & 0xFF;
+            int mr = (mapColor.col >> 16) & 0xFF;
+            int mg = (mapColor.col >> 8) & 0xFF;
+            int mb = mapColor.col & 0xFF;
 
             int dr = mr - r;
             int dg = mg - g;

@@ -72,6 +72,7 @@ public class BCLibClient {
         modBus.addListener(BCLibClient::clientSetup);
         modBus.addListener(BCLibClient::textureStitchPost);
         modBus.addListener(BCLibClient::modelBake);
+        modBus.addListener(BCLibClient::registerFluidModels);
         NeoForge.EVENT_BUS.register(BCLibClient.class);
     }
 
@@ -125,6 +126,18 @@ public class BCLibClient {
                     // TODO: Support entities!
                 }
             }
+        }
+    }
+
+    /** Every BuildCraft fluid draws its own still and flowing textures (on the block atlas), untinted. */
+    private static void registerFluidModels(net.neoforged.neoforge.client.event.RegisterFluidModelsEvent event) {
+        for (buildcraft.lib.fluid.BCFluid fluid : buildcraft.lib.fluid.FluidManager.getAll()) {
+            net.minecraft.client.renderer.block.FluidModel.Unbaked model =
+                new net.minecraft.client.renderer.block.FluidModel.Unbaked(
+                    new net.minecraft.client.resources.model.sprite.Material(fluid.getStill()),
+                    new net.minecraft.client.resources.model.sprite.Material(fluid.getFlowing()), null,
+                    (net.neoforged.neoforge.client.fluid.FluidTintSource) null);
+            event.register(model, fluid.getSource(), fluid.getFlowingFluid());
         }
     }
 }

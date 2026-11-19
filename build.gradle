@@ -35,6 +35,7 @@ def portedPackages = [
         'buildcraft/lib/**',
         'buildcraft/core/**',
         'buildcraft/transport/**',
+        'buildcraft/energy/**',
 ]
 
 // Client rendering, models, the guide book and the GUI screens inside the ported packages. They are ported in the
@@ -93,6 +94,8 @@ def deferredSources = [
 deferredSources += [
         'buildcraft/transport/gui/**',
         'buildcraft/transport/container/**',
+        'buildcraft/energy/client/gui/**',
+        'buildcraft/energy/container/**',
 ]
 
 def mainResourceDirs = ['buildcraft_resources', 'BuildCraft-Localization', 'BuildCraftGuide/guide_resources']

@@ -6,44 +6,43 @@
 
 package buildcraft.energy;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.stream.Collectors;
-
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import net.minecraftforge.client.event.ModelBakeEvent;
-import net.minecraftforge.client.event.ModelRegistryEvent;
-import net.minecraftforge.client.model.ModelFluid;
-import net.minecraftforge.client.model.ModelLoader;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 import buildcraft.api.enums.EnumEngineType;
 import buildcraft.api.enums.EnumPowerStage;
 
 import buildcraft.lib.client.model.ModelHolderVariable;
-import buildcraft.lib.client.model.ModelItemSimple;
 import buildcraft.lib.client.model.MutableQuad;
 import buildcraft.lib.engine.TileEngineBase_BC8;
 import buildcraft.lib.expression.DefaultContexts;
 import buildcraft.lib.expression.FunctionContext;
 import buildcraft.lib.expression.node.value.NodeVariableDouble;
 import buildcraft.lib.expression.node.value.NodeVariableObject;
-import buildcraft.lib.fluid.BCFluid;
 import buildcraft.lib.misc.ExpressionCompat;
-import buildcraft.lib.misc.data.ModelVariableData;
+import buildcraft.lib.registry.TileTypes;
 
+import buildcraft.core.BCCoreBlocks;
+import buildcraft.api.properties.BuildCraftProperties;
+import buildcraft.energy.client.render.RenderDynamoMJ;
+import buildcraft.energy.client.render.RenderEngineIron;
+import buildcraft.energy.client.render.RenderEngineRF;
+import buildcraft.energy.client.render.RenderEngineStone;
 import buildcraft.energy.tile.TileDynamoMJ;
 import buildcraft.energy.tile.TileEngineIron_BC8;
 import buildcraft.energy.tile.TileEngineRF;
 import buildcraft.energy.tile.TileEngineStone_BC8;
 
+/** Energy's engine and dynamo models (variable models, drawn by their tile renderers). Fluid models are registered for
+ * every BuildCraft fluid by BCLibClient.
+ * <p>
+ * TODO(26.3): engine and dynamo items. 1.12.2 baked the variable model into the item model; 26.3 needs a special item
+ * model renderer for that, so the items show plain fallback models for now (as core's engines do). */
+@OnlyIn(Dist.CLIENT)
 public class BCEnergyModels {
     private static final NodeVariableDouble ENGINE_PROGRESS;
     private static final NodeVariableObject<EnumPowerStage> ENGINE_STAGE;
@@ -59,111 +58,47 @@ public class BCEnergyModels {
         ENGINE_PROGRESS = fnCtx.putVariableDouble("progress");
         ENGINE_STAGE = fnCtx.putVariableObject("stage", EnumPowerStage.class);
         ENGINE_FACING = fnCtx.putVariableObject("direction", Direction.class);
-        // TODO: Item models from "item/engine_stone.json"
-        ENGINE_STONE = new ModelHolderVariable(
-            "buildcraftenergy:models/block/engine_stone.json",
-            fnCtx
-        );
-        ENGINE_IRON = new ModelHolderVariable(
-            "buildcraftenergy:models/block/engine_iron.json",
-            fnCtx
-        );
-        ENGINE_RF = new ModelHolderVariable(
-            "buildcraftenergy:models/block/engine_rf.json",
-            fnCtx
-        );
-        MJ_DYNAMO = new ModelHolderVariable(
-            "buildcraftenergy:models/block/mj_dynamo.json",
-            fnCtx
-        );
+        ENGINE_STONE = new ModelHolderVariable("buildcraftenergy:models/block/engine_stone.json", fnCtx);
+        ENGINE_IRON = new ModelHolderVariable("buildcraftenergy:models/block/engine_iron.json", fnCtx);
+        ENGINE_RF = new ModelHolderVariable("buildcraftenergy:models/block/engine_rf.json", fnCtx);
+        MJ_DYNAMO = new ModelHolderVariable("buildcraftenergy:models/block/mj_dynamo.json", fnCtx);
     }
 
     public static void fmlPreInit() {
-        NeoForge.EVENT_BUS.register(BCEnergyModels.class);
+        BCEnergy.MOD_BUS.addListener(BCEnergyModels::registerRenderers);
     }
 
-    @SubscribeEvent
-    @OnlyIn(Dist.CLIENT)
-    public static void onModelRegistry(ModelRegistryEvent event) {
-        for (BCFluid fluid : BCEnergyFluids.allFluids) {
-            ModelLoader.setCustomStateMapper(fluid.getBlock(), b -> Collections.emptyMap());
+    @SuppressWarnings("unchecked")
+    private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        if (BCCoreBlocks.engine != null) {
+            BlockEntityType<?> stone = engineType(EnumEngineType.STONE);
+            BlockEntityType<?> iron = engineType(EnumEngineType.IRON);
+            BlockEntityType<?> rf = engineType(EnumEngineType.RF);
+            if (stone != null) {
+                event.registerBlockEntityRenderer((BlockEntityType<TileEngineStone_BC8>) stone,
+                    ctx -> new RenderEngineStone());
+            }
+            if (iron != null) {
+                event.registerBlockEntityRenderer((BlockEntityType<TileEngineIron_BC8>) iron,
+                    ctx -> new RenderEngineIron());
+            }
+            if (rf != null) {
+                event.registerBlockEntityRenderer((BlockEntityType<TileEngineRF>) rf, ctx -> new RenderEngineRF());
+            }
+        }
+        if (BCEnergyBlocks.mjDynamo != null) {
+            BlockEntityType<?> dynamo = TileTypes.forState(BCEnergyBlocks.mjDynamo.defaultBlockState());
+            event.registerBlockEntityRenderer((BlockEntityType<TileDynamoMJ>) dynamo, ctx -> new RenderDynamoMJ());
         }
     }
 
-    @SubscribeEvent
-    public static void onModelBake(ModelBakeEvent event) {
-        ENGINE_PROGRESS.value = 0.2;
-        ENGINE_STAGE.value = EnumPowerStage.BLUE;
-        ENGINE_FACING.value = Direction.UP;
-        ModelVariableData varData = new ModelVariableData();
-        varData.setNodes(ENGINE_STONE.createTickableNodes());
-        varData.tick();
-        varData.refresh();
-        event.getModelRegistry().putObject(
-            new ModelResourceLocation(EnumEngineType.STONE.getItemModelLocation(), "inventory"),
-            new ModelItemSimple(
-                Arrays.stream(ENGINE_STONE.getCutoutQuads())
-                    .map(MutableQuad::toBakedItem)
-                    .collect(Collectors.toList()),
-                ModelItemSimple.TRANSFORM_BLOCK,
-                true
-            )
-        );
-        varData.setNodes(ENGINE_IRON.createTickableNodes());
-        varData.tick();
-        varData.refresh();
-        event.getModelRegistry().putObject(
-            new ModelResourceLocation(EnumEngineType.IRON.getItemModelLocation(), "inventory"),
-            new ModelItemSimple(
-                Arrays.stream(ENGINE_IRON.getCutoutQuads())
-                    .map(MutableQuad::toBakedItem)
-                    .collect(Collectors.toList()),
-                ModelItemSimple.TRANSFORM_BLOCK,
-                true
-            )
-        );
-        varData.setNodes(ENGINE_RF.createTickableNodes());
-        varData.tick();
-        varData.refresh();
-        event.getModelRegistry().putObject(
-            new ModelResourceLocation(EnumEngineType.RF.getItemModelLocation(), "inventory"),
-            new ModelItemSimple(
-                Arrays.stream(ENGINE_RF.getCutoutQuads())
-                    .map(MutableQuad::toBakedItem)
-                    .collect(Collectors.toList()),
-                ModelItemSimple.TRANSFORM_BLOCK,
-                true
-            )
-        );
-        varData.setNodes(MJ_DYNAMO.createTickableNodes());
-        varData.tick();
-        varData.refresh();
-        event.getModelRegistry().putObject(
-            new ModelResourceLocation("buildcraftenergy:mj_dynamo", "inventory"),
-            new ModelItemSimple(
-                Arrays.stream(MJ_DYNAMO.getCutoutQuads())
-                    .map(MutableQuad::toBakedItem)
-                    .collect(Collectors.toList()),
-                ModelItemSimple.TRANSFORM_BLOCK,
-                true
-            )
-        );
-        for (BCFluid fluid : BCEnergyFluids.allFluids) {
-            ModelFluid modelFluid = new ModelFluid(fluid);
-            event.getModelRegistry().putObject(
-                new ModelResourceLocation("buildcraftenergy:fluid_block_" + fluid.getBlockName()),
-                modelFluid.bake(
-                    modelFluid.defaultBlockState(),
-                    DefaultVertexFormat.ITEM,
-                    ModelLoader.defaultTextureGetter()
-                )
-            );
-        }
+    private static BlockEntityType<?> engineType(EnumEngineType type) {
+        return BCCoreBlocks.engine.getTileType(
+            BCCoreBlocks.engine.defaultBlockState().setValue(BuildCraftProperties.ENGINE_TYPE, type));
     }
 
-    private static MutableQuad[] getEngineQuads(ModelHolderVariable model,
-                                                TileEngineBase_BC8 tile,
-                                                float partialTicks) {
+    private static MutableQuad[] getEngineQuads(ModelHolderVariable model, TileEngineBase_BC8 tile,
+        float partialTicks) {
         ENGINE_PROGRESS.value = tile.getProgressClient(partialTicks);
         ENGINE_STAGE.value = tile.getPowerStage();
         ENGINE_FACING.value = tile.getCurrentFacing();

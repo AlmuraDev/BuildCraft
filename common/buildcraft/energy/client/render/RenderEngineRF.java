@@ -13,7 +13,7 @@ import buildcraft.energy.BCEnergyModels;
 import buildcraft.energy.tile.TileEngineRF;
 
 public class RenderEngineRF extends RenderEngine_BC8<TileEngineRF> {
-    public static final RenderEngineRF INSTANCE = new RenderEngineRF();
+
 
     @Override
     protected MutableQuad[] getEngineModel(TileEngineRF engine, float partialTicks) {

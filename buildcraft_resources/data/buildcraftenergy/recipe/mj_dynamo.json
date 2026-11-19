@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "w": "minecraft:redstone",
+    "g": "#c:glass_blocks/colorless",
+    "G": "#c:gears/iron",
+    "p": "minecraft:piston"
+  },
+  "pattern": [
+    "wgw",
+    " p ",
+    "GwG"
+  ],
+  "result": {
+    "id": "buildcraftenergy:mj_dynamo"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftenergy:mj_dynamo"
+    }
+  ]
+}

@@ -6,14 +6,13 @@
 
 package buildcraft.energy;
 
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
-
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraft.world.level.material.Fluids;
+
 import net.neoforged.neoforge.fluids.FluidStack;
 
-import buildcraft.api.BCModules;
 import buildcraft.api.fuels.BuildcraftFuelRegistry;
 import buildcraft.api.mj.MjAPI;
 import buildcraft.api.recipes.BuildcraftRecipeRegistry;
@@ -22,14 +21,16 @@ import buildcraft.api.recipes.IRefineryRecipeManager.IDistillationRecipe;
 import buildcraft.lib.fluid.BCFluid;
 import buildcraft.lib.misc.MathUtil;
 
+/** Engine fuels and coolants, and the refinery's distillation and heat exchange recipes. They live in BuildCraft's own
+ * registries (not vanilla recipes), so they are added in common setup once the fluids exist. */
 public class BCEnergyRecipes {
     public static void init() {
 
-        BuildcraftFuelRegistry.coolant.addCoolant(FluidRegistry.WATER, 0.0023f);
-        BuildcraftFuelRegistry.coolant.addSolidCoolant(new ItemStack(Blocks.ICE),
-            new FluidStack(FluidRegistry.WATER, 1000), 1.5f);
+        BuildcraftFuelRegistry.coolant.addCoolant(Fluids.WATER, 0.0023f);
+        BuildcraftFuelRegistry.coolant.addSolidCoolant(new ItemStack(Blocks.ICE), new FluidStack(Fluids.WATER, 1000),
+            1.5f);
         BuildcraftFuelRegistry.coolant.addSolidCoolant(new ItemStack(Blocks.PACKED_ICE),
-            new FluidStack(FluidRegistry.WATER, 1000), 2f);
+            new FluidStack(Fluids.WATER, 1000), 2f);
 
         // Relative amounts of the fluid -- the amount of oil used in refining will return X amount of fluid
 
@@ -62,71 +63,69 @@ public class BCEnergyRecipes {
 
         addDirtyFuel(BCEnergyFluids.crudeOil, _oil, 3, 4);
 
-        if (BCModules.FACTORY.isLoaded()) {
-            FluidStack[] gas_light_dense_residue = createFluidStack(BCEnergyFluids.crudeOil, _oil);
-            FluidStack[] gas_light_dense = createFluidStack(BCEnergyFluids.oilDistilled, _gas_light_dense);
-            FluidStack[] gas_light = createFluidStack(BCEnergyFluids.fuelMixedLight, _gas_light);
-            FluidStack[] gas = createFluidStack(BCEnergyFluids.fuelGaseous, _gas);
-            FluidStack[] light_dense_residue = createFluidStack(BCEnergyFluids.oilHeavy, _light_dense_residue);
-            FluidStack[] light_dense = createFluidStack(BCEnergyFluids.fuelMixedHeavy, _light_dense);
-            FluidStack[] light = createFluidStack(BCEnergyFluids.fuelLight, _light);
-            FluidStack[] dense_residue = createFluidStack(BCEnergyFluids.oilDense, _dense_residue);
-            FluidStack[] dense = createFluidStack(BCEnergyFluids.fuelDense, _dense);
-            FluidStack[] residue = createFluidStack(BCEnergyFluids.oilResidue, _residue);
+        FluidStack[] gas_light_dense_residue = createFluidStack(BCEnergyFluids.crudeOil, _oil);
+        FluidStack[] gas_light_dense = createFluidStack(BCEnergyFluids.oilDistilled, _gas_light_dense);
+        FluidStack[] gas_light = createFluidStack(BCEnergyFluids.fuelMixedLight, _gas_light);
+        FluidStack[] gas = createFluidStack(BCEnergyFluids.fuelGaseous, _gas);
+        FluidStack[] light_dense_residue = createFluidStack(BCEnergyFluids.oilHeavy, _light_dense_residue);
+        FluidStack[] light_dense = createFluidStack(BCEnergyFluids.fuelMixedHeavy, _light_dense);
+        FluidStack[] light = createFluidStack(BCEnergyFluids.fuelLight, _light);
+        FluidStack[] dense_residue = createFluidStack(BCEnergyFluids.oilDense, _dense_residue);
+        FluidStack[] dense = createFluidStack(BCEnergyFluids.fuelDense, _dense);
+        FluidStack[] residue = createFluidStack(BCEnergyFluids.oilResidue, _residue);
 
-            addDistillation(gas_light_dense_residue, gas, light_dense_residue, 0, 32 * MjAPI.MJ);
-            addDistillation(gas_light_dense_residue, gas_light, dense_residue, 1, 16 * MjAPI.MJ);
-            addDistillation(gas_light_dense_residue, gas_light_dense, residue, 2, 12 * MjAPI.MJ);
+        addDistillation(gas_light_dense_residue, gas, light_dense_residue, 0, 32 * MjAPI.MJ);
+        addDistillation(gas_light_dense_residue, gas_light, dense_residue, 1, 16 * MjAPI.MJ);
+        addDistillation(gas_light_dense_residue, gas_light_dense, residue, 2, 12 * MjAPI.MJ);
 
-            addDistillation(gas_light_dense, gas, light_dense, 0, 24 * MjAPI.MJ);
-            addDistillation(gas_light_dense, gas_light, dense, 1, 16 * MjAPI.MJ);
+        addDistillation(gas_light_dense, gas, light_dense, 0, 24 * MjAPI.MJ);
+        addDistillation(gas_light_dense, gas_light, dense, 1, 16 * MjAPI.MJ);
 
-            addDistillation(gas_light, gas, light, 0, 24 * MjAPI.MJ);
+        addDistillation(gas_light, gas, light, 0, 24 * MjAPI.MJ);
 
-            addDistillation(light_dense_residue, light, dense_residue, 1, 16 * MjAPI.MJ);
-            addDistillation(light_dense_residue, light_dense, residue, 2, 12 * MjAPI.MJ);
+        addDistillation(light_dense_residue, light, dense_residue, 1, 16 * MjAPI.MJ);
+        addDistillation(light_dense_residue, light_dense, residue, 2, 12 * MjAPI.MJ);
 
-            addDistillation(light_dense, light, dense, 1, 16 * MjAPI.MJ);
+        addDistillation(light_dense, light, dense, 1, 16 * MjAPI.MJ);
 
-            addDistillation(dense_residue, dense, residue, 2, 12 * MjAPI.MJ);
+        addDistillation(dense_residue, dense, residue, 2, 12 * MjAPI.MJ);
 
-            addHeatExchange(BCEnergyFluids.crudeOil);
-            addHeatExchange(BCEnergyFluids.oilDistilled);
-            addHeatExchange(BCEnergyFluids.oilHeavy);
-            addHeatExchange(BCEnergyFluids.fuelMixedLight);
-            addHeatExchange(BCEnergyFluids.fuelMixedHeavy);
-            addHeatExchange(BCEnergyFluids.oilDense);
-            addHeatExchange(BCEnergyFluids.fuelGaseous);
-            addHeatExchange(BCEnergyFluids.fuelLight);
-            addHeatExchange(BCEnergyFluids.fuelDense);
-            addHeatExchange(BCEnergyFluids.oilResidue);
+        addHeatExchange(BCEnergyFluids.crudeOil);
+        addHeatExchange(BCEnergyFluids.oilDistilled);
+        addHeatExchange(BCEnergyFluids.oilHeavy);
+        addHeatExchange(BCEnergyFluids.fuelMixedLight);
+        addHeatExchange(BCEnergyFluids.fuelMixedHeavy);
+        addHeatExchange(BCEnergyFluids.oilDense);
+        addHeatExchange(BCEnergyFluids.fuelGaseous);
+        addHeatExchange(BCEnergyFluids.fuelLight);
+        addHeatExchange(BCEnergyFluids.fuelDense);
+        addHeatExchange(BCEnergyFluids.oilResidue);
 
-            FluidStack water = new FluidStack(FluidRegistry.WATER, 10);
-            BuildcraftRecipeRegistry.refineryRecipes.addHeatableRecipe(water, null, 0, 1);
+        FluidStack water = new FluidStack(Fluids.WATER, 10);
+        BuildcraftRecipeRegistry.refineryRecipes.addHeatableRecipe(water, FluidStack.EMPTY, 0, 1);
 
-            FluidStack lava = new FluidStack(FluidRegistry.LAVA, 5);
-            BuildcraftRecipeRegistry.refineryRecipes.addCoolableRecipe(lava, null, 4, 2);
-        }
+        FluidStack lava = new FluidStack(Fluids.LAVA, 5);
+        BuildcraftRecipeRegistry.refineryRecipes.addCoolableRecipe(lava, FluidStack.EMPTY, 4, 2);
     }
 
-    private static FluidStack[] createFluidStack(Fluid[] fluid, int amount) {
+    private static FluidStack[] createFluidStack(BCFluid[] fluid, int amount) {
         FluidStack[] arr = new FluidStack[fluid.length];
         for (int i = 0; i < arr.length; i++) {
-            arr[i] = new FluidStack(fluid[i], amount);
+            arr[i] = fluid[i].createStack(amount);
         }
         return arr;
     }
 
-    private static Fluid getFirstOrNull(Fluid[] array) {
+    private static Fluid getFirstOrNull(BCFluid[] array) {
         if (array == null || array.length == 0) {
             return null;
         }
-        return array[0];
+        return array[0].getSource();
     }
 
     private static final int TIME_BASE = 240_000; // 240_000 - multiple of 3, 5, 16, 1000
 
-    private static void addFuel(Fluid[] in, int amountDiff, int multiplier, int boostOver4) {
+    private static void addFuel(BCFluid[] in, int amountDiff, int multiplier, int boostOver4) {
         Fluid fuel = getFirstOrNull(in);
         if (fuel == null) {// It may have been disabled
             return;
@@ -136,7 +135,7 @@ public class BCEnergyRecipes {
         BuildcraftFuelRegistry.fuel.addFuel(fuel, powerPerCycle, totalTime);
     }
 
-    private static void addDirtyFuel(Fluid[] in, int amountDiff, int multiplier, int boostOver4) {
+    private static void addDirtyFuel(BCFluid[] in, int amountDiff, int multiplier, int boostOver4) {
         Fluid fuel = getFirstOrNull(in);
         if (fuel == null) {// It may have been disabled
             return;
@@ -160,14 +159,14 @@ public class BCEnergyRecipes {
         IDistillationRecipe existing =
             BuildcraftRecipeRegistry.refineryRecipes.getDistillationRegistry().getRecipeForInput(_in);
         if (existing != null) {
-            throw new IllegalStateException("Already added distillation recipe for " + _in.getFluid().getName());
+            throw new IllegalStateException("Already added distillation recipe for " + _in.getFluid());
         }
-        int hcf = MathUtil.findHighestCommonFactor(_in.amount, _outGas.amount);
-        hcf = MathUtil.findHighestCommonFactor(hcf, _outLiquid.amount);
+        int hcf = MathUtil.findHighestCommonFactor(_in.getAmount(), _outGas.getAmount());
+        hcf = MathUtil.findHighestCommonFactor(hcf, _outLiquid.getAmount());
         if (hcf > 1) {
-            (_in = _in.copy()).amount /= hcf;
-            (_outGas = _outGas.copy()).amount /= hcf;
-            (_outLiquid = _outLiquid.copy()).amount /= hcf;
+            _in = _in.copyWithAmount(_in.getAmount() / hcf);
+            _outGas = _outGas.copyWithAmount(_outGas.getAmount() / hcf);
+            _outLiquid = _outLiquid.copyWithAmount(_outLiquid.getAmount() / hcf);
             mjCost /= hcf;
         }
         BuildcraftRecipeRegistry.refineryRecipes.addDistillationRecipe(_in, _outGas, _outLiquid, mjCost);
@@ -177,8 +176,8 @@ public class BCEnergyRecipes {
         for (int i = 0; i < fluid.length - 1; i++) {
             BCFluid cool = fluid[i];
             BCFluid hot = fluid[i + 1];
-            FluidStack cool_f = new FluidStack(cool, 10);
-            FluidStack hot_f = new FluidStack(hot, 10);
+            FluidStack cool_f = cool.createStack(10);
+            FluidStack hot_f = hot.createStack(10);
             int ch = cool.getHeatValue();
             int hh = hot.getHeatValue();
             BuildcraftRecipeRegistry.refineryRecipes.addHeatableRecipe(cool_f, hot_f, ch, hh);

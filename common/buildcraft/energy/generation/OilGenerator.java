@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 SpaceToad and the BuildCraft team
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not
+ * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/
+ */
+
 package buildcraft.energy.generation;
 
 import java.util.ArrayList;
@@ -8,16 +14,15 @@ import java.util.function.Predicate;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction.Axis;
+import net.minecraft.core.Holder;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.Level;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.WorldType;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.biome.BiomeEnd;
-
-import net.minecraftforge.event.terraingen.PopulateChunkEvent;
-import net.neoforged.bus.api.SubscribeEvent;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
@@ -31,6 +36,9 @@ import buildcraft.energy.BCEnergyConfig;
 import buildcraft.energy.generation.OilGenStructure.GenByPredicate;
 import buildcraft.energy.generation.OilGenStructure.ReplaceType;
 
+/** Oil wells, lakes and spouts (1.12.2 generated them on PopulateChunkEvent.Pre; 26.3 runs {@link OilWellFeature} once
+ * per chunk). Wells are worked out from each chunk's own random, so neighbouring chunks agree on them; each generating
+ * chunk places the parts of all wells within {@link #MAX_CHUNK_RADIUS} chunks that fall inside it. */
 public class OilGenerator {
     private OilGenerator() {}
 
@@ -52,46 +60,27 @@ public class OilGenerator {
         NONE
     }
 
-    @SubscribeEvent
-    public static void onPopulatePre(PopulateChunkEvent.Pre event) {
-        Level world = event.getWorld();
-        int chunkX = event.getChunkX();
-        int chunkZ = event.getChunkZ();
-
-        if (world.getWorldType() == WorldType.FLAT) {
+    /** Generates the parts of nearby oil wells that are in the given chunk. */
+    public static void generateChunk(WorldGenLevel world, int chunkX, int chunkZ) {
+        ResourceKey<Level> dimension = world.getLevel().dimension();
+        if (!BCEnergyConfig.isDimensionAllowed(dimension)) {
             if (DEBUG_OILGEN_BASIC) {
-                BCLog.logger.info(
-                    "[energy.oilgen] Not generating oil in " + world + " chunk " + chunkX + ", " + chunkZ
-                        + " because it's WorldType is FLAT."
-                );
-            }
-            return;
-        }
-        boolean isExcludedDimension = BCEnergyConfig.excludedDimensions.contains(world.provider.getDimension());
-        if (isExcludedDimension == BCEnergyConfig.excludedDimensionsIsBlackList) {
-            if (DEBUG_OILGEN_BASIC) {
-                BCLog.logger.info(
-                    "[energy.oilgen] Not generating oil in " + world + " chunk " + chunkX + ", " + chunkZ
-                        + " because it's dimension is disabled."
-                );
+                BCLog.logger.info("[energy.oilgen] Not generating oil in " + dimension.identifier() + " chunk "
+                    + chunkX + ", " + chunkZ + " because its dimension is disabled.");
             }
             return;
         }
 
-        world.profiler.startSection("bc_oil");
-        int x = chunkX * 16 + 8;
-        int z = chunkZ * 16 + 8;
-        BlockPos min = new BlockPos(x, 0, z);
-        Box box = new Box(min, min.add(15, world.getHeight(), 15));
+        int x = chunkX * 16;
+        int z = chunkZ * 16;
+        Box box = new Box(new BlockPos(x, world.getMinY(), z), new BlockPos(x + 15, world.getMaxY(), z + 15));
 
         for (int cdx = -MAX_CHUNK_RADIUS; cdx <= MAX_CHUNK_RADIUS; cdx++) {
             for (int cdz = -MAX_CHUNK_RADIUS; cdz <= MAX_CHUNK_RADIUS; cdz++) {
                 int cx = chunkX + cdx;
                 int cz = chunkZ + cdz;
-                world.profiler.startSection("scan");
                 List<OilGenStructure> structures = getStructures(world, cx, cz, cdx == 0 && cdz == 0);
                 OilGenStructure.Spring spring = null;
-                world.profiler.endStartSection("gen");
                 for (OilGenStructure struct : structures) {
                     struct.generate(world, box);
                     if (struct instanceof OilGenStructure.Spring) {
@@ -100,57 +89,53 @@ public class OilGenerator {
                 }
                 if (spring != null && box.contains(spring.pos)) {
                     int count = 0;
+                    // The spout shares the spring's column, so it was generated just above
                     for (OilGenStructure struct : structures) {
                         count += struct.countOilBlocks();
                     }
                     spring.generate(world, count);
                 }
-                world.profiler.endSection();
             }
         }
-        world.profiler.endSection();
     }
 
-    public static List<OilGenStructure> getStructures(Level world, int cx, int cz) {
+    public static List<OilGenStructure> getStructures(WorldGenLevel world, int cx, int cz) {
         return getStructures(world, cx, cz, false);
     }
 
-    private static List<OilGenStructure> getStructures(Level world, int cx, int cz, boolean log) {
-        Random rand = RandUtil.createRandomForChunk(world, cx, cz, MAGIC_GEN_NUMBER);
+    private static List<OilGenStructure> getStructures(WorldGenLevel world, int cx, int cz, boolean log) {
+        Random rand = RandUtil.createRandomForChunk(world.getSeed(), cx, cz, MAGIC_GEN_NUMBER);
 
         // shift to world coordinates
         int x = cx * 16 + 8 + rand.nextInt(16);
         int z = cz * 16 + 8 + rand.nextInt(16);
 
-        Biome biome = world.getBiome(new BlockPos(x, 0, z));
+        Holder<Biome> biome = world.getBiome(new BlockPos(x, world.getSeaLevel(), z));
+        Identifier biomeName = biome.unwrapKey().map(ResourceKey::identifier).orElse(null);
 
         // Do not generate oil in excluded biomes
-        boolean isExcludedBiome = BCEnergyConfig.excludedBiomes.contains(biome.getRegistryName());
+        boolean isExcludedBiome = biomeName != null && BCEnergyConfig.excludedBiomes.contains(biomeName);
         if (isExcludedBiome == BCEnergyConfig.excludedBiomesIsBlackList) {
             if (DEBUG_OILGEN_BASIC & log) {
-                BCLog.logger.info(
-                    "[energy.oilgen] Not generating oil in " + toStr(world) + " chunk " + cx + ", " + cz
-                        + " because the biome we found (" + biome.getRegistryName() + ") is disabled!"
-                );
+                BCLog.logger.info("[energy.oilgen] Not generating oil in chunk " + cx + ", " + cz
+                    + " because the biome we found (" + biomeName + ") is disabled!");
             }
             return ImmutableList.of();
         }
 
-        if (biome instanceof BiomeEnd && (Math.abs(x) < 1200 || Math.abs(z) < 1200)) {
+        if (biome.is(BiomeTags.IS_END) && (Math.abs(x) < 1200 || Math.abs(z) < 1200)) {
             if (DEBUG_OILGEN_BASIC & log) {
-                BCLog.logger.info(
-                    "[energy.oilgen] Not generating oil in " + toStr(world) + " chunk " + cx + ", " + cz
-                        + " because it's the end biome and we're within 1200 blocks of the ender dragon fight"
-                );
+                BCLog.logger.info("[energy.oilgen] Not generating oil in chunk " + cx + ", " + cz
+                    + " because it's the end biome and we're within 1200 blocks of the ender dragon fight");
             }
             return ImmutableList.of();
         }
 
-        boolean oilBiome = BCEnergyConfig.surfaceDepositBiomes.contains(biome.getRegistryName());
+        boolean oilBiome = biomeName != null && BCEnergyConfig.surfaceDepositBiomes.contains(biomeName);
 
         double bonus = oilBiome ? 3.0 : 1.0;
         bonus *= BCEnergyConfig.oilWellGenerationRate;
-        if (BCEnergyConfig.excessiveBiomes.contains(biome.getRegistryName())) {
+        if (biomeName != null && BCEnergyConfig.excessiveBiomes.contains(biomeName)) {
             bonus *= 30.0;
         }
         final GenType type;
@@ -166,19 +151,19 @@ public class OilGenerator {
             type = GenType.LAKE;
         } else {
             if (DEBUG_OILGEN_ALL & log) {
-                BCLog.logger.info(
-                    "[energy.oilgen] Not generating oil in " + toStr(world) + " chunk " + cx + ", " + cz
-                        + " because none of the random numbers were above the thresholds for generation"
-                );
+                BCLog.logger.info("[energy.oilgen] Not generating oil in chunk " + cx + ", " + cz
+                    + " because none of the random numbers were above the thresholds for generation");
             }
             return ImmutableList.of();
         }
         if (DEBUG_OILGEN_BASIC & log) {
-            BCLog.logger.info(
-                "[energy.oilgen] Generating an oil well (" + type.name().toLowerCase(Locale.ROOT)
-                    + ") in " + toStr(world) + " chunk " + cx + ", " + cz + " at " + x + ", " + z
-            );
+            BCLog.logger.info("[energy.oilgen] Generating an oil well (" + type.name().toLowerCase(Locale.ROOT)
+                + ") in chunk " + cx + ", " + cz + " at " + x + ", " + z);
         }
+
+        // 1.12.2 measured everything from y = 0 (the bedrock floor); 26.3 worlds start at their min y
+        int floor = world.getMinY();
+        int maxY = world.getMaxY();
 
         List<OilGenStructure> structures = new ArrayList<>();
         int lakeRadius;
@@ -193,11 +178,12 @@ public class OilGenerator {
             lakeRadius = 2;
             tendrilRadius = 5 + rand.nextInt(10);
         }
-        structures.add(createTendril(new BlockPos(x, 62, z), lakeRadius, tendrilRadius, rand));
+        structures.add(createTendril(new BlockPos(x, world.getSeaLevel(), z), floor + 1, maxY, lakeRadius,
+            tendrilRadius, rand));
 
         if (type != GenType.LAKE) {
             // Generate a spherical cave deposit
-            int wellY = 20 + rand.nextInt(10);
+            int wellY = floor + 20 + rand.nextInt(10);
 
             int radius;
             if (type == GenType.LARGE) {
@@ -232,30 +218,19 @@ public class OilGenerator {
                     }
                     height = minHeight + rand.nextInt(maxHeight - minHeight);
                 }
-                structures.add(createSpout(new BlockPos(x, wellY, z), height, radius));
+                structures.add(new OilGenStructure.Spout(new BlockPos(x, wellY, z), maxY, ReplaceType.ALWAYS, radius,
+                    height));
             }
 
             // Generate a spring at the very bottom
             if (type == GenType.LARGE) {
-                structures.add(createTube(new BlockPos(x, 1, z), wellY, radius, Axis.Y));
-                if (BCCoreBlocks.spring!= null) {
-                    structures.add(createSpring(new BlockPos(x, 0, z)));
+                structures.add(createTube(new BlockPos(x, floor + 1, z), wellY - floor, radius, Axis.Y));
+                if (BCCoreBlocks.spring != null) {
+                    structures.add(createSpring(new BlockPos(x, floor, z)));
                 }
             }
         }
         return structures;
-    }
-
-    private static String toStr(Level world) {
-        if (world instanceof ServerLevel) {
-            ServerLevel ws = (ServerLevel) world;
-            return ws.getChunkSaveLocation().getName();
-        }
-        return world.toString();
-    }
-
-    private static OilGenStructure createSpout(BlockPos start, int height, int radius) {
-        return new OilGenStructure.Spout(start, ReplaceType.ALWAYS, radius, height);
     }
 
     public static OilGenStructure createTubeY(BlockPos base, int height, int radius) {
@@ -268,23 +243,24 @@ public class OilGenerator {
 
     public static OilGenStructure createTube(BlockPos center, int length, int radius, Axis axis) {
         int valForAxis = VecUtil.getValue(center, axis);
-        BlockPos min = VecUtil.replaceValue(center.add(-radius, -radius, -radius), axis, valForAxis);
-        BlockPos max = VecUtil.replaceValue(center.add(radius, radius, radius), axis, valForAxis + length);
+        BlockPos min = VecUtil.replaceValue(center.offset(-radius, -radius, -radius), axis, valForAxis);
+        BlockPos max = VecUtil.replaceValue(center.offset(radius, radius, radius), axis, valForAxis + length);
         double radiusSq = radius * radius;
         int toReplace = valForAxis;
-        Predicate<BlockPos> tester = p -> VecUtil.replaceValue(p, axis, toReplace).distanceSq(center) <= radiusSq;
+        Predicate<BlockPos> tester = p -> VecUtil.replaceValue(p, axis, toReplace).distSqr(center) <= radiusSq;
         return new GenByPredicate(new Box(min, max), ReplaceType.ALWAYS, tester);
     }
 
     public static OilGenStructure createSphere(BlockPos center, int radius) {
-        Box box = new Box(center.add(-radius, -radius, -radius), center.add(radius, radius, radius));
+        Box box = new Box(center.offset(-radius, -radius, -radius), center.offset(radius, radius, radius));
         double radiusSq = radius * radius + 0.01;
-        Predicate<BlockPos> tester = p -> p.distanceSq(center) <= radiusSq;
+        Predicate<BlockPos> tester = p -> p.distSqr(center) <= radiusSq;
         return new GenByPredicate(box, ReplaceType.ALWAYS, tester);
     }
 
-    public static OilGenStructure createTendril(BlockPos center, int lakeRadius, int radius, Random rand) {
-        BlockPos start = center.add(-radius, 0, -radius);
+    public static OilGenStructure createTendril(BlockPos center, int minY, int maxY, int lakeRadius, int radius,
+        Random rand) {
+        BlockPos start = center.offset(-radius, 0, -radius);
         int diameter = radius * 2 + 1;
         boolean[][] pattern = new boolean[diameter][diameter];
 
@@ -318,7 +294,7 @@ public class OilGenerator {
         }
 
         int depth = rand.nextDouble() < 0.5 ? 1 : 2;
-        return OilGenStructure.PatternTerrainHeight.create(start, ReplaceType.IS_FOR_LAKE, pattern, depth);
+        return OilGenStructure.PatternTerrainHeight.create(start, minY, maxY, ReplaceType.IS_FOR_LAKE, pattern, depth);
     }
 
     private static void fillPatternIfProba(Random rand, float proba, int x, int z, boolean[][] pattern) {

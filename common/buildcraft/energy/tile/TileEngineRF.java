@@ -12,6 +12,8 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -56,7 +58,8 @@ public class TileEngineRF extends TileEngineBase_BC8 {
     int currentRF;
     public final ItemHandlerSimple invUpgrades;
 
-    public TileEngineRF() {
+    public TileEngineRF(BlockPos pos, BlockState state) {
+        super(pos, state);
         caps.addCapabilityInstance(CapUtil.CAP_RF, new Rf(), EnumPipePart.VALUES);
         invUpgrades = itemManager.addInvHandler("upgrades", 4, this::isValidUpgrade, StackInsertionFunction.getInsertionFunction(1), EnumAccess.NONE);
     }

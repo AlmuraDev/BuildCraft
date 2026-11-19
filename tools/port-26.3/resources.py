@@ -94,8 +94,8 @@ ITEMS = {
                                         'buildcraftcore:item/decorated/destroy'),
         # TODO(26.3): the engine item models are BuildCraft variable models (a special item renderer is needed); until
         # then the items show the plain block models.
-        'engine': select_block_state('type', [('wood', 'buildcraftcore:block/engine/wood'),
-                                              ('creative', 'buildcraftcore:block/engine/creative')],
+        'engine': select_block_state('type', [(t, 'buildcraftcore:block/engine/' + t)
+                                              for t in ['wood', 'stone', 'iron', 'creative', 'rf']],
                                      'buildcraftcore:block/engine/wood'),
     },
 }
@@ -156,6 +156,48 @@ def _add_pipe_items():
 
 
 _add_pipe_items()
+
+
+# ---- Energy ----
+# Fluids: name -> heat values, as BCEnergyFluids registers them ("oil", "oil_heat_1", "oil_heat_2"...). The textures
+# are baked by fluid_textures.py.
+ENERGY_FLUIDS = ['oil', 'oil_residue', 'oil_heavy', 'oil_dense', 'oil_distilled', 'fuel_dense', 'fuel_mixed_heavy',
+                 'fuel_light', 'fuel_mixed_light', 'fuel_gaseous']
+
+
+def _add_energy():
+    ITEMS['buildcraftenergy'] = {
+        'glob_of_oil': model('buildcraftenergy:item/glob_oil'),
+        # TODO(26.3): the dynamo item is a BuildCraft variable model like the engines; a plain fallback until then
+        'mj_dynamo': model('buildcraftenergy:block/mj_dynamo_fallback'),
+    }
+    MODELS['buildcraftenergy'] = {
+        'block/mj_dynamo_fallback': {'parent': 'block/cube_all',
+                                     'textures': {'all': 'buildcraftenergy:blocks/mj_dynamo/front'}},
+    }
+    BLOCKSTATES['buildcraftenergy'] = {
+        # Drawn by its tile renderer; the model gives the particle texture
+        'mj_dynamo': {'variants': {'': {'model': 'buildcraftenergy:block/mj_dynamo_fallback'}},
+                      '__converted_26_3': True},
+    }
+    for name in ENERGY_FLUIDS:
+        for heat in range(3):
+            full = name if heat == 0 else '%s_heat_%d' % (name, heat)
+            tex = 'buildcraftenergy:blocks/fluids/%s_heat_%d_still' % (name, heat)
+            # Fluid blocks are drawn by their fluid model; the block model only gives the particle texture
+            MODELS['buildcraftenergy']['block/fluid/%s_heat_%d' % (name, heat)] = {'textures': {'particle': tex}}
+            BLOCKSTATES['buildcraftenergy']['fluid_block_%s_heat_%d' % (name, heat)] = {
+                'variants': {'': {'model': 'buildcraftenergy:block/fluid/%s_heat_%d' % (name, heat)}},
+                '__converted_26_3': True}
+            ITEMS['buildcraftenergy']['bucket_' + full] = {
+                'type': 'neoforge:fluid_container',
+                'fluid': 'buildcraftenergy:' + full,
+                'flip_gas': True,
+                'textures': {'base': 'minecraft:item/bucket', 'fluid': 'neoforge:item/mask/bucket_fluid_drip'},
+            }
+
+
+_add_energy()
 
 
 def write_models_and_states():

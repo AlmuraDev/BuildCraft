@@ -1,94 +1,50 @@
+/*
+ * Copyright (c) 2017 SpaceToad and the BuildCraft team
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not
+ * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/
+ */
+
 package buildcraft.energy.blocks;
 
-import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.block.state.BlockFaceShape;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.util.EnumBlockRenderType;
-import net.minecraft.core.Direction;
+import javax.annotation.Nullable;
+
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.redstone.Orientation;
 
 import buildcraft.api.blocks.ICustomRotationHandler;
 
 import buildcraft.lib.block.BlockBCTile_Neptune;
-import buildcraft.lib.engine.TileEngineBase_BC8;
-import buildcraft.lib.tile.TileBC_Neptune;
 
 import buildcraft.energy.tile.TileDynamoMJ;
 
+/** The MJ to RF dynamo. Like the engines it is drawn entirely by its tile renderer, which animates it. */
 public class BlockDynamoMJ extends BlockBCTile_Neptune implements ICustomRotationHandler {
 
-    public BlockDynamoMJ(Material material, String id) {
-        super(material, id);
+    public BlockDynamoMJ(BlockBehaviour.Properties properties, String id) {
+        super(properties.noOcclusion(), id);
     }
 
     @Override
-    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
-        return new TileDynamoMJ();
+    protected RenderShape getRenderShape(BlockState state) {
+        return RenderShape.INVISIBLE;
     }
 
     @Override
-    @Deprecated
-    public boolean isOpaqueCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    @Deprecated
-    public boolean isFullBlock(BlockState state) {
-        return false;
-    }
-
-    @Override
-    @Deprecated
-    public boolean isFullCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    @Deprecated
-    public BlockFaceShape getBlockFaceShape(BlockGetter world, BlockState state, BlockPos pos, Direction side) {
-        BlockEntity tile = world.getBlockEntity(pos);
-        if (tile instanceof TileDynamoMJ) {
-            TileDynamoMJ engine = (TileDynamoMJ) tile;
-            if (side == engine.getCurrentDirection().getOpposite()) {
-                return BlockFaceShape.SOLID;
-            } else {
-                return BlockFaceShape.UNDEFINED;
-            }
-        }
-        return BlockFaceShape.UNDEFINED;
-    }
-
-    @Override
-    @Deprecated
-    public boolean isSideSolid(BlockState base_state, BlockGetter world, BlockPos pos, Direction side) {
-        BlockEntity tile = world.getBlockEntity(pos);
-        if (tile instanceof TileDynamoMJ) {
-            TileDynamoMJ engine = (TileDynamoMJ) tile;
-            return side == engine.getCurrentDirection().getOpposite();
-        }
-        return false;
-    }
-
-    @Override
-    @Deprecated
-    public EnumBlockRenderType getRenderType(BlockState state) {
-        return EnumBlockRenderType.ENTITYBLOCK_ANIMATED;
-    }
-
-    @Override
-    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos) {
-        super.neighborChanged(state, world, pos, block, fromPos);
+    protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block block,
+        @Nullable Orientation orientation, boolean movedByPiston) {
+        super.neighborChanged(state, world, pos, block, orientation, movedByPiston);
         if (world.isClientSide()) return;
         BlockEntity tile = world.getBlockEntity(pos);
         if (tile instanceof TileDynamoMJ) {
-            TileDynamoMJ engine = (TileDynamoMJ) tile;
-            engine.rotateIfInvalid();
+            ((TileDynamoMJ) tile).rotateIfInvalid();
         }
     }
 
@@ -98,8 +54,7 @@ public class BlockDynamoMJ extends BlockBCTile_Neptune implements ICustomRotatio
     public InteractionResult attemptRotation(Level world, BlockPos pos, BlockState state, Direction sideWrenched) {
         BlockEntity tile = world.getBlockEntity(pos);
         if (tile instanceof TileDynamoMJ) {
-            TileDynamoMJ engine = (TileDynamoMJ) tile;
-            return engine.attemptRotation();
+            return ((TileDynamoMJ) tile).attemptRotation();
         }
         return InteractionResult.FAIL;
     }

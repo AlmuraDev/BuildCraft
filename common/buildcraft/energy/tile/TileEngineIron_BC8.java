@@ -6,10 +6,13 @@
 
 package buildcraft.energy.tile;
 
+import buildcraft.lib.misc.FluidUtilBC;
 import java.io.IOException;
 
 import javax.annotation.Nonnull;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -60,7 +63,7 @@ public class TileEngineIron_BC8 extends TileEngineBase_BC8 {
                 return super.map(stack, space);
             }
             FluidStack fluidCoolant = coolant.getFluidFromSolidCoolant(stack);
-            if (fluidCoolant == null || fluidCoolant.amount <= 0 || fluidCoolant.amount > space) {
+            if (fluidCoolant == null || fluidCoolant.getAmount() <= 0 || fluidCoolant.getAmount() > space) {
                 return super.map(stack, space);
             }
             return new FluidGetResult(StackUtil.EMPTY, fluidCoolant);
@@ -75,7 +78,8 @@ public class TileEngineIron_BC8 extends TileEngineBase_BC8 {
     private double residueAmount = 0;
     private IFuel currentFuel;
 
-    public TileEngineIron_BC8() {
+    public TileEngineIron_BC8(BlockPos pos, BlockState state) {
+        super(pos, state);
         tankManager.addAll(tankFuel, tankCoolant, tankResidue);
 
         // TODO: Auto list of example fuels!
@@ -179,13 +183,13 @@ public class TileEngineIron_BC8 extends TileEngineBase_BC8 {
     @Override
     public boolean isBurning() {
         FluidStack fuel = tankFuel.getFluid();
-        return fuel != null && fuel.amount > 0 && penaltyCooling == 0 && isRedstonePowered;
+        return fuel != null && fuel.getAmount() > 0 && penaltyCooling == 0 && isRedstonePowered;
     }
 
     @Override
     protected void burn() {
         final FluidStack fuel = this.tankFuel.getFluid();
-        if (currentFuel == null || !currentFuel.getFluid().isFluidEqual(fuel)) {
+        if (currentFuel == null || !FluidUtilBC.isFluidEqual(currentFuel.getFluid(), fuel)) {
             currentFuel = BuildcraftFuelRegistry.fuel.getFuel(fuel);
         }
 
@@ -197,25 +201,25 @@ public class TileEngineIron_BC8 extends TileEngineBase_BC8 {
             if (isRedstonePowered) {
                 lastPowered = true;
 
-                if (burnTime > 0 || fuel.amount > 0) {
+                if (burnTime > 0 || fuel.getAmount() > 0) {
                     if (burnTime > 0) {
                         burnTime--;
                     }
                     if (burnTime <= 0) {
-                        if (fuel.amount > 0) {
-                            fuel.amount--;
+                        if (fuel.getAmount() > 0) {
+                            fuel.shrink(1);
                             burnTime += currentFuel.getTotalBurningTime() / 1000.0;
 
                             // If we also produce residue then put it out too
                             if (currentFuel instanceof IDirtyFuel) {
                                 IDirtyFuel dirtyFuel = (IDirtyFuel) currentFuel;
                                 FluidStack residueFluid = dirtyFuel.getResidue().copy();
-                                residueAmount += residueFluid.amount / 1000.0;
+                                residueAmount += residueFluid.getAmount() / 1000.0;
                                 if (residueAmount >= 1) {
-                                    residueFluid.amount = Mth.floor(residueAmount);
+                                    residueFluid.setAmount(Mth.floor(residueAmount));
                                     residueAmount -= tankResidue.fill(residueFluid, true);
                                 } else if (tankResidue.getFluid() == null) {
-                                    residueFluid.amount = 0;
+                                    residueFluid.setAmount(0);
                                     tankResidue.setFluid(residueFluid);
                                 }
                             }
@@ -237,7 +241,7 @@ public class TileEngineIron_BC8 extends TileEngineBase_BC8 {
             }
         }
 
-        if (burnTime <= 0 && fuel.amount <= 0) {
+        if (burnTime <= 0 && fuel.getAmount() <= 0) {
             tankFuel.setFluid(null);
         }
     }
@@ -355,7 +359,7 @@ public class TileEngineIron_BC8 extends TileEngineBase_BC8 {
             return true;
         }
         if (currentFuel instanceof IDirtyFuel) {
-            return fluid.isFluidEqual(((IDirtyFuel) currentFuel).getResidue());
+            return FluidUtilBC.isFluidEqual(fluid, ((IDirtyFuel) currentFuel).getResidue());
         }
         return false;
     }

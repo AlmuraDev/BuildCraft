@@ -10,20 +10,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import gnu.trove.set.TIntSet;
-import gnu.trove.set.hash.TIntHashSet;
-
 import org.apache.logging.log4j.Level;
 
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 
 import buildcraft.lib.config.Property;
-import net.minecraft.core.registries.BuiltInRegistries;
 
 import buildcraft.api.core.BCLog;
 
-import buildcraft.lib.BCLibConfig;
-import buildcraft.lib.BCLibConfig.PowerMode;
 import buildcraft.lib.config.EnumRestartRequirement;
 import buildcraft.lib.misc.ConfigUtil;
 
@@ -51,7 +49,8 @@ public class BCEnergyConfig {
     public static double mediumOilGenProb;
     public static double largeOilGenProb;
 
-    public static final TIntSet excludedDimensions = new TIntHashSet();
+    /** Dimensions, from the config's 1.12 ids (-1 nether, 0 overworld, 1 end) or 26.3 dimension names. */
+    public static final Set<Identifier> excludedDimensions = new HashSet<>();
     /** If false then {@link #excludedDimensions} should be treated as a whitelist rather than a blacklist. */
     public static boolean excludedDimensionsIsBlackList;
     public static final Set<Identifier> excessiveBiomes = new HashSet<>();
@@ -157,16 +156,17 @@ public class BCEnergyConfig {
             "Biome registry names (e.g. 'minecraft:ocean','minecraft:hills')"
                 + " of biomes that should have slightly increased oil generation rates.");
 
-        String[] _excluded = { "minecraft:hell", "minecraft:sky", };
+        String[] _excluded = { "minecraft:nether_wastes", "minecraft:the_end", };
         propExcludedBiomes = BCCoreConfig.config.get("worldgen.oil", "excludedBiomes", _excluded,
             "Biome registry names (e.g. 'minecraft:hell','minecraft:jungle') of biomes that should never generate oil.");
 
         propExcludedBiomesIsBlacklist = BCCoreConfig.config.get("worldgen.oil", "excludedBiomesIsBlacklist", true,
             "If true then the excluded biomes list will be treated as a blacklist, otherwise it will be treated as a whitelist.");
 
-        int[] _dims = { -1, 1 };
+        String[] _dims = { "minecraft:the_nether", "minecraft:the_end" };
         propExcludedDimensions = BCCoreConfig.config.get("worldgen.oil", "excludedDimensions", _dims,
-            "Dimension ID's (e.g. '-1' for the nether,'1' for the end) of dimensions that should never generate oil.");
+            "Dimension names (e.g. 'minecraft:the_nether') of dimensions that should never generate oil."
+                + " The 1.12 ids -1, 0 and 1 still mean the nether, the overworld and the end.");
 
         propExcludedDimensionsIsBlacklist = BCCoreConfig.config.get("worldgen.oil", "excludedDimensionsIsBlacklist", true,
             "If true then the excluded dimenstions list will be treated as a blacklist, otherwise it will be treated as a whitelist.");
@@ -183,35 +183,7 @@ public class BCEnergyConfig {
         ConfigUtil.setEnumProperty(propChristmasEventType, SpecialEventType.values());
         game.setTo(propChristmasEventType);
 
-        // Move old configs
-        // boolean hasKey(String category, String key)
-        // boolean moveProperty(String oldCategory, String propName, String newCategory);
-        // boolean renameProperty(String category, String oldPropName, String newPropName)
-        if (BCCoreConfig.config.contains("worldgen", "enableOilGen")) {
-            BCCoreConfig.config.moveProperty("worldgen", "enableOilGen", "worldgen.oil");
-            BCCoreConfig.config.renameProperty("worldgen.oil", "enableOilGen", "enable");
-        }
-        if (BCCoreConfig.config.contains("worldgen", "oilWellGenerationRate")) {
-            BCCoreConfig.config.moveProperty("worldgen", "oilWellGenerationRate", "worldgen.oil");
-            BCCoreConfig.config.renameProperty("worldgen.oil", "oilWellGenerationRate", "generationRate");
-        }
-        if (BCCoreConfig.config.contains("worldgen", "enableOilSpouts")) {
-            BCCoreConfig.config.moveProperty("worldgen", "enableOilSpouts", "worldgen.oil.spouts");
-            BCCoreConfig.config.renameProperty("worldgen.oil.spouts", "enableOilSpouts", "enable");
-        }
-
-        if (BCCoreConfig.config.contains("worldgen", "excessiveBiomes")) {
-            BCCoreConfig.config.moveProperty("worldgen", "excessiveBiomes", "worldgen.oil");
-        }
-        if (BCCoreConfig.config.contains("worldgen", "surfaceDepositBiomes")) {
-            BCCoreConfig.config.moveProperty("worldgen", "surfaceDepositBiomes", "worldgen.oil");
-        }
-        if (BCCoreConfig.config.contains("worldgen", "excludedBiomes")) {
-            BCCoreConfig.config.moveProperty("worldgen", "excludedBiomes", "worldgen.oil");
-        }
-        if (BCCoreConfig.config.contains("worldgen", "excludedDimensions")) {
-            BCCoreConfig.config.moveProperty("worldgen", "excludedDimensions", "worldgen.oil");
-        }
+        // (1.12.2 moved pre-7.99 "worldgen" keys into "worldgen.oil" here; those configs are long gone.)
 
         reloadConfig(EnumRestartRequirement.GAME);
         BCCoreConfig.addReloadListener(BCEnergyConfig::reloadConfig);
@@ -224,7 +196,12 @@ public class BCEnergyConfig {
             addBiomeNames(propExcessiveBiomes, excessiveBiomes);
             addBiomeNames(propSurfaceDepositBiomes, surfaceDepositBiomes);
             excludedDimensions.clear();
-            excludedDimensions.addAll(propExcludedDimensions.getIntList());
+            for (String dim : propExcludedDimensions.getStringList()) {
+                Identifier id = parseDimension(dim.trim());
+                if (id != null) {
+                    excludedDimensions.add(id);
+                }
+            }
             excludedBiomesIsBlackList = propExcludedBiomesIsBlacklist.getBoolean();
             excludedDimensionsIsBlackList = propExcludedDimensionsIsBlacklist.getBoolean();
 
@@ -250,26 +227,68 @@ public class BCEnergyConfig {
                 largeOilGenProb = propLargeOilGenProb.getDouble() / 100;
 
                 christmasEventStatus = ConfigUtil.parseEnumForConfig(propChristmasEventType, SpecialEventType.DAY_ONLY);
-            } else {
-                validateBiomeNames();
             }
+        }
+    }
+
+    private static Identifier parseDimension(String dim) {
+        switch (dim) {
+            case "-1":
+                return Identifier.withDefaultNamespace("the_nether");
+            case "0":
+                return Identifier.withDefaultNamespace("overworld");
+            case "1":
+                return Identifier.withDefaultNamespace("the_end");
+            default:
+                Identifier id = Identifier.tryParse(dim);
+                if (id == null || dim.matches("-?[0-9]+")) {
+                    BCLog.logger.warn("[energy.config] Unknown dimension '" + dim + "' in excludedDimensions (1.12"
+                        + " numeric ids other than -1, 0 and 1 have no 26.3 name)");
+                    return null;
+                }
+                return id;
+        }
+    }
+
+    /** @return True if oil may generate in the given dimension. */
+    public static boolean isDimensionAllowed(ResourceKey<net.minecraft.world.level.Level> dimension) {
+        boolean excluded = excludedDimensions.contains(dimension.identifier());
+        return excluded != excludedDimensionsIsBlackList;
+    }
+
+    /** 1.12.2 names of vanilla biomes that a config may still hold. */
+    private static Identifier convertLegacyBiome(Identifier id) {
+        if (!"minecraft".equals(id.getNamespace())) {
+            return id;
+        }
+        switch (id.getPath()) {
+            case "hell":
+                return Identifier.withDefaultNamespace("nether_wastes");
+            case "sky":
+                return Identifier.withDefaultNamespace("the_end");
+            default:
+                return id;
         }
     }
 
     private static void addBiomeNames(Property prop, Set<Identifier> set) {
         set.clear();
         for (String s : prop.getStringList()) {
-            set.add(Identifier.parse(s));
+            Identifier id = Identifier.tryParse(s.trim());
+            if (id != null) {
+                set.add(convertLegacyBiome(id));
+            }
         }
     }
 
-    /** Called in post-init, after all biomes should have been registered. In 1.12 this should be called after the
-     * registry event for biomes has been fired. */
-    public static void validateBiomeNames() {
+    /** Called when a server starts (biomes are data driven on 26.3, so they are only known then). */
+    public static void validateBiomeNames(MinecraftServer server) {
+        Registry<net.minecraft.world.level.biome.Biome> biomes =
+            server.registryAccess().lookupOrThrow(Registries.BIOME);
         Set<Identifier> invalids = new HashSet<>();
-        addInvalidBiomeNames(excessiveBiomes, invalids);
-        addInvalidBiomeNames(excludedBiomes, invalids);
-        addInvalidBiomeNames(surfaceDepositBiomes, invalids);
+        addInvalidBiomeNames(biomes, excessiveBiomes, invalids);
+        addInvalidBiomeNames(biomes, excludedBiomes, invalids);
+        addInvalidBiomeNames(biomes, surfaceDepositBiomes, invalids);
 
         if (invalids.isEmpty()) {
             return;
@@ -280,7 +299,7 @@ public class BCEnergyConfig {
         Collections.sort(invalidList, Comparator.comparing(Identifier::toString));
 
         List<Identifier> allValid = new ArrayList<>();
-        allValid.addAll(ForgeRegistries.BIOMES.getKeys());
+        allValid.addAll(biomes.keySet());
         Collections.sort(allValid, Comparator.comparing(Identifier::toString));
 
         BCLog.logger.warn("****************************************************");
@@ -303,9 +322,10 @@ public class BCEnergyConfig {
         }
     }
 
-    private static void addInvalidBiomeNames(Set<Identifier> toTest, Set<Identifier> invalidDest) {
+    private static void addInvalidBiomeNames(Registry<net.minecraft.world.level.biome.Biome> biomes,
+        Set<Identifier> toTest, Set<Identifier> invalidDest) {
         for (Identifier test : toTest) {
-            if (!ForgeRegistries.BIOMES.containsKey(test)) {
+            if (!biomes.containsKey(test)) {
                 invalidDest.add(test);
             }
         }
