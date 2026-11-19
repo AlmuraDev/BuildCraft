@@ -4,6 +4,18 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core.client;
 
+import javax.annotation.Nullable;
+
+import net.minecraft.client.gui.components.debug.DebugScreenDisplayer;
+import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
+import net.minecraft.client.gui.components.debug.DebugScreenProfile;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.phys.BlockHitResult;
+import net.neoforged.neoforge.client.event.RegisterDebugEntriesEvent;
+
+import buildcraft.lib.debug.IDetachedRenderer;
 import buildcraft.core.marker.VolumeSubCache;
 import buildcraft.core.marker.PathSubCache;
 import java.util.ArrayList;
@@ -13,7 +25,6 @@ import java.util.Set;
 
 import javax.annotation.Nonnull;
 import org.joml.Matrix4f;
-import org.joml.Vector3d;
 import org.joml.Vector3f;
 
 import org.lwjgl.opengl.GL11;
@@ -23,14 +34,11 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.ChatFormatting;
 
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.event.RenderWorldLastEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 
 import buildcraft.api.core.IBox;
@@ -75,8 +83,8 @@ public class RenderTickListener {
             for (int i = 0; i < 5; i++) {
                 for (int j = 0; j < 2; j++) {
                     double[] from = upFace[i][j];
-                    Vector3f point = new Vector3f(new Vector3d(from));
-                    matrix.transform(point);
+                    Vector3f point = new Vector3f((float) from[0], (float) from[1], (float) from[2]);
+                    matrix.transformPosition(point);
                     Vec3 to = new Vec3(point.x, point.y, point.z);
                     arr[i][j] = to;
                 }
@@ -88,19 +96,31 @@ public class RenderTickListener {
         DIFF_HEADER_FORMATTING = ChatFormatting.AQUA + "" + ChatFormatting.BOLD;
     }
 
-    @SubscribeEvent
-    public static void renderOverlay(RenderGameOverlayEvent.Text event) {
+    public static final Identifier DEBUG_ENTRY = Identifier.fromNamespaceAndPath("buildcraftcore", "debuggable");
+
+    /** The debugger's info about the looked at tile, on the F3 screen (1.12.2 added it to the overlay text event). */
+    public static void registerDebugEntry(RegisterDebugEntriesEvent event) {
+        event.register(DEBUG_ENTRY, RenderTickListener::addDebugLines);
+        event.includeInProfile(DEBUG_ENTRY, DebugScreenProfile.DEFAULT, DebugScreenEntryStatus.IN_OVERLAY);
+    }
+
+    private static void addDebugLines(DebugScreenDisplayer displayer, @Nullable Level level, @Nullable LevelChunk clientChunk,
+        @Nullable LevelChunk serverChunk) {
         Minecraft mc = Minecraft.getInstance();
         IDebuggable debuggable = ClientDebuggables.getDebuggableObject(mc.hitResult);
-        if (debuggable != null) {
+        if (debuggable != null && mc.hitResult instanceof BlockHitResult hit) {
             List<String> clientLeft = new ArrayList<>();
             List<String> clientRight = new ArrayList<>();
-            debuggable.getDebugInfo(clientLeft, clientRight, mc.hitResult.sideHit);
+            debuggable.getDebugInfo(clientLeft, clientRight, hit.getDirection());
             String headerFirst = DIFF_HEADER_FORMATTING + "SERVER:";
             String headerSecond = DIFF_HEADER_FORMATTING + "CLIENT:";
-            appendDiff(event.getLeft(), ClientDebuggables.SERVER_LEFT, clientLeft, headerFirst, headerSecond);
-            appendDiff(event.getRight(), ClientDebuggables.SERVER_RIGHT, clientRight, headerFirst, headerSecond);
-            debuggable.getClientDebugInfo(event.getLeft(), event.getRight(), mc.hitResult.sideHit);
+            List<String> left = new ArrayList<>();
+            List<String> right = new ArrayList<>();
+            appendDiff(left, ClientDebuggables.SERVER_LEFT, clientLeft, headerFirst, headerSecond);
+            appendDiff(right, ClientDebuggables.SERVER_RIGHT, clientRight, headerFirst, headerSecond);
+            debuggable.getClientDebugInfo(left, right, hit.getDirection());
+            left.addAll(right);
+            displayer.addToGroup(DEBUG_ENTRY, left);
         }
     }
 
@@ -131,11 +151,8 @@ public class RenderTickListener {
         }
     }
 
-    @SubscribeEvent
-    public static void renderLast(RenderWorldLastEvent event) {
-        float partialTicks = event.getPartialTicks();
-        renderHeldItemInWorld(partialTicks);
-    }
+    /** Previews of the held map location / marker connector, as a detached renderer from the world origin. */
+    public static final IDetachedRenderer HELD_ITEM_RENDERER = (player, partialTicks) -> renderHeldItemInWorld(partialTicks);
 
     private static void renderHeldItemInWorld(float partialTicks) {
         Minecraft mc = Minecraft.getInstance();
@@ -147,10 +164,6 @@ public class RenderTickListener {
         ItemStack offHand = StackUtil.asNonNull(player.getOffhandItem());
         ClientLevel world = mc.level;
 
-        mc.mcProfiler.startSection("bc");
-        mc.mcProfiler.startSection("renderWorld");
-
-        DetachedRenderer.fromWorldOriginPre(player, partialTicks);
 
         Item mainHandItem = mainHand.getItem();
         Item offHandItem = offHand.getItem();
@@ -161,10 +174,6 @@ public class RenderTickListener {
             renderMarkerConnector(world, player);
         }
 
-        DetachedRenderer.fromWorldOriginPost();
-
-        mc.mcProfiler.endSection();
-        mc.mcProfiler.endSection();
     }
 
     private static void renderMapLocation(@Nonnull ItemStack stack) {
@@ -207,23 +216,16 @@ public class RenderTickListener {
     }
 
     private static void renderMarkerConnector(ClientLevel world, Player player) {
-        ProfilerFiller profiler = Minecraft.getInstance().mcProfiler;
-        profiler.push("marker");
         for (MarkerCache<?> cache : MarkerCache.CACHES) {
-            profiler.push(cache.name);
             renderMarkerCache(player, cache.getSubCache(world));
-            profiler.pop();
         }
-        profiler.pop();
     }
 
     private static void renderMarkerCache(Player player, MarkerSubCache<?> cache) {
-        ProfilerFiller profiler = Minecraft.getInstance().mcProfiler;
-        profiler.push("compute");
         Set<LaserData_BC8> toRender = new HashSet<>();
         for (final BlockPos a : cache.getAllMarkers()) {
             for (final BlockPos b : cache.getValidConnections(a)) {
-                if (a.toLong() > b.toLong()) {
+                if (a.asLong() > b.asLong()) {
                     // Only render each pair once
                     continue;
                 }
@@ -247,11 +249,9 @@ public class RenderTickListener {
                 toRender.add(data);
             }
         }
-        profiler.popPush("render");
         for (LaserData_BC8 laser : toRender) {
             LaserRenderer_BC8.renderLaserStatic(laser);
         }
-        profiler.pop();
     }
 
     private static boolean isLookingAt(BlockPos from, BlockPos to, Player player) {

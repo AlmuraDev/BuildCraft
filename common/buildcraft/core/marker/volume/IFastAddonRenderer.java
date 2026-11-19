@@ -6,16 +6,18 @@
 
 package buildcraft.core.marker.volume;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.world.entity.player.Player;
 
 public interface IFastAddonRenderer<T extends Addon> {
-    void renderAddonFast(T addon, Player player, float partialTicks, BufferBuilder bb);
+    /** Draws the addon in world coordinates (a translucent, entity-format, block-atlas consumer). */
+    void renderAddonFast(T addon, Player player, float partialTicks, VertexConsumer bb, PoseStack.Pose pose);
 
     default IFastAddonRenderer<T> then(IFastAddonRenderer<? super T> after) {
-        return (addon, player, partialTicks, bb) -> {
-            renderAddonFast(addon, player, partialTicks, bb);
-            after.renderAddonFast(addon, player, partialTicks, bb);
+        return (addon, player, partialTicks, bb, pose) -> {
+            renderAddonFast(addon, player, partialTicks, bb, pose);
+            after.renderAddonFast(addon, player, partialTicks, bb, pose);
         };
     }
 }

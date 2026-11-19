@@ -4,19 +4,25 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.core.client.render;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
-import com.google.common.collect.ImmutableSet;
+import javax.annotation.Nullable;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
+import com.google.common.collect.ImmutableSet;
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.phys.Vec3;
 
-import buildcraft.lib.client.render.DetachedRenderer;
+import buildcraft.lib.client.render.WorldRenderContext;
 import buildcraft.lib.client.render.laser.LaserData_BC8;
 import buildcraft.lib.client.render.laser.LaserData_BC8.LaserType;
 import buildcraft.lib.client.render.laser.LaserRenderer_BC8;
@@ -27,58 +33,73 @@ import buildcraft.core.client.BuildCraftLaserManager;
 import buildcraft.core.marker.VolumeConnection;
 import buildcraft.core.tile.TileMarkerVolume;
 
-public class RenderMarkerVolume extends TileEntitySpecialRenderer<TileMarkerVolume> {
+/** Draws a powered volume marker's signal lasers, along each axis that has no connection. */
+public class RenderMarkerVolume implements BlockEntityRenderer<TileMarkerVolume, RenderMarkerVolume.State> {
     private static final double SCALE = 1 / 16.2; // smaller than normal lasers
-
-    public static final RenderMarkerVolume INSTANCE = new RenderMarkerVolume();
 
     private static final LaserType LASER_TYPE = BuildCraftLaserManager.MARKER_VOLUME_SIGNAL;
     private static final Vec3 VEC_HALF = new Vec3(0.5, 0.5, 0.5);
 
+    public static class State extends BlockEntityRenderState {
+        final List<LaserData_BC8> lasers = new ArrayList<>();
+    }
+
     @Override
-    public boolean isGlobalRenderer(TileMarkerVolume te) {
+    public State createRenderState() {
+        return new State();
+    }
+
+    @Override
+    public boolean shouldRenderOffScreen() {
         return true;
     }
 
     @Override
-    public void render(TileMarkerVolume marker, double tileX, double tileY, double tileZ, float partialTicks, int destroyStage, float alpha) {
-        if (marker == null || !marker.isShowingSignals()) return;
+    public int getViewDistance() {
+        return Math.max(64, BCCoreConfig.markerMaxDistance * 2);
+    }
 
-        Minecraft.getInstance().mcProfiler.startSection("bc");
-        Minecraft.getInstance().mcProfiler.startSection("marker");
-        Minecraft.getInstance().mcProfiler.startSection("volume");
-
-        DetachedRenderer.fromWorldOriginPre(Minecraft.getInstance().player, partialTicks);
-        RenderHelper.disableStandardItemLighting();
-        Minecraft.getInstance().renderEngine.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+    @Override
+    public void extractRenderState(TileMarkerVolume marker, State state, float partialTicks, Vec3 cameraPosition,
+        @Nullable ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(marker, state, partialTicks, cameraPosition, breakProgress);
+        state.lasers.clear();
+        if (!marker.isShowingSignals()) return;
 
         VolumeConnection volume = marker.getCurrentConnection();
         Set<Axis> taken = volume == null ? ImmutableSet.of() : volume.getConnectedAxis();
 
-        Vec3 start = VecUtil.add(VEC_HALF, marker.getPos());
+        Vec3 start = VecUtil.add(VEC_HALF, marker.getBlockPos());
         for (Direction face : Direction.values()) {
             if (taken.contains(face.getAxis())) {
                 continue;
             }
             Vec3 end = VecUtil.offset(start, face, BCCoreConfig.markerMaxDistance);
-            renderLaser(start, end, face.getAxis());
+            state.lasers.add(makeLaser(start, end, face.getAxis()));
         }
-
-        RenderHelper.enableStandardItemLighting();
-        DetachedRenderer.fromWorldOriginPost();
-
-        Minecraft.getInstance().mcProfiler.endSection();
-        Minecraft.getInstance().mcProfiler.endSection();
-        Minecraft.getInstance().mcProfiler.endSection();
     }
 
-    private static void renderLaser(Vec3 min, Vec3 max, Axis axis) {
+    @Override
+    public void submit(State state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+        if (state.lasers.isEmpty()) return;
+        List<LaserData_BC8> lasers = new ArrayList<>(state.lasers);
+        // The lasers are in world coordinates, and this pose is at the block
+        poseStack.pushPose();
+        poseStack.translate(-state.blockPos.getX(), -state.blockPos.getY(), -state.blockPos.getZ());
+        collector.submitCustomGeometry(poseStack, WorldRenderContext.TRANSLUCENT_BLOCK_ATLAS, (pose, buffer) -> {
+            for (LaserData_BC8 laser : lasers) {
+                LaserRenderer_BC8.renderLaser(laser, buffer, pose);
+            }
+        });
+        poseStack.popPose();
+    }
+
+    private static LaserData_BC8 makeLaser(Vec3 min, Vec3 max, Axis axis) {
         Direction faceForMin = VecUtil.getFacing(axis, true);
         Direction faceForMax = VecUtil.getFacing(axis, false);
         Vec3 one = offset(min, faceForMin);
         Vec3 two = offset(max, faceForMax);
-        LaserData_BC8 data = new LaserData_BC8(LASER_TYPE, one, two, SCALE);
-        LaserRenderer_BC8.renderLaserStatic(data);
+        return new LaserData_BC8(LASER_TYPE, one, two, SCALE);
     }
 
     private static Vec3 offset(Vec3 vec, Direction face) {

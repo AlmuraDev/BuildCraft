@@ -6,64 +6,42 @@
 
 package buildcraft.lib.client.render;
 
-import buildcraft.lib.debug.IDetachedRenderer;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-import org.lwjgl.opengl.GL11;
+import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
+
+import buildcraft.lib.debug.IDetachedRenderer;
 
 /** Dispatches "detached renderer elements" - rendering that does not require a specific tile or entity in the world
- * (perhaps held item HUD elements) */
+ * (perhaps held item HUD elements). The renderers run while the level render state is extracted ({@link #extract}),
+ * drawing through {@link WorldRenderContext}; what they drew is submitted with the rest of the frame
+ * ({@link #submit}). */
 @OnlyIn(Dist.CLIENT)
 public enum DetachedRenderer {
     INSTANCE;
 
-    public enum RenderMatrixType implements IGlPre, IGLPost {
-        FROM_PLAYER(null, null),
-        FROM_WORLD_ORIGIN(DetachedRenderer::fromWorldOriginPre, DetachedRenderer::fromWorldOriginPost);
-
-        public final IGlPre pre;
-        public final IGLPost post;
-
-        RenderMatrixType(IGlPre pre, IGLPost post) {
-            this.pre = pre;
-            this.post = post;
-        }
-
-        @Override
-        public void glPre(Player clientPlayer, float partialTicks) {
-            if (pre != null) pre.glPre(clientPlayer, partialTicks);
-        }
-
-        @Override
-        public void glPost() {
-            if (post != null) post.glPost();
-        }
+    public enum RenderMatrixType {
+        /** Positions relative to the camera. */
+        FROM_PLAYER,
+        /** Positions in world coordinates. */
+        FROM_WORLD_ORIGIN;
     }
 
-    @FunctionalInterface
-    public interface IGlPre {
-        void glPre(Player clientPlayer, float partialTicks);
-    }
-
-    @FunctionalInterface
-    public interface IGLPost {
-        void glPost();
-    }
-
-    @FunctionalInterface
     private final Map<RenderMatrixType, List<IDetachedRenderer>> renders = new EnumMap<>(RenderMatrixType.class);
+
+    /** The last frame's recording, and the camera position it was made for. */
+    private WorldRenderContext.Recording lastRecording;
+    private Vec3 lastCamera = Vec3.ZERO;
 
     DetachedRenderer() {
         for (RenderMatrixType type : RenderMatrixType.values()) {
@@ -75,33 +53,43 @@ public enum DetachedRenderer {
         renders.get(type).add(renderer);
     }
 
-    public void renderWorldLastEvent(Player player, float partialTicks) {
-        Minecraft.getInstance().renderEngine.bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-        Minecraft.getInstance().entityRenderer.enableLightmap();
-
+    /** Runs every renderer, recording their quads in world coordinates. */
+    public void extract(Player player, Vec3 camera, float partialTicks) {
+        WorldRenderContext.Recording recording = new WorldRenderContext.Recording();
+        PoseStack poseStack = new PoseStack();
         for (RenderMatrixType type : RenderMatrixType.values()) {
             List<IDetachedRenderer> rendersForType = this.renders.get(type);
             if (rendersForType.isEmpty()) continue;
-            type.glPre(player, partialTicks);
-            for (IDetachedRenderer render : rendersForType) {
-                render.render(player, partialTicks);
+            poseStack.pushPose();
+            if (type == RenderMatrixType.FROM_PLAYER) {
+                poseStack.translate(camera.x, camera.y, camera.z);
             }
-            type.glPost();
+            WorldRenderContext.begin(poseStack, recording);
+            try {
+                for (IDetachedRenderer render : rendersForType) {
+                    render.render(player, partialTicks);
+                }
+            } finally {
+                WorldRenderContext.end();
+                poseStack.popPose();
+            }
         }
-
-        Minecraft.getInstance().entityRenderer.disableLightmap();
+        recording.finish();
+        lastRecording = recording.isEmpty() ? null : recording;
+        lastCamera = camera;
     }
 
-    public static void fromWorldOriginPre(Player player, float partialTicks) {
-        GL11.glPushMatrix();
-
-        Vec3 diff = new Vec3(0, 0, 0);
-        diff = diff.subtract(player.getPositionEyes(partialTicks));
-        diff = diff.add(0, player.getEyeHeight(), 0);
-        GL11.glTranslated(diff.x, diff.y, diff.z);
-    }
-
-    public static void fromWorldOriginPost() {
-        GL11.glPopMatrix();
+    /** Submits what {@link #extract} recorded. */
+    public void submit(SubmitCustomGeometryEvent event) {
+        WorldRenderContext.Recording recording = lastRecording;
+        if (recording == null) {
+            return;
+        }
+        PoseStack poseStack = event.getPoseStack();
+        poseStack.pushPose();
+        poseStack.translate(-lastCamera.x, -lastCamera.y, -lastCamera.z);
+        event.getSubmitNodeCollector().submitCustomGeometry(poseStack, WorldRenderContext.TRANSLUCENT_BLOCK_ATLAS,
+            (pose, buffer) -> recording.replay(buffer, pose));
+        poseStack.popPose();
     }
 }

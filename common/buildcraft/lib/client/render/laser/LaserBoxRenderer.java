@@ -9,7 +9,8 @@ package buildcraft.lib.client.render.laser;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.phys.Vec3;
@@ -38,7 +39,8 @@ public class LaserBoxRenderer {
         }
     }
 
-    public static void renderLaserBoxDynamic(Box box, LaserType type, BufferBuilder bb, boolean center) {
+    public static void renderLaserBoxDynamic(Box box, LaserType type, VertexConsumer bb, PoseStack.Pose pose,
+        boolean center) {
         if (box == null || box.min() == null || box.max() == null) {
             return;
         }
@@ -46,7 +48,7 @@ public class LaserBoxRenderer {
         makeLaserBox(box, type, center);
 
         for (LaserData_BC8 data : (LaserData_BC8[]) box.laserData) {
-            LaserRenderer_BC8.renderLaserDynamic(data, bb);
+            LaserRenderer_BC8.renderLaserDynamic(data, bb, pose);
         }
     }
 

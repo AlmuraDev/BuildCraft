@@ -12,38 +12,29 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.resources.Identifier;
 
-import net.neoforged.fml.ModList;
-import net.minecraftforge.fml.common.LoaderState;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
 
-import buildcraft.lib.client.sprite.AtlasSpriteVariants;
 
 public class ModelHolderRegistry {
     public static final boolean DEBUG = BCDebugging.shouldDebugLog("lib.model.holder");
 
     static final List<ModelHolder> HOLDERS = new ArrayList<>();
 
-    public static void onTextureStitchPre(TextureMap map) {
-        Set<Identifier> toStitch = new HashSet<>();
-        for (ModelHolder holder : HOLDERS) {
-            holder.onTextureStitchPre(toStitch);
-        }
-
-        for (Identifier res : toStitch) {
-            map.setTextureEntry(AtlasSpriteVariants.createForConfig(res));
-        }
-    }
-
+    /** Reloads and bakes every model holder. Called once 26.3 has baked its own models, so the atlases (stitched from
+     * their JSON sources, which must list the models' texture folders) are ready. */
     public static void onModelBake() {
+        Set<Identifier> unused = new HashSet<>();
+        for (ModelHolder holder : HOLDERS) {
+            holder.onTextureStitchPre(unused);
+        }
         for (ModelHolder holder : HOLDERS) {
             holder.onModelBake();
         }
-        if (DEBUG && ModList.get().isInState(LoaderState.AVAILABLE)) {
+        if (DEBUG) {
             BCLog.logger.info("[lib.model.holder] List of registered Models:");
             List<ModelHolder> holders = new ArrayList<>();
             holders.addAll(HOLDERS);

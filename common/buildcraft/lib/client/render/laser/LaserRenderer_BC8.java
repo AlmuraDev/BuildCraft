@@ -13,13 +13,11 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalNotification;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.minecraft.client.Minecraft;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.renderpearl.api.vertex.VertexFormat;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.Level;
@@ -28,37 +26,19 @@ import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
+import buildcraft.lib.client.render.WorldRenderContext;
 import buildcraft.lib.client.render.laser.LaserData_BC8.LaserType;
-import buildcraft.lib.misc.SpriteUtil;
 
 @OnlyIn(Dist.CLIENT)
 public class LaserRenderer_BC8 {
     private static final Map<LaserType, CompiledLaserType> COMPILED_LASER_TYPES = new HashMap<>();
-    private static final LoadingCache<LaserData_BC8, LaserCompiledList> COMPILED_STATIC_LASERS;
-    private static final LoadingCache<LaserData_BC8, LaserCompiledBuffer> COMPILED_DYNAMIC_LASERS;
-
-    public static final VertexFormat FORMAT_LESS, FORMAT_ALL;
+    /** Lasers are baked into vertex lists (1.12.2 also compiled GL display lists for static ones; 26.3 has none). */
+    private static final LoadingCache<LaserData_BC8, LaserCompiledBuffer> COMPILED_LASERS;
 
     static {
-        COMPILED_STATIC_LASERS = CacheBuilder.newBuilder()//
+        COMPILED_LASERS = CacheBuilder.newBuilder()//
             .expireAfterWrite(5, TimeUnit.SECONDS)//
-            .removalListener(LaserRenderer_BC8::removeCompiledLaser)//
-            .build(CacheLoader.from(LaserRenderer_BC8::makeStaticLaser));
-
-        COMPILED_DYNAMIC_LASERS = CacheBuilder.newBuilder()//
-            .expireAfterWrite(5, TimeUnit.SECONDS)//
-            .build(CacheLoader.from(LaserRenderer_BC8::makeDynamicLaser));
-
-        FORMAT_LESS = new VertexFormat();
-        FORMAT_LESS.addElement(DefaultVertexFormat.POSITION_3F);
-        FORMAT_LESS.addElement(DefaultVertexFormat.TEX_2F);
-        FORMAT_LESS.addElement(DefaultVertexFormat.TEX_2S);
-
-        FORMAT_ALL = new VertexFormat();
-        FORMAT_ALL.addElement(DefaultVertexFormat.POSITION_3F);
-        FORMAT_ALL.addElement(DefaultVertexFormat.TEX_2F);
-        FORMAT_ALL.addElement(DefaultVertexFormat.TEX_2S);
-        FORMAT_ALL.addElement(DefaultVertexFormat.COLOR_4UB);
+            .build(CacheLoader.from(LaserRenderer_BC8::makeLaserBuffer));
     }
 
     public static void clearModels() {
@@ -72,14 +52,7 @@ public class LaserRenderer_BC8 {
         return COMPILED_LASER_TYPES.get(laserType);
     }
 
-    private static LaserCompiledList makeStaticLaser(LaserData_BC8 data) {
-        try (LaserCompiledList.Builder renderer = new LaserCompiledList.Builder(data.enableDiffuse)) {
-            makeLaser(data, renderer);
-            return renderer.build();
-        }
-    }
-
-    private static LaserCompiledBuffer makeDynamicLaser(LaserData_BC8 data) {
+    private static LaserCompiledBuffer makeLaserBuffer(LaserData_BC8 data) {
         LaserCompiledBuffer.Builder renderer = new LaserCompiledBuffer.Builder(data.enableDiffuse);
         makeLaser(data, renderer);
         return renderer.build();
@@ -89,13 +62,6 @@ public class LaserRenderer_BC8 {
         LaserContext ctx = new LaserContext(renderer, data, data.enableDiffuse, data.doubleFace);
         CompiledLaserType type = compileType(data.laserType);
         type.bakeFor(ctx);
-    }
-
-    private static void removeCompiledLaser(RemovalNotification<LaserData_BC8, LaserCompiledList> notification) {
-        LaserCompiledList comp = notification.getValue();
-        if (comp != null) {
-            comp.delete();
-        }
     }
 
     public static int computeLightmap(double x, double y, double z, int minBlockLight) {
@@ -112,7 +78,7 @@ public class LaserRenderer_BC8 {
         int count = 0;
         int sum = 0;
 
-        boolean ao = Minecraft.isAmbientOcclusionEnabled();
+        boolean ao = Minecraft.getInstance().options.ambientOcclusion().get();
 
         double xn = (x % 1 + 1) % 1;
         double yn = (y % 1 + 1) % 1;
@@ -131,7 +97,7 @@ public class LaserRenderer_BC8 {
         for (int xp = xl; xp <= xu; xp++) {
             for (int yp = yl; yp <= yu; yp++) {
                 for (int zp = zl; zp <= zu; zp++) {
-                    int light = world.getLightFor(type, BlockPos.containing(x + xp, y + yp, z + zp));
+                    int light = world.getBrightness(type, BlockPos.containing(x + xp, y + yp, z + zp));
                     if (light > 0) {
                         sum += light;
                         count++;
@@ -148,23 +114,22 @@ public class LaserRenderer_BC8 {
         }
     }
 
+    /** Draws a laser (in world coordinates) into the current detached render pass, if there is one. */
     public static void renderLaserStatic(LaserData_BC8 data) {
-        ProfilerFiller profiler = Minecraft.getInstance().mcProfiler;
-        profiler.push("compute");
-        LaserCompiledList compiled = COMPILED_STATIC_LASERS.getUnchecked(data);
-        profiler.popPush("render");
-        SpriteUtil.bindBlockTextureMap();
-        compiled.render();
-        profiler.pop();
+        PoseStack stack = WorldRenderContext.poseStack();
+        VertexConsumer buffer = WorldRenderContext.buffer(WorldRenderContext.TRANSLUCENT_BLOCK_ATLAS);
+        if (stack != null && buffer != null) {
+            renderLaser(data, buffer, stack.last());
+        }
     }
 
-    /** Assumes the buffer uses {@link DefaultVertexFormat#BLOCK} */
-    public static void renderLaserDynamic(LaserData_BC8 data, BufferBuilder buffer) {
-        ProfilerFiller profiler = Minecraft.getInstance().mcProfiler;
-        profiler.push("compute");
-        LaserCompiledBuffer compiled = COMPILED_DYNAMIC_LASERS.getUnchecked(data);
-        profiler.popPush("render");
-        compiled.render(buffer);
-        profiler.pop();
+    /** Draws a laser into the given consumer (a translucent, entity-format, block-atlas one) through the pose. */
+    public static void renderLaser(LaserData_BC8 data, VertexConsumer buffer, PoseStack.Pose pose) {
+        COMPILED_LASERS.getUnchecked(data).render(buffer, pose);
+    }
+
+    /** 1.12.2 cached "dynamic" lasers separately; they are the same as static ones now. */
+    public static void renderLaserDynamic(LaserData_BC8 data, VertexConsumer buffer, PoseStack.Pose pose) {
+        renderLaser(data, buffer, pose);
     }
 }

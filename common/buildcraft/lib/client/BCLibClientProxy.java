@@ -31,7 +31,6 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import buildcraft.lib.BCLibProxy;
-import buildcraft.lib.client.guide.GuiGuide;
 import buildcraft.lib.misc.MessageUtil;
 
 /** Lib's client proxy: created by name from {@link BCLibProxy} on the client only. */
@@ -91,7 +90,7 @@ public class BCLibClientProxy extends BCLibProxy {
 
     @Override
     public void openGuide(@Nullable String bookName) {
-        Minecraft.getInstance().setScreen(bookName == null ? new GuiGuide() : new GuiGuide(bookName));
+        // TODO(26.3 GUIs+guide batch): open GuiGuide.
     }
 
     @Override

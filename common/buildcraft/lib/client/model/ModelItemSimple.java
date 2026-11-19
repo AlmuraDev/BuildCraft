@@ -6,6 +6,7 @@
 
 package buildcraft.lib.client.model;
 
+import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
@@ -125,7 +126,7 @@ public class ModelItemSimple implements IBakedModel {
         this.quads = quads == null ? ImmutableList.of() : quads;
         this.isGui3d = isGui3d;
         if (quads.isEmpty()) {
-            particle = Minecraft.getInstance().getTextureMapBlocks().getMissingSprite();
+            particle = SpriteHolderRegistry.missingSprite();
         } else {
             particle = quads.get(0).getSprite();
         }

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "p": "minecraft:paper",
+    "R": "#c:dusts/redstone",
+    "G": "#c:dyes/green"
+  },
+  "pattern": [
+    "pRp",
+    "pGp",
+    "ppp"
+  ],
+  "result": {
+    "id": "buildcraftcore:list"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftcore:list"
+    }
+  ]
+}

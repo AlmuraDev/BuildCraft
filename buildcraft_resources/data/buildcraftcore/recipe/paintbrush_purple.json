@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "buildcraftcore:paintbrush_colouring",
+  "ingredients": [
+    "buildcraftcore:paintbrush",
+    "#c:dyes/purple"
+  ],
+  "result": {
+    "id": "buildcraftcore:paintbrush",
+    "components": {
+      "buildcraftcore:paint_colour": "purple"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftcore:paintbrush"
+    }
+  ]
+}

@@ -6,12 +6,13 @@
 
 package buildcraft.lib.client.model;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.joml.Vector3f;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -99,63 +100,17 @@ public class MutableQuad {
         return this.sprite;
     }
 
-    public BakedQuad toBakedBlock() {
-        int[] data = new int[28];
-        vertex_0.toBakedBlock(data, 0);
-        vertex_1.toBakedBlock(data, 7);
-        vertex_2.toBakedBlock(data, 14);
-        vertex_3.toBakedBlock(data, 21);
-        return new BakedQuad(data, tintIndex, face, sprite, shade, DefaultVertexFormat.BLOCK);
-    }
 
-    public BakedQuad toBakedItem() {
-        int[] data = new int[28];
-        vertex_0.toBakedItem(data, 0);
-        vertex_1.toBakedItem(data, 7);
-        vertex_2.toBakedItem(data, 14);
-        vertex_3.toBakedItem(data, 21);
-        return new BakedQuad(data, tintIndex, face, sprite, shade, DefaultVertexFormat.ITEM);
-    }
 
-    public MutableQuad fromBakedBlock(BakedQuad quad) {
-        tintIndex = quad.getTintIndex();
-        face = quad.getFace();
-        sprite = quad.getSprite();
-        shade = quad.shouldApplyDiffuseLighting();
 
-        int[] data = quad.getVertexData();
-        int stride = data.length / 4;
 
-        vertex_0.fromBakedBlock(data, 0);
-        vertex_1.fromBakedBlock(data, stride);
-        vertex_2.fromBakedBlock(data, stride * 2);
-        vertex_3.fromBakedBlock(data, stride * 3);
-
-        return this;
-    }
-
-    public MutableQuad fromBakedItem(BakedQuad quad) {
-        tintIndex = quad.getTintIndex();
-        face = quad.getFace();
-        sprite = quad.getSprite();
-        shade = quad.shouldApplyDiffuseLighting();
-
-        int[] data = quad.getVertexData();
-        int stride = data.length / 4;
-
-        vertex_0.fromBakedItem(data, 0);
-        vertex_1.fromBakedItem(data, stride);
-        vertex_2.fromBakedItem(data, stride * 2);
-        vertex_3.fromBakedItem(data, stride * 3);
-
-        return this;
-    }
-
-    public void render(BufferBuilder bb) {
-        vertex_0.render(bb);
-        vertex_1.render(bb);
-        vertex_2.render(bb);
-        vertex_3.render(bb);
+    /** Draws this quad (26.3 has no quad primitive in BufferBuilder any more: the consumer must be a quad-mode one,
+     * which every BuildCraft block/entity render type is). TODO(26.3 pipes batch): conversion to and from BakedQuad. */
+    public void render(VertexConsumer vc, PoseStack.Pose pose, int overlay) {
+        vertex_0.render(vc, pose, overlay);
+        vertex_1.render(vc, pose, overlay);
+        vertex_2.render(vc, pose, overlay);
+        vertex_3.render(vc, pose, overlay);
     }
 
     public Vector3f getCalculatedNormal() {

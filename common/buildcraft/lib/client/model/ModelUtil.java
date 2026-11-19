@@ -214,4 +214,13 @@ public class ModelUtil {
         if (shouldInvertForRender(face)) return face.getOpposite();
         return face;
     }
+
+    /** ARGB -> ABGR (1.12.2's RenderUtil.swapARGBforABGR, as quads hold their colour in that order). */
+    public static int swapARGBforABGR(int argb) {
+        int a = (argb >>> 24) & 255;
+        int r = (argb >> 16) & 255;
+        int g = (argb >> 8) & 255;
+        int b = (argb >> 0) & 255;
+        return (a << 24) | (b << 16) | (g << 8) | r;
+    }
 }

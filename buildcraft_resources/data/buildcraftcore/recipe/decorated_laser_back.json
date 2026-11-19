@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "s": "minecraft:obsidian",
+    "c": "minecraft:redstone_block"
+  },
+  "pattern": [
+    "sss",
+    "scs",
+    "sss"
+  ],
+  "result": {
+    "id": "buildcraftcore:decorated",
+    "count": 16,
+    "components": {
+      "minecraft:block_state": {
+        "decoration_type": "laser_back"
+      }
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftcore:decorated"
+    }
+  ]
+}

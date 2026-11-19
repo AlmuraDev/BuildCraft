@@ -6,45 +6,67 @@
 
 package buildcraft.lib.client.render.tile;
 
-import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
 
-import net.minecraft.client.Minecraft;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.util.profiling.ProfilerFiller;
+import javax.annotation.Nullable;
 
-import net.minecraftforge.client.model.animation.FastTESR;
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.world.phys.Vec3;
 
 import buildcraft.lib.client.model.MutableQuad;
 import buildcraft.lib.engine.TileEngineBase_BC8;
 
-public abstract class RenderEngine_BC8<T extends TileEngineBase_BC8> extends FastTESR<T> {
-    // TODO: Cache the model!
+/** Draws an engine from its variable model, which moves with the engine's progress (1.12.2's FastTESR). The quads are
+ * computed while extracting the render state, as the model reads the tile. */
+public abstract class RenderEngine_BC8<T extends TileEngineBase_BC8>
+    implements BlockEntityRenderer<T, RenderEngine_BC8.EngineRenderState> {
+
+    public static class EngineRenderState extends BlockEntityRenderState {
+        public final List<MutableQuad> quads = new ArrayList<>();
+    }
 
     @Override
-    public void renderTileEntityFast(@Nonnull T engine, double x, double y, double z, float partialTicks, int destroyStage, float partial, @Nonnull BufferBuilder vb) {
-        ProfilerFiller profiler = Minecraft.getInstance().mcProfiler;
-        profiler.push("bc");
-        profiler.push("engine");
+    public EngineRenderState createRenderState() {
+        return new EngineRenderState();
+    }
 
-        profiler.push("compute");
-        vb.setTranslation(x, y, z);
-        MutableQuad[] quads = getEngineModel(engine, partialTicks);
-        profiler.popPush("render");
-        MutableQuad copy = new MutableQuad(0, null);
-        int lightc = engine.getWorld().getCombinedLight(engine.getPos(), 0);
-        int light_block = (lightc >> 4) & 15;
-        int light_sky = (lightc >> 20) & 15;
-        for (MutableQuad q : quads) {
-            copy.copyFrom(q);
-            copy.maxLighti(light_block, light_sky);
+    @Override
+    public void extractRenderState(T engine, EngineRenderState state, float partialTicks, Vec3 cameraPosition,
+        @Nullable ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(engine, state, partialTicks, cameraPosition, breakProgress);
+        state.quads.clear();
+        int lightBlock = LightCoordsUtil.block(state.lightCoords);
+        int lightSky = LightCoordsUtil.sky(state.lightCoords);
+        for (MutableQuad q : getEngineModel(engine, partialTicks)) {
+            MutableQuad copy = new MutableQuad(q);
+            copy.maxLighti(lightBlock, lightSky);
             copy.multShade();
-            copy.render(vb);
+            state.quads.add(copy);
         }
-        vb.setTranslation(0, 0, 0);
+    }
 
-        profiler.pop();
-        profiler.pop();
-        profiler.pop();
+    @Override
+    public void submit(EngineRenderState state, PoseStack poseStack, SubmitNodeCollector collector, CameraRenderState camera) {
+        if (state.quads.isEmpty()) {
+            return;
+        }
+        List<MutableQuad> quads = new ArrayList<>(state.quads);
+        collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(TextureAtlas.LOCATION_BLOCKS), (pose, buffer) -> {
+            for (MutableQuad q : quads) {
+                q.render(buffer, pose, OverlayTexture.NO_OVERLAY);
+            }
+        });
     }
 
     protected abstract MutableQuad[] getEngineModel(T engine, float partialTicks);

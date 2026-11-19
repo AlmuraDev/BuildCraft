@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "i": "#c:strings",
+    "s": "#c:rods/wooden",
+    "g": "#c:gears/wood",
+    "w": "#minecraft:wool"
+  },
+  "pattern": [
+    " iw",
+    " gi",
+    "s  "
+  ],
+  "result": {
+    "id": "buildcraftcore:paintbrush"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftcore:paintbrush"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "r": "minecraft:redstone_torch",
+    "g": "#c:gears/wood",
+    "w": "buildcraftcore:wrench"
+  },
+  "pattern": [
+    "r",
+    "g",
+    "w"
+  ],
+  "result": {
+    "id": "buildcraftcore:marker_connector"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftcore:marker_connector"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftcore:gear_wood"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftcore:wrench"
+    }
+  ]
+}

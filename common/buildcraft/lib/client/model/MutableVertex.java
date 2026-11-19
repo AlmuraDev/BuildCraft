@@ -6,18 +6,16 @@
 
 package buildcraft.lib.client.model;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.util.LightCoordsUtil;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.renderpearl.api.vertex.VertexFormat;
-import com.mojang.renderpearl.api.vertex.VertexFormatElement;
-import com.mojang.renderpearl.api.vertex.VertexFormatElement.EnumUsage;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.Vec3i;
@@ -98,118 +96,20 @@ public class MutableVertex {
         return this;
     }
 
-    public void toBakedBlock(int[] data, int offset) {
-        // POSITION_3F
-        data[offset + 0] = Float.floatToRawIntBits(position_x);
-        data[offset + 1] = Float.floatToRawIntBits(position_y);
-        data[offset + 2] = Float.floatToRawIntBits(position_z);
-        // COLOR_4UB
-        data[offset + 3] = colourRGBA();
-        // TEX_2F
-        data[offset + 4] = Float.floatToRawIntBits(tex_u);
-        data[offset + 5] = Float.floatToRawIntBits(tex_v);
-        // TEX_2S
-        data[offset + 6] = lightc();
-    }
 
-    public void toBakedItem(int[] data, int offset) {
-        // POSITION_3F
-        data[offset + 0] = Float.floatToRawIntBits(position_x);
-        data[offset + 1] = Float.floatToRawIntBits(position_y);
-        data[offset + 2] = Float.floatToRawIntBits(position_z);
-        // COLOR_4UB
-        data[offset + 3] = colourRGBA();
-        // TEX_2F
-        data[offset + 4] = Float.floatToRawIntBits(tex_u);
-        data[offset + 5] = Float.floatToRawIntBits(tex_v);
-        // NORMAL_3B
-        data[offset + 6] = normalToPackedInt();
-    }
 
-    public void fromBakedBlock(int[] data, int offset) {
-        // POSITION_3F
-        position_x = Float.intBitsToFloat(data[offset + 0]);
-        position_y = Float.intBitsToFloat(data[offset + 1]);
-        position_z = Float.intBitsToFloat(data[offset + 2]);
-        // COLOR_4UB
-        colouri(data[offset + 3]);
-        // TEX_2F
-        tex_u = Float.intBitsToFloat(data[offset + 4]);
-        tex_v = Float.intBitsToFloat(data[offset + 5]);
-        // TEX_2S
-        lighti(data[offset + 6]);
-        normalf(0, 1, 0);
-    }
 
-    public void fromBakedItem(int[] data, int offset) {
-        // POSITION_3F
-        position_x = Float.intBitsToFloat(data[offset + 0]);
-        position_y = Float.intBitsToFloat(data[offset + 1]);
-        position_z = Float.intBitsToFloat(data[offset + 2]);
-        // COLOR_4UB
-        colouri(data[offset + 3]);
-        // TEX_2F
-        tex_u = Float.intBitsToFloat(data[offset + 4]);
-        tex_v = Float.intBitsToFloat(data[offset + 5]);
-        // NORMAL_3B
-        normali(data[offset + 6]);
-        lightf(1, 1);
-    }
 
     // Rendering
 
-    public void render(BufferBuilder bb) {
-        VertexFormat vf = bb.getVertexFormat();
-        if (vf == DefaultVertexFormat.BLOCK) {
-            renderAsBlock(bb);
-        } else {
-            for (VertexFormatElement vfe : vf.getElements()) {
-                if (vfe.getUsage() == EnumUsage.POSITION) renderPosition(bb);
-                else if (vfe.getUsage() == EnumUsage.NORMAL) renderNormal(bb);
-                else if (vfe.getUsage() == EnumUsage.COLOR) renderColour(bb);
-                else if (vfe.getUsage() == EnumUsage.UV) {
-                    if (vfe.getIndex() == 0) renderTex(bb);
-                    else if (vfe.getIndex() == 1) renderLightMap(bb);
-                }
-            }
-            bb.endVertex();
-        }
-    }
-
-    /** Renders this vertex into the given {@link BufferBuilder}, assuming that the {@link VertexFormat} is
-     * {@link DefaultVertexFormat#BLOCK}.
-     * <p>
-     * Slight performance increase over {@link #render(BufferBuilder)}. */
-    public void renderAsBlock(BufferBuilder bb) {
-        renderPosition(bb);
-        renderColour(bb);
-        renderTex(bb);
-        renderLightMap(bb);
-        bb.endVertex();
-    }
-
-    public void renderPosition(BufferBuilder bb) {
-        bb.pos(position_x, position_y, position_z);
-    }
-
-    public void renderNormal(BufferBuilder bb) {
-        bb.normal(normal_x, normal_y, normal_z);
-    }
-
-    public void renderColour(BufferBuilder bb) {
-        bb.color(colour_r, colour_g, colour_b, colour_a);
-    }
-
-    public void renderTex(BufferBuilder bb) {
-        bb.tex(tex_u, tex_v);
-    }
-
-    public void renderTex(BufferBuilder bb, ISprite sprite) {
-        bb.tex(sprite.getInterpU(tex_u), sprite.getInterpV(tex_v));
-    }
-
-    public void renderLightMap(BufferBuilder bb) {
-        bb.lightmap(light_sky << 4, light_block << 4);
+    /** Adds this vertex to the consumer, through the given pose. */
+    public void render(VertexConsumer vc, PoseStack.Pose pose, int overlay) {
+        vc.addVertex(pose, position_x, position_y, position_z)
+            .setColor(colour_r, colour_g, colour_b, colour_a)
+            .setUv(tex_u, tex_v)
+            .setOverlay(overlay)
+            .setLight(LightCoordsUtil.pack(light_block, light_sky))
+            .setNormal(pose, normal_x, normal_y, normal_z);
     }
 
     // Mutating
@@ -345,8 +245,8 @@ public class MutableVertex {
     }
 
     public MutableVertex texFromSprite(TextureAtlasSprite sprite) {
-        tex_u = sprite.getInterpolatedU(tex_u * 16);
-        tex_v = sprite.getInterpolatedV(tex_v * 16);
+        tex_u = sprite.getU(tex_u);
+        tex_v = sprite.getV(tex_v);
         return this;
     }
 
@@ -400,11 +300,11 @@ public class MutableVertex {
 
     public MutableVertex transform(Matrix4f matrix) {
         Vector3f point = positionvf();
-        matrix.transform(point);
+        matrix.transformPosition(point);
         positionv(point);
 
         Vector3f normal = normal();
-        matrix.transform(normal);
+        matrix.transformDirection(normal);
         normalv(normal);
         return this;
     }

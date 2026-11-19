@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "D": "minecraft:diamond"
+  },
+  "pattern": [
+    "D"
+  ],
+  "result": {
+    "id": "buildcraftcore:diamond_shard",
+    "count": 4
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftcore:diamond_shard"
+    }
+  ]
+}

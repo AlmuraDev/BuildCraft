@@ -9,18 +9,19 @@ import java.util.List;
 import net.minecraft.world.level.Level;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.neoforge.common.NeoForge;
+
+import buildcraft.lib.net.MessageManager;
+
 
 import buildcraft.lib.client.render.DetachedRenderer;
 import buildcraft.lib.client.render.DetachedRenderer.RenderMatrixType;
-import buildcraft.lib.net.MessageManager;
 
+import buildcraft.core.BCCore;
+import buildcraft.core.client.render.RenderMarkerConnections;
+import buildcraft.core.client.render.RenderVolumeBoxes;
 import buildcraft.core.BCCoreModels;
 import buildcraft.core.BCCoreProxy;
 import buildcraft.core.BCCoreSprites;
-import buildcraft.core.client.render.RenderMarkerConnections;
-import buildcraft.core.client.render.RenderVolumeBoxes;
-import buildcraft.core.list.ListTooltipHandler;
 import buildcraft.core.marker.volume.ClientVolumeBoxes;
 import buildcraft.core.marker.volume.MessageVolumeBoxes;
 import buildcraft.core.marker.volume.VolumeBox;
@@ -32,17 +33,18 @@ public class BCCoreClientProxy extends BCCoreProxy {
         super.fmlPreInit();
         BCCoreSprites.fmlPreInit();
         BCCoreModels.fmlPreInit();
+        BCCore.MOD_BUS.addListener(BCCoreModels::registerRenderers);
         DetachedRenderer.INSTANCE.addRenderer(RenderMatrixType.FROM_WORLD_ORIGIN, RenderVolumeBoxes.INSTANCE);
         RenderMarkerConnections.register();
-        NeoForge.EVENT_BUS.register(ListTooltipHandler.INSTANCE);
+        // TODO(26.3 GUIs batch): ListTooltipHandler, once ContainerList is ported.
         MessageManager.setHandler(MessageVolumeBoxes.class, MessageVolumeBoxes.HANDLER, LogicalSide.CLIENT);
     }
 
     @Override
     public void fmlInit() {
         super.fmlInit();
-        BCCoreModels.fmlInit();
-        NeoForge.EVENT_BUS.register(RenderTickListener.class);
+        DetachedRenderer.INSTANCE.addRenderer(RenderMatrixType.FROM_WORLD_ORIGIN, RenderTickListener.HELD_ITEM_RENDERER);
+        BCCore.MOD_BUS.addListener(RenderTickListener::registerDebugEntry);
     }
 
     @Override

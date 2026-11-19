@@ -22,14 +22,13 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
-import net.minecraft.client.renderer.block.model.ModelBlock;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.resources.Identifier;
 
 import buildcraft.lib.client.model.ResourceLoaderContext;
 import buildcraft.lib.misc.JsonUtil;
 
-/** {@link ModelBlock} but with different/additional features */
+/** 1.12.2's ModelBlock but with different/additional features */
 public class JsonModel {
     public final boolean ambientOcclusion;
     public final Map<String, String> textures;

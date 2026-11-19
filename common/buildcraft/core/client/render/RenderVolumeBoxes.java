@@ -7,13 +7,13 @@
 package buildcraft.core.client.render;
 
 import buildcraft.lib.debug.IDetachedRenderer;
-import org.lwjgl.opengl.GL11;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+
 import net.minecraft.world.entity.player.Player;
+
+import buildcraft.lib.client.render.WorldRenderContext;
 
 import buildcraft.lib.client.render.DetachedRenderer;
 import buildcraft.lib.client.render.laser.LaserBoxRenderer;
@@ -31,11 +31,12 @@ public enum RenderVolumeBoxes implements IDetachedRenderer {
     @SuppressWarnings("unchecked")
     @Override
     public void render(Player player, float partialTicks) {
-        GlStateManager.enableBlend();
-
-        BufferBuilder bb = Tessellator.getInstance().getBuffer();
-
-        bb.begin(GL11.GL_QUADS, DefaultVertexFormat.BLOCK);
+        PoseStack stack = WorldRenderContext.poseStack();
+        VertexConsumer bb = WorldRenderContext.buffer(WorldRenderContext.TRANSLUCENT_BLOCK_ATLAS);
+        if (stack == null || bb == null) {
+            return;
+        }
+        PoseStack.Pose pose = stack.last();
 
         ClientVolumeBoxes.INSTANCE.volumeBoxes.forEach(volumeBox -> {
             LaserType type;
@@ -51,15 +52,12 @@ public enum RenderVolumeBoxes implements IDetachedRenderer {
                     .findFirst()
                     .orElse(BuildCraftLaserManager.MARKER_VOLUME_CONNECTED);
             }
-            LaserBoxRenderer.renderLaserBoxDynamic(volumeBox.box, type, bb, false);
+            LaserBoxRenderer.renderLaserBoxDynamic(volumeBox.box, type, bb, pose, false);
 
             volumeBox.addons.values().forEach(addon ->
-                ((IFastAddonRenderer<Addon>) addon.getRenderer()).renderAddonFast(addon, player, partialTicks, bb)
+                ((IFastAddonRenderer<Addon>) addon.getRenderer()).renderAddonFast(addon, player, partialTicks, bb, pose)
             );
         });
 
-        Tessellator.getInstance().draw();
-
-        GlStateManager.disableBlend();
     }
 }

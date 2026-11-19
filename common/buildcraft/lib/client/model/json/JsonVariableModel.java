@@ -6,6 +6,7 @@
 
 package buildcraft.lib.client.model.json;
 
+import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -36,13 +37,9 @@ import buildcraft.lib.client.model.ModelUtil;
 import buildcraft.lib.client.model.ModelUtil.TexturedFace;
 import buildcraft.lib.client.model.MutableQuad;
 import buildcraft.lib.client.model.ResourceLoaderContext;
-import buildcraft.lib.client.reload.ReloadManager;
-import buildcraft.lib.client.reload.ReloadSource;
-import buildcraft.lib.client.reload.SourceType;
 import buildcraft.lib.expression.FunctionContext;
 import buildcraft.lib.json.JsonVariableObject;
 import buildcraft.lib.misc.JsonUtil;
-import buildcraft.lib.misc.SpriteUtil;
 
 /** {@link JsonModel} but any element can change depending on variables. */
 public class JsonVariableModel extends JsonVariableObject {
@@ -170,7 +167,6 @@ public class JsonVariableModel extends JsonVariableObject {
         if (ModelHolderRegistry.DEBUG) {
             BCLog.logger.info("[lib.model] The model " + modelLocation + " requires these sprites:");
         }
-        ReloadSource srcModel = new ReloadSource(modelLocation, SourceType.MODEL);
         for (Entry<String, JsonTexture> entry : textures.entrySet()) {
             JsonTexture lookup = entry.getValue();
             String location = lookup.location;
@@ -180,9 +176,6 @@ public class JsonVariableModel extends JsonVariableObject {
             }
             Identifier textureLoc = Identifier.parse(location);
             toRegisterSprites.add(textureLoc);
-            // Allow transitive deps
-            ReloadSource srcSprite = new ReloadSource(SpriteUtil.transformLocation(textureLoc), SourceType.SPRITE);
-            ReloadManager.INSTANCE.addDependency(srcSprite, srcModel);
             if (ModelHolderRegistry.DEBUG) {
                 BCLog.logger.info("[lib.model]  - " + location);
             }
@@ -222,7 +215,7 @@ public class JsonVariableModel extends JsonVariableObject {
             attempts++;
         }
         lookup = texture.location;
-        sprite = Minecraft.getInstance().getTextureMapBlocks().getAtlasSprite(lookup);
+        sprite = SpriteHolderRegistry.lookupSprite(Identifier.parse(String.valueOf(lookup)));
         TexturedFace face = new TexturedFace();
         face.sprite = sprite;
         face.faceData = texture.faceData;

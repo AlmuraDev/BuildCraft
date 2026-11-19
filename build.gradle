@@ -39,12 +39,21 @@ def portedPackages = [
 // Client rendering, models, the guide book and the GUI screens inside the ported packages. They are ported in the
 // GUIs+guide batch; until then the server side (containers, slots and the GUI interfaces included) compiles without them.
 def deferredSources = [
-        'buildcraft/lib/client/*.java',
+        'buildcraft/lib/client/ToastInformation.java',
         'buildcraft/lib/client/guide/**',
-        'buildcraft/lib/client/model/**',
+        'buildcraft/lib/client/model/plug/**',
+        'buildcraft/lib/client/model/ModelPluggableItem.java',
+        'buildcraft/lib/client/model/ModelItemSimple.java',
+        'buildcraft/lib/client/model/ModelNotifyOfRF.java',
         'buildcraft/lib/client/reload/**',
-        'buildcraft/lib/client/render/**',
         'buildcraft/lib/client/resource/**',
+        'buildcraft/lib/client/render/CuboidRenderer.java',
+        'buildcraft/lib/client/render/HudRenderer.java',
+        'buildcraft/lib/client/render/ItemRenderUtil.java',
+        'buildcraft/lib/client/render/fluid/**',
+        'buildcraft/lib/client/render/font/**',
+        'buildcraft/lib/client/render/tile/RenderMachineWave.java',
+        'buildcraft/lib/client/render/tile/RenderPartCube.java',
         'buildcraft/lib/client/sprite/Atlas*.java',
         'buildcraft/lib/client/sprite/Dynamic*.java',
         'buildcraft/lib/client/sprite/SpriteAtlas.java',
@@ -74,12 +83,10 @@ def deferredSources = [
         'buildcraft/lib/misc/SpriteUtil.java',
         'buildcraft/lib/misc/GlUtil.java',
         'buildcraft/lib/misc/search/**',
-        'buildcraft/lib/debug/DebugRenderHelper.java',
-        'buildcraft/core/client/**',
+        'buildcraft/core/client/*Config*.java',
         'buildcraft/core/list/ContainerList.java',
         'buildcraft/core/list/GuiList.java',
         'buildcraft/core/list/ListTooltipHandler.java',
-        'buildcraft/core/BCCoreModels.java',
         'buildcraft/core/marker/volume/AddonDefaultRenderer.java',
 ]
 
@@ -95,7 +102,11 @@ sourceSets {
         }
         resources {
             srcDirs = mainResourceDirs
-            exclude '**/*.md', 'mcmod.info', 'pack.png', 'pack.mcmeta'
+            srcDir layout.buildDirectory.dir('generated/lang')
+            // 1.12.2 .lang files become JSON (generateLang); the old 1.12.2 recipes and advancements under assets/ are
+            // replaced by data/ as each module is ported.
+            exclude '**/*.md', 'mcmod.info', 'pack.png', 'pack.mcmeta', '**/*.lang', 'assets/*/recipes/**',
+                'assets/*/advancements/**'
         }
     }
     test {
@@ -160,7 +171,34 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs += ['-Xmaxerrs', '10000']
 }
 
+// Turns the 1.12.2 .lang files (English in buildcraft_resources, the rest in BuildCraft-Localization) into 26.3 JSON
+// lang files with lower-case locale names.
+tasks.register('generateLang') {
+    def srcDirs = [file('buildcraft_resources/assets'), file('BuildCraft-Localization/assets')]
+    def outDir = layout.buildDirectory.dir('generated/lang/assets').get().asFile
+    inputs.files srcDirs.collect { fileTree(it).matching { include '**/lang/*.lang' } }
+    outputs.dir outDir
+    doLast {
+        delete outDir
+        srcDirs.each { File srcDir -> fileTree(srcDir).matching { include '**/lang/*.lang' }.each { File langFile ->
+            def entries = new LinkedHashMap<String, String>()
+            langFile.getText('UTF-8').readLines().each { String line ->
+                line = line.replace('﻿', '')
+                if (line.isBlank() || line.startsWith('#')) return
+                int eq = line.indexOf('=')
+                if (eq <= 0) return
+                entries.put(line.substring(0, eq), line.substring(eq + 1))
+            }
+            def rel = srcDir.toPath().relativize(langFile.parentFile.toPath()).toString()
+            def out = new File(new File(outDir, rel), langFile.name.replace('.lang', '.json').toLowerCase(Locale.ROOT))
+            out.parentFile.mkdirs()
+            out.setText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(entries)), 'UTF-8')
+        } }
+    }
+}
+
 processResources {
+    dependsOn 'generateLang'
     var expandProps = [
             'version'                      : version,
             'mod_license'                  : mod_license,

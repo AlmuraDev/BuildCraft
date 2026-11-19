@@ -8,18 +8,22 @@ package buildcraft.lib.debug;
 
 import org.joml.Vector3f;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
 
-import net.minecraftforge.client.model.ModelLoader;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.ModelUtil;
+import buildcraft.lib.client.render.WorldRenderContext;
+import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import buildcraft.lib.client.model.MutableQuad;
 import buildcraft.lib.debug.IDetachedRenderer;
 
@@ -57,8 +61,11 @@ public enum DebugRenderHelper implements IDetachedRenderer {
         }
     }
 
-    public static void renderAABB(BufferBuilder bb, AABB aabb, int colour) {
-        bb.setTranslation(0, 0, 0);
+    /** Draws a box in world coordinates into the current detached render pass. */
+    public static void renderAABB(AABB aabb, int colour) {
+        PoseStack stack = WorldRenderContext.poseStack();
+        VertexConsumer bb = WorldRenderContext.buffer(WorldRenderContext.TRANSLUCENT_BLOCK_ATLAS);
+        if (stack == null || bb == null) return;
         for (Direction face : Direction.values()) {
             MutableQuad quad = ModelUtil.createFace(
                 face,
@@ -75,19 +82,24 @@ public enum DebugRenderHelper implements IDetachedRenderer {
                 null
             );
             quad.lightf(1, 1);
-            quad.texFromSprite(ModelLoader.White.INSTANCE);
+            quad.texFromSprite(SpriteHolderRegistry.whiteSprite());
             quad.colouri(colour);
-            quad.render(bb);
+            quad.render(bb, stack.last(), OverlayTexture.NO_OVERLAY);
         }
     }
 
-    public static void renderSmallCuboid(BufferBuilder bb, BlockPos pos, int colour) {
-        bb.setTranslation(pos.getX(), pos.getY(), pos.getZ());
+    /** Draws a small cube in the middle of the block into the current detached render pass. */
+    public static void renderSmallCuboid(BlockPos pos, int colour) {
+        PoseStack stack = WorldRenderContext.poseStack();
+        VertexConsumer bb = WorldRenderContext.buffer(WorldRenderContext.TRANSLUCENT_BLOCK_ATLAS);
+        if (stack == null || bb == null) return;
+        stack.pushPose();
+        stack.translate(pos.getX(), pos.getY(), pos.getZ());
         for (MutableQuad q : smallCuboid) {
-            q.texFromSprite(ModelLoader.White.INSTANCE);
+            q.texFromSprite(SpriteHolderRegistry.whiteSprite());
             q.colouri(colour);
-            q.render(bb);
+            q.render(bb, stack.last(), OverlayTexture.NO_OVERLAY);
         }
-        bb.setTranslation(0, 0, 0);
+        stack.popPose();
     }
 }

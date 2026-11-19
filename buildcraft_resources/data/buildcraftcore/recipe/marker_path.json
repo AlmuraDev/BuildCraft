@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "t": "minecraft:redstone_torch",
+    "g": "#c:dyes/green"
+  },
+  "pattern": [
+    "g",
+    "t"
+  ],
+  "result": {
+    "id": "buildcraftcore:marker_path"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftcore:marker_path"
+    }
+  ]
+}

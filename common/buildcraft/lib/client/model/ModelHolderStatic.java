@@ -6,6 +6,7 @@
 
 package buildcraft.lib.client.model;
 
+import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -131,7 +132,7 @@ public class ModelHolderStatic extends ModelHolder {
     }
 
     private MutableQuad[] bakePart(JsonModelPart[] a) {
-        TextureAtlasSprite missingSprite = Minecraft.getInstance().getTextureMapBlocks().getMissingSprite();
+        TextureAtlasSprite missingSprite = SpriteHolderRegistry.missingSprite();
         List<MutableQuad> list = new ArrayList<>();
         for (JsonModelPart part : a) {
             for (JsonQuad quad : part.quads) {
@@ -154,7 +155,7 @@ public class ModelHolderStatic extends ModelHolder {
                         sprite = missingSprite;
                     }
                 } else {
-                    sprite = Minecraft.getInstance().getTextureMapBlocks().getAtlasSprite(lookup);
+                    sprite = SpriteHolderRegistry.lookupSprite(Identifier.parse(String.valueOf(lookup)));
                 }
                 list.add(quad.toQuad(sprite));
             }

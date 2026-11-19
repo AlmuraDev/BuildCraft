@@ -37,6 +37,7 @@ public class BCCore {
     public static final String MODID = "buildcraftcore";
 
     public static BCCore INSTANCE = null;
+    public static IEventBus MOD_BUS;
 
     static {
         BCLibItems.enableGuide();
@@ -45,6 +46,7 @@ public class BCCore {
 
     public BCCore(IEventBus modBus, ModContainer container) {
         INSTANCE = this;
+        MOD_BUS = modBus;
 
         File cfgFolder = new File(FMLPaths.CONFIGDIR.get().toFile(), "buildcraft");
         BCCoreConfig.preInit(cfgFolder);

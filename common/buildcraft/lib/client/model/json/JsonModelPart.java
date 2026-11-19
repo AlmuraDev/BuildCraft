@@ -15,14 +15,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 
-import net.minecraft.client.renderer.block.model.BlockPart;
 import net.minecraft.core.Direction;
 import net.minecraft.util.GsonHelper;
 
 import buildcraft.lib.client.model.ResourceLoaderContext;
 import buildcraft.lib.misc.JsonUtil;
 
-/** {@link BlockPart} but with a few extra features */
+/** 1.12.2's BlockPart but with a few extra features */
 public class JsonModelPart {
     public final JsonQuad[] quads;
 

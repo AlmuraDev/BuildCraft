@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "t": "minecraft:redstone_torch",
+    "l": "#c:dyes/blue"
+  },
+  "pattern": [
+    "l",
+    "t"
+  ],
+  "result": {
+    "id": "buildcraftcore:marker_volume"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftcore:marker_volume"
+    }
+  ]
+}

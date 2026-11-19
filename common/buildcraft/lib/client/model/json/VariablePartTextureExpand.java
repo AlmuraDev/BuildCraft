@@ -1,5 +1,7 @@
 package buildcraft.lib.client.model.json;
 
+import buildcraft.lib.client.model.ModelUtil;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -8,13 +10,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonObject;
 
 import net.minecraft.client.resources.model.geometry.BakedQuad;
-import net.minecraft.client.renderer.block.model.IBakedModel;
-import net.minecraft.client.renderer.block.model.ModelRotation;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.client.model.ItemLayerModel;
 
 import buildcraft.api.core.BCLog;
 
@@ -28,7 +27,6 @@ import buildcraft.lib.expression.api.IExpressionNode.INodeLong;
 import buildcraft.lib.expression.api.IExpressionNode.INodeObject;
 import buildcraft.lib.expression.node.value.NodeConstantBoolean;
 import buildcraft.lib.expression.node.value.NodeConstantLong;
-import buildcraft.lib.misc.RenderUtil;
 
 public class VariablePartTextureExpand extends JsonVariableModelPart {
     public final INodeDouble[] from;
@@ -60,28 +58,11 @@ public class VariablePartTextureExpand extends JsonVariableModelPart {
             float[] size = { t[0] - f[0], t[1] - f[1], t[2], f[2] };
             boolean s = shade.evaluate();
             int l = (int) (light.evaluate() & 15);
-            int rgba = RenderUtil.swapARGBforABGR((int) colour.evaluate());
+            int rgba = ModelUtil.swapARGBforABGR((int) colour.evaluate());
 
             VariableFaceData data = faceUv.evaluate(spriteLookup);
-            // TODO: Use the UV data! (only take part of the texture)
-            ItemLayerModel model = new ItemLayerModel(ImmutableList.of(Identifier.parse(".")));
-            IBakedModel baked = model.bake(ModelRotation.X0_Y0, DefaultVertexFormat.ITEM, (loc) -> data.sprite);
-            List<BakedQuad> quads = baked.getQuads(null, null, 0);
-            for (BakedQuad q : quads) {
-                MutableQuad mut = new MutableQuad();
-                mut.fromBakedItem(q);
-                mut.translated(0, 0, -(7.5 / 16.0));
-                mut.scaled(1, 1, 16);
-                mut.rotate(Direction.SOUTH, evaluateFace(this.face), 0.5f, 0.5f, 0.5f);
-                mut.scalef(size[0], size[1], size[2]);
-                mut.translated(f[0], f[1], f[2]);
-                mut.setCalculatedNormal();
-                mut.setShade(s);
-                mut.lighti(l, 0);
-                mut.colouri(rgba);
-                mut.setSprite(data.sprite);
-                addTo.add(mut);
-            }
+            // TODO(26.3): extrude the sprite like an item layer (1.12.2 baked Forge's ItemLayerModel here). Until then
+            // texture_expand parts draw nothing.
         }
     }
 

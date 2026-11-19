@@ -9,8 +9,10 @@ package buildcraft.lib.client.render.laser;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+
+import net.minecraft.client.renderer.texture.OverlayTexture;
 
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
@@ -30,24 +32,17 @@ public class LaserCompiledBuffer {
         this.ia = ia;
     }
 
-    /** Assumes the buffer uses {@link DefaultVertexFormat#BLOCK} */
-    public void render(BufferBuilder buffer) {
+    /** Draws the laser's quads through the given pose (into a quad-mode, entity-format consumer). */
+    public void render(VertexConsumer buffer, PoseStack.Pose pose) {
         for (int i = 0; i < vertices; i++) {
-            // POSITION_3F
-            buffer.pos(da[DOUBLE_STRIDE * i + 0], da[DOUBLE_STRIDE * i + 1], da[DOUBLE_STRIDE * i + 2]);
-
-            // COLOR_4UB
             int c = ia[INT_STRIDE * i + 0];
-            buffer.color(c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF, (c >> 24) & 0xFF);
-
-            // TEX_2F
-            buffer.tex(da[DOUBLE_STRIDE * i + 3], da[DOUBLE_STRIDE * i + 4]);
-
-            // TEX_2S
-            int lmap = ia[INT_STRIDE * i + 1];
-            buffer.lightmap((lmap >> 16) & 0xFFFF, lmap & 0xFFFF);
-
-            buffer.endVertex();
+            buffer.addVertex(pose, (float) da[DOUBLE_STRIDE * i + 0], (float) da[DOUBLE_STRIDE * i + 1],
+                    (float) da[DOUBLE_STRIDE * i + 2])
+                .setColor(c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF, (c >> 24) & 0xFF)
+                .setUv((float) da[DOUBLE_STRIDE * i + 3], (float) da[DOUBLE_STRIDE * i + 4])
+                .setOverlay(OverlayTexture.NO_OVERLAY)
+                .setLight(ia[INT_STRIDE * i + 1])
+                .setNormal(pose, 0, 1, 0);
         }
     }
 

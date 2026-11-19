@@ -6,6 +6,8 @@
 
 package buildcraft.lib.client.model.json;
 
+import buildcraft.lib.client.model.ModelUtil;
+
 import java.util.Arrays;
 
 import com.google.gson.JsonElement;

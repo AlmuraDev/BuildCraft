@@ -25,7 +25,6 @@ import buildcraft.lib.expression.api.IExpressionNode.INodeDouble;
 import buildcraft.lib.expression.api.IExpressionNode.INodeLong;
 import buildcraft.lib.expression.node.value.NodeConstantBoolean;
 import buildcraft.lib.expression.node.value.NodeConstantLong;
-import buildcraft.lib.misc.RenderUtil;
 
 public abstract class VariablePartCuboidBase extends JsonVariableModelPart {
     public final INodeDouble[] from;
@@ -51,12 +50,12 @@ public abstract class VariablePartCuboidBase extends JsonVariableModelPart {
             float[] t = bakePosition(to);
             boolean s = shade.evaluate();
             int l = (int) (light.evaluate() & 15);
-            int rgba = RenderUtil.swapARGBforABGR((int) colour.evaluate());
+            int rgba = ModelUtil.swapARGBforABGR((int) colour.evaluate());
             for (Direction face : Direction.values()) {
                 VariableFaceData data = getFaceData(face, spriteLookup);
                 if (data != null) {
                     Vector3f radius = new Vector3f(t[0] - f[0], t[1] - f[1], t[2] - f[2]);
-                    radius.scale(0.5f);
+                    radius.mul(0.5f);
                     Vector3f center = new Vector3f(f);
                     center.add(radius);
                     MutableQuad quad = ModelUtil.createFace(face, center, radius, data.uvs);

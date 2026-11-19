@@ -62,35 +62,11 @@ public class LaserContext {
         // 3: scale it by the laser's scale
         // 4: translate forward by "start"
 
-        matrix.setIdentity();
-        Matrix4f holding = new Matrix4f();
-        holding.setIdentity();
-
-        // // Step 4
-        Vector3f translation = new Vector3f();
-        translation.x = (float) data.start.x;
-        translation.y = (float) data.start.y;
-        translation.z = (float) data.start.z;
-        holding.setTranslation(translation);
-        matrix.mul(holding);
-        holding.setIdentity();
-
-        // Step 3
-        holding.m00 = (float) data.scale;
-        holding.m11 = (float) data.scale;
-        holding.m22 = (float) data.scale;
-        matrix.mul(holding);
-        holding.setIdentity();
-
-        // Step 2
-        holding.rotY((float) angleZ);
-        matrix.mul(holding);
-        holding.setIdentity();
-
-        // Step 1
-        holding.rotZ((float) angleY);
-        matrix.mul(holding);
-        holding.setIdentity();
+        matrix.identity()
+            .translate((float) data.start.x, (float) data.start.y, (float) data.start.z)
+            .scale((float) data.scale)
+            .rotateY((float) angleZ)
+            .rotateZ((float) angleY);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -123,7 +99,7 @@ public class LaserContext {
         point.x = (float) xIn;
         point.y = (float) yIn;
         point.z = (float) zIn;
-        matrix.transform(point);
+        matrix.transformPosition(point);
         int lmap = LaserRenderer_BC8.computeLightmap(point.x, point.y, point.z, minBlockLight);
         x[index] = point.x;
         y[index] = point.y;

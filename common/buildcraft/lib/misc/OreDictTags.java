@@ -66,6 +66,8 @@ public final class OreDictTags {
         Map.entry("slimeball", "c:slime_balls"),
         Map.entry("paper", "minecraft:paper"),
         Map.entry("blockGlass", "c:glass_blocks"),
+        Map.entry("blockGlassColorless", "c:glass_blocks/colorless"),
+        Map.entry("paneGlassColorless", "c:glass_panes/colorless"),
         Map.entry("paneGlass", "c:glass_panes"));
 
     /** @return The tag for the given ore dictionary name or tag id, or null if it doesn't look like either. */
