@@ -6,11 +6,11 @@
 
 package buildcraft.transport.client.model;
 
+import buildcraft.lib.client.model.MutableQuad;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.world.item.DyeColor;
 
 import buildcraft.api.transport.pipe.EnumPipeColourType;
@@ -33,11 +33,11 @@ public class PipeModelCacheBase {
         cacheTranslucent = new ModelCache<>(PipeModelCacheBase::generateTranslucent);
     }
 
-    private static List<BakedQuad> generateCutout(PipeBaseCutoutKey key) {
+    private static List<MutableQuad> generateCutout(PipeBaseCutoutKey key) {
         return generator.generateCutout(key);
     }
 
-    private static List<BakedQuad> generateTranslucent(PipeBaseTranslucentKey key) {
+    private static List<MutableQuad> generateTranslucent(PipeBaseTranslucentKey key) {
         return generator.generateTranslucent(key);
     }
 

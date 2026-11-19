@@ -1,5 +1,6 @@
 package buildcraft.transport.client.model.plug;
 
+import buildcraft.lib.client.model.MutableQuad;
 import buildcraft.api.transport.pluggable.PluggableModelKey;
 
 import buildcraft.lib.client.model.MutableQuad;

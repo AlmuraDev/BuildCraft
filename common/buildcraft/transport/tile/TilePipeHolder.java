@@ -17,6 +17,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.annotation.Nonnull;
 
@@ -36,6 +37,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 import net.neoforged.neoforge.capabilities.BlockCapability;
+import net.neoforged.neoforge.model.data.ModelData;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
 
@@ -68,6 +70,15 @@ import buildcraft.transport.pipe.PluggableHolder;
 import buildcraft.transport.wire.WireManager;
 
 public class TilePipeHolder extends TileBC_Neptune implements IPipeHolder, ITickable, IDebuggable {
+
+    /** Bakes the pipe's block model data. The client proxy sets this (the model lives in client-only code); servers
+     * never ask for model data. */
+    public static Function<TilePipeHolder, ModelData> modelDataFactory = tile -> ModelData.EMPTY;
+
+    @Override
+    public ModelData getModelData() {
+        return modelDataFactory.apply(this);
+    }
     /** Extra pipe event handlers for item pipes (silicon adds its lens/filter handler; 1.12.2 named it here). */
     public static final List<Object> ITEM_PIPE_EVENT_HANDLERS = new java.util.ArrayList<>();
 

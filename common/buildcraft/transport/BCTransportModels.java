@@ -6,31 +6,27 @@
 
 package buildcraft.transport;
 
-import net.minecraft.client.renderer.block.model.IBakedModel;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import net.minecraftforge.client.event.ModelBakeEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
-import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterBlockStateModels;
 
 import buildcraft.api.transport.pipe.PipeApiClient;
 import buildcraft.api.transport.pluggable.IPluggableStaticBaker;
 
 import buildcraft.lib.client.model.ModelHolderStatic;
 import buildcraft.lib.client.model.ModelHolderVariable;
-import buildcraft.lib.client.model.ModelPluggableItem;
 import buildcraft.lib.client.model.MutableQuad;
 import buildcraft.lib.client.model.plug.PlugBakerSimple;
 import buildcraft.lib.expression.DefaultContexts;
 import buildcraft.lib.expression.FunctionContext;
 import buildcraft.lib.expression.node.value.NodeVariableObject;
-import buildcraft.lib.misc.RenderUtil;
+import buildcraft.lib.registry.TileTypes;
 
-import buildcraft.transport.client.PipeBlockColours;
 import buildcraft.transport.client.model.ModelPipe;
-import buildcraft.transport.client.model.ModelPipeItem;
 import buildcraft.transport.client.model.key.KeyPlugBlocker;
 import buildcraft.transport.client.model.key.KeyPlugPowerAdaptor;
 import buildcraft.transport.client.render.PipeBehaviourRendererStripes;
@@ -46,6 +42,12 @@ import buildcraft.transport.pipe.flow.PipeFlowPower;
 import buildcraft.transport.pipe.flow.PipeFlowRedstoneFlux;
 import buildcraft.transport.tile.TilePipeHolder;
 
+/** Transport's client models and renderers.
+ * <p>
+ * The pipe holder's block model is {@link ModelPipe}, named by its blockstate file. Pipe and plug items use flat item
+ * models for now. TODO(26.3): 1.12.2 drew pipe items as small pipes (ModelPipeItem) and plug items from their plug
+ * models (ModelPluggableItem); both need special item model renderers. */
+@OnlyIn(Dist.CLIENT)
 public class BCTransportModels {
     public static final ModelHolderStatic BLOCKER;
     public static final ModelHolderStatic POWER_ADAPTER;
@@ -79,12 +81,12 @@ public class BCTransportModels {
     }
 
     public static void fmlPreInit() {
-        NeoForge.EVENT_BUS.register(BCTransportModels.class);
+        TilePipeHolder.modelDataFactory = ModelPipe::createModelData;
+        BCTransport.MOD_BUS.addListener(BCTransportModels::registerBlockStateModels);
+        BCTransport.MOD_BUS.addListener(BCTransportModels::registerRenderers);
     }
 
     public static void fmlInit() {
-        ClientRegistry.bindTileEntitySpecialRenderer(TilePipeHolder.class, new RenderPipeHolder());
-
         PipeApiClient.registry.registerBaker(KeyPlugBlocker.class, BAKER_PLUG_BLOCKER);
         PipeApiClient.registry.registerBaker(KeyPlugPowerAdaptor.class, BAKER_PLUG_POWER_ADAPTOR);
 
@@ -96,20 +98,21 @@ public class BCTransportModels {
         PipeApiClient.registry.registerRenderer(PipeBehaviourStripes.class, PipeBehaviourRendererStripes.INSTANCE);
     }
 
-    public static void fmlPostInit() {
-        RenderUtil.registerBlockColour(BCTransportBlocks.pipeHolder, PipeBlockColours.INSTANCE);
+    public static void fmlPostInit() {}
+
+    private static void registerBlockStateModels(RegisterBlockStateModels event) {
+        event.registerModel(ModelPipe.TYPE, ModelPipe.Unbaked.CODEC);
     }
 
-    @SubscribeEvent
-    public static void onModelBake(ModelBakeEvent event) {
-        putModel(event, "pipe_holder#normal", ModelPipe.INSTANCE);
-        putModel(event, "pipe_item#inventory", ModelPipeItem.INSTANCE);
-        putModel(event, "plug_blocker#inventory", new ModelPluggableItem(BLOCKER.getCutoutQuads()));
-        putModel(event, "plug_power_adaptor#inventory", new ModelPluggableItem(POWER_ADAPTER.getCutoutQuads()));
-    }
-
-    private static void putModel(ModelBakeEvent event, String str, IBakedModel model) {
-        event.getModelRegistry().putObject(new ModelResourceLocation("buildcrafttransport:" + str), model);
+    @SuppressWarnings("unchecked")
+    private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        if (BCTransportBlocks.pipeHolder == null) {
+            return;
+        }
+        BlockEntityType<?> type = TileTypes.forState(BCTransportBlocks.pipeHolder.defaultBlockState());
+        if (type != null) {
+            event.registerBlockEntityRenderer((BlockEntityType<TilePipeHolder>) type, ctx -> new RenderPipeHolder());
+        }
     }
 
     public static MutableQuad[] getStripesDynQuads(Direction side) {

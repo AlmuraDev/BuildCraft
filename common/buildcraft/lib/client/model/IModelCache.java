@@ -8,10 +8,9 @@ package buildcraft.lib.client.model;
 
 import java.util.List;
 
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 
 public interface IModelCache<K> {
-    List<BakedQuad> bake(K key);
+    List<MutableQuad> bake(K key);
 
     /** Clears all cached models. */
     void clear();

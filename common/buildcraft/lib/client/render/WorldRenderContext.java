@@ -63,7 +63,7 @@ public final class WorldRenderContext {
     }
 
     /** Recorded entity-format vertices (position, colour, uv, overlay, light, normal), replayed when submitting. */
-    static final class Recording implements VertexConsumer {
+    public static final class Recording implements VertexConsumer {
         private final TFloatArrayList floats = new TFloatArrayList();
         private final TIntArrayList ints = new TIntArrayList();
         private int vertices = 0;
@@ -90,16 +90,16 @@ public final class WorldRenderContext {
             }
         }
 
-        boolean isEmpty() {
+        public boolean isEmpty() {
             return vertices == 0 && !started;
         }
 
-        void finish() {
+        public void finish() {
             flush();
             started = false;
         }
 
-        void replay(VertexConsumer buffer, PoseStack.Pose pose) {
+        public void replay(VertexConsumer buffer, PoseStack.Pose pose) {
             for (int i = 0; i < vertices; i++) {
                 int f = i * 8;
                 int n = i * 3;

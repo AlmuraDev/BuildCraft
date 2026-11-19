@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "buildcrafttransport:block/pipe_holder"
+      "type": "buildcrafttransport:pipe_holder"
     }
   },
   "__converted_26_3": true

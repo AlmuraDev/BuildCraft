@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 
 /** An adding {@link IModelCache} that takes a single key and adds all of the sub-keys given by the
  * {@link IModelKeyMultipleSameMapper}
@@ -31,8 +30,8 @@ public class ModelCacheMultipleSame<K, T> implements IModelCache<K> {
         this.separateCache = separateCache;
     }
 
-    private List<BakedQuad> load(K key) {
-        List<BakedQuad> quads = new ArrayList<>();
+    private List<MutableQuad> load(K key) {
+        List<MutableQuad> quads = new ArrayList<>();
         for (T to : mapper.map(key)) {
             quads.addAll(separateCache.bake(to));
         }
@@ -40,7 +39,7 @@ public class ModelCacheMultipleSame<K, T> implements IModelCache<K> {
     }
 
     @Override
-    public List<BakedQuad> bake(K key) {
+    public List<MutableQuad> bake(K key) {
         if (ModelCache.cacheJoined) {
             return mainCache.bake(key);
         } else {

@@ -1,8 +1,8 @@
 package buildcraft.api.transport.pluggable;
 
+import buildcraft.api.transport.pipe.IPipeRenderOutput;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
 
 public interface IPlugDynamicRenderer<P extends PipePluggable> {
-    void render(P plug, double x, double y, double z, float partialTicks, BufferBuilder bb);
+    void render(P plug, float partialTicks, IPipeRenderOutput out);
 }

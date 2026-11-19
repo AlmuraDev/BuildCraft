@@ -135,11 +135,12 @@ MODELS = {'buildcrafttransport': {
     'item/plug_blocker': {'parent': 'item/generated', 'textures': {'layer0': 'buildcrafttransport:pipes/plug'}},
     'item/plug_power_adaptor': {'parent': 'item/generated',
                                 'textures': {'layer0': 'buildcrafttransport:items/pipePowerAdapter'}},
-    # The pipe holder draws everything itself (TODO(26.3): pipe rendering); the model only gives the particle texture
+    # Unused by the blockstate (ModelPipe draws the pipe holder); kept for anything that names the model
     'block/pipe_holder': {'textures': {'particle': 'buildcrafttransport:pipes/structure'}},
 }}
 BLOCKSTATES = {'buildcrafttransport': {
-    'pipe_holder': {'variants': {'': {'model': 'buildcrafttransport:block/pipe_holder'}}, '__converted_26_3': True},
+    # ModelPipe, registered in BCTransportModels (a NeoForge custom block state model)
+    'pipe_holder': {'variants': {'': {'type': 'buildcrafttransport:pipe_holder'}}, '__converted_26_3': True},
 }}
 
 

@@ -6,7 +6,8 @@
 
 package buildcraft.transport.client.render;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import buildcraft.api.transport.pipe.IPipeRenderOutput;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.core.Direction;
 
 import net.neoforged.fml.LogicalSide;
@@ -25,17 +26,16 @@ public enum PipeBehaviourRendererStripes implements IPipeBehaviourRenderer<PipeB
     INSTANCE;
 
     @Override
-    public void render(PipeBehaviourStripes stripes, double x, double y, double z, float partialTicks, BufferBuilder bb) {
+    public void render(PipeBehaviourStripes stripes, float partialTicks, IPipeRenderOutput out) {
+        VertexConsumer bb = out.cutout();
         Direction dir = stripes.direction;
         if (dir == null) return;
         MutableQuad[] quads = BCTransportModels.getStripesDynQuads(dir);
-        bb.setTranslation(x, y, z);
-        int light = stripes.pipe.getHolder().getPipeWorld().getCombinedLight(stripes.pipe.getHolder().getPipePos(), 0);
+        int light = out.light();
         for (MutableQuad q : quads) {
             q.multShade();
             q.lighti(light);
             q.render(bb);
         }
-        bb.setTranslation(0, 0, 0);
     }
 }

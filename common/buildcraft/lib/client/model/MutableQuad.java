@@ -106,6 +106,57 @@ public class MutableQuad {
 
     /** Draws this quad (26.3 has no quad primitive in BufferBuilder any more: the consumer must be a quad-mode one,
      * which every BuildCraft block/entity render type is). TODO(26.3 pipes batch): conversion to and from BakedQuad. */
+    private static final PoseStack.Pose IDENTITY_POSE = new PoseStack().last();
+
+    /** Makes a chunk-meshed quad for a block model. Quads that are not {@link #isShade() shaded} keep the colours they
+     * were given (BuildCraft models shade themselves), so they are lit as if facing up. The tint is applied by the caller
+     * (it reads world state), so the baked quad is never tinted.
+     *
+     * @param translucent true to draw the quad in the translucent chunk layer, false for cutout. */
+    public BakedQuad toBakedQuad(boolean translucent) {
+        TextureAtlasSprite s = sprite != null ? sprite : buildcraft.lib.client.sprite.SpriteHolderRegistry.missingSprite();
+        net.minecraft.client.renderer.chunk.ChunkSectionLayer layer = translucent
+            ? net.minecraft.client.renderer.chunk.ChunkSectionLayer.TRANSLUCENT
+            : net.minecraft.client.renderer.chunk.ChunkSectionLayer.CUTOUT;
+        BakedQuad.MaterialInfo info = new BakedQuad.MaterialInfo(s, layer,
+            translucent ? net.minecraft.client.renderer.Sheets.translucentBlockItemSheet()
+                : net.minecraft.client.renderer.Sheets.cutoutBlockItemSheet(),
+            translucent ? net.minecraft.client.renderer.Sheets.translucentBlockItemGlintSheet()
+                : net.minecraft.client.renderer.Sheets.cutoutBlockItemGlintSheet(),
+            translucent ? net.minecraft.client.renderer.Sheets.translucentBlockItemGlintSpecialSheet()
+                : net.minecraft.client.renderer.Sheets.cutoutBlockItemGlintSpecialSheet(),
+            -1, shade ? null : Direction.UP, 0, false);
+        Direction dir = face;
+        if (dir == null) {
+            Vector3f n = getCalculatedNormal();
+            dir = Direction.getApproximateNearest(n.x, n.y, n.z);
+        }
+        MutableVertex[] v = { vertex_0, vertex_1, vertex_2, vertex_3 };
+        return new BakedQuad(
+            v[0].positionvf(), v[1].positionvf(), v[2].positionvf(), v[3].positionvf(),
+            net.minecraft.client.model.geom.builders.UVPair.pack(v[0].tex_u, v[0].tex_v),
+            net.minecraft.client.model.geom.builders.UVPair.pack(v[1].tex_u, v[1].tex_v),
+            net.minecraft.client.model.geom.builders.UVPair.pack(v[2].tex_u, v[2].tex_v),
+            net.minecraft.client.model.geom.builders.UVPair.pack(v[3].tex_u, v[3].tex_v),
+            dir, info,
+            net.neoforged.neoforge.client.model.quad.BakedNormals.of(packNormal(v[0]), packNormal(v[1]),
+                packNormal(v[2]), packNormal(v[3])),
+            net.neoforged.neoforge.client.model.quad.BakedColors.of(argb(v[0]), argb(v[1]), argb(v[2]), argb(v[3])));
+    }
+
+    private static int packNormal(MutableVertex v) {
+        return net.neoforged.neoforge.client.model.quad.BakedNormals.pack(v.normal_x, v.normal_y, v.normal_z);
+    }
+
+    private static int argb(MutableVertex v) {
+        return (v.colour_a & 0xFF) << 24 | (v.colour_r & 0xFF) << 16 | (v.colour_g & 0xFF) << 8 | (v.colour_b & 0xFF);
+    }
+
+    /** Draws this quad as it is (no pose, no overlay). */
+    public void render(VertexConsumer vc) {
+        render(vc, IDENTITY_POSE, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+    }
+
     public void render(VertexConsumer vc, PoseStack.Pose pose, int overlay) {
         vertex_0.render(vc, pose, overlay);
         vertex_1.render(vc, pose, overlay);

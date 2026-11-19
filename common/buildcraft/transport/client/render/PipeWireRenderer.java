@@ -6,28 +6,20 @@
 
 package buildcraft.transport.client.render;
 
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Map;
 
 import org.joml.Vector3f;
 
-import org.lwjgl.opengl.GL11;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.OpenGlHelper;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.Tessellator;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.renderpearl.api.vertex.VertexFormat;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.Direction.AxisDirection;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -53,14 +45,7 @@ public class PipeWireRenderer {
 
     private static final Map<DyeColor, SpriteHolderRegistry.SpriteHolder> wireSprites =
         new EnumMap<>(DyeColor.class);
-    private static final int[] wireRenderingCache =
-        new int[(EnumWireBetween.VALUES.length + EnumWirePart.VALUES.length) * ColourUtil.COLOURS.length * 2];
-
-    final static int WIRE_COUNT = EnumWirePart.VALUES.length * ColourUtil.COLOURS.length * 2;
-
     static {
-        Arrays.fill(wireRenderingCache, -1);
-
         for (DyeColor color : DyeColor.values()) {
             wireSprites.put(color, SpriteHolderRegistry.getHolder("buildcrafttransport:wires/" + color.getName()));
         }
@@ -73,9 +58,8 @@ public class PipeWireRenderer {
         }
     }
 
-    public static void clearWireCache() {
-        Arrays.fill(wireRenderingCache, -1);
-    }
+    /** Wires are drawn straight from their quads each frame (26.3 has no display lists), so there is nothing to clear. */
+    public static void clearWireCache() {}
 
     public static SpriteHolderRegistry.SpriteHolder getWireSprite(DyeColor colour) {
         return wireSprites.get(colour);
@@ -204,107 +188,43 @@ public class PipeWireRenderer {
         return quads;
     }
 
-    private static void renderQuads(MutableQuad[] quads, ISprite sprite, int level) {
-        VertexFormat vf = DefaultVertexFormat.POSITION_TEX_COLOR;
-        Tessellator tessellator = new Tessellator(quads.length * vf.getNextOffset());
-        BufferBuilder bb = tessellator.getBuffer();
-        bb.begin(GL11.GL_QUADS, vf);
-
+    /** Writes the quads with the wire sprite, shading the sides of unpowered wire like 1.12.2 did. The wire textures
+     * hold 16 power levels (rows), though pipe wire only uses off (0) and on (15). */
+    private static void renderQuads(MutableQuad[] quads, ISprite sprite, int level, int lightCoords,
+        VertexConsumer out) {
         float vOffset = (level & 0xF) / 16f;
         for (MutableQuad q : quads) {
+            q = new MutableQuad(q);
             if (q.getFace() != Direction.UP && level != 15) {
-                q = new MutableQuad(q);
                 float shade = 1 - q.getCalculatedDiffuse();
                 shade = shade * (15 - level) / 15;
                 shade = 1 - shade;
                 q.multColourd(shade);
             }
-            renderVertex(bb, q.vertex_0, sprite, vOffset);
-            renderVertex(bb, q.vertex_1, sprite, vOffset);
-            renderVertex(bb, q.vertex_2, sprite, vOffset);
-            renderVertex(bb, q.vertex_3, sprite, vOffset);
+            for (MutableVertex v : new MutableVertex[] { q.vertex_0, q.vertex_1, q.vertex_2, q.vertex_3 }) {
+                v.texf((float) sprite.getInterpU(v.tex_u), (float) sprite.getInterpV(v.tex_v + vOffset));
+                v.lighti(lightCoords);
+            }
+            q.setCalculatedNormal();
+            q.render(out);
         }
-        tessellator.draw();
     }
 
-    private static void renderVertex(BufferBuilder bb, MutableVertex vertex, ISprite sprite, float vOffset) {
-        vertex.renderPosition(bb);
-        double u = sprite.getInterpU(vertex.tex_u);
-        double v = sprite.getInterpV(vertex.tex_v + vOffset);
-        bb.tex(u, v);
-        vertex.renderColour(bb);
-        bb.endVertex();
-    }
-
-    private static int compileQuads(MutableQuad[] quads, DyeColor colour, boolean isOn) {
-        int index = GlStateManager.glGenLists(1);
-        GlStateManager.glNewList(index, GL11.GL_COMPILE);
-
-        ISprite sprite = wireSprites.get(colour);
-        /*
-         * Currently pipe wire only supports two states - on or off. However all the textures supply 16 different
-         * states, which could (possibly) be used for making pipe wire use all 16 states that normal redstone does. This
-         * just opens up the possibility in the future.
-         */
-        renderQuads(quads, sprite, isOn ? 15 : 0);
-
-        GL11.glEndList();
-        return index;
-    }
-
-    private static int getIndex(EnumWirePart part, DyeColor colour, boolean isOn) {
-        return part.ordinal() * 32 + colour.ordinal() * 2 + (isOn ? 1 : 0);
-    }
-
-    private static int getIndex(EnumWireBetween bet, DyeColor colour, boolean isOn) {
-        return WIRE_COUNT + bet.ordinal() * 32 + colour.ordinal() * 2 + (isOn ? 1 : 0);
-    }
-
-    private static int compileWire(EnumWirePart part, DyeColor colour, boolean isOn) {
-        return compileQuads(getQuads(part), colour, isOn);
-    }
-
-    private static int compileWire(EnumWireBetween between, DyeColor colour, boolean isOn) {
-        return compileQuads(getQuads(between), colour, isOn);
-    }
-
-    public static void renderWires(TilePipeHolder pipe, double x, double y, double z, BufferBuilder bb) {
-        int combinedLight = pipe.getWorld().getCombinedLight(pipe.getPipePos(), 0);
-        int skyLight = combinedLight >> 16 & 0xFFFF;
-        int blockLight = combinedLight & 0xFFFF;
-        RenderHelper.disableStandardItemLighting();
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(x, y, z);
+    public static void renderWires(TilePipeHolder pipe, VertexConsumer out, int lightCoords) {
+        int sky = LightCoordsUtil.sky(lightCoords);
+        int poweredLight = LightCoordsUtil.pack(15, sky);
         for (Map.Entry<EnumWirePart, DyeColor> partColor : pipe.getWireManager().parts.entrySet()) {
             EnumWirePart part = partColor.getKey();
-            DyeColor color = partColor.getValue();
             boolean isOn = pipe.wireManager.isPowered(part);
-            int idx = getIndex(part, color, isOn);
-            if (wireRenderingCache[idx] == -1) {
-                wireRenderingCache[idx] = compileWire(part, color, isOn);
-            }
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, isOn ? 240 : blockLight, skyLight);
-            GlStateManager.callList(wireRenderingCache[idx]);
+            renderQuads(partQuads.get(part), wireSprites.get(partColor.getValue()), isOn ? 15 : 0,
+                isOn ? poweredLight : lightCoords, out);
         }
         for (Map.Entry<EnumWireBetween, DyeColor> betweenColor : pipe.getWireManager().betweens.entrySet()) {
             EnumWireBetween between = betweenColor.getKey();
-            DyeColor color = betweenColor.getValue();
             boolean isOn = pipe.wireManager.isPowered(between.parts[0]);
-            int idx = getIndex(between, color, isOn);
-            if (wireRenderingCache[idx] == -1) {
-                wireRenderingCache[idx] = compileWire(between, color, isOn);
-            }
-            OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, isOn ? 240 : blockLight, skyLight);
-            GlStateManager.callList(wireRenderingCache[idx]);
+            renderQuads(betweenQuads.get(between), wireSprites.get(betweenColor.getValue()), isOn ? 15 : 0,
+                isOn ? poweredLight : lightCoords, out);
         }
-        GlStateManager.popMatrix();
-        GlStateManager.enableLighting();
-        /*
-         * Directly rendering (like with a gllist) changes the colour directly, so we need to change the opengl state
-         * directly
-         */
-        GL11.glColor3f(1, 1, 1);
-        GlStateManager.color(1, 1, 1, 1);
     }
 
     public static void init() {

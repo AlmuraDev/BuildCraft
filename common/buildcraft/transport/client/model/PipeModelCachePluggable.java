@@ -6,12 +6,12 @@
 
 package buildcraft.transport.client.model;
 
+import buildcraft.lib.client.model.MutableQuad;
 import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 import buildcraft.api.core.BCRenderLayer;
 import net.minecraft.core.Direction;
 
@@ -38,7 +38,7 @@ public class PipeModelCachePluggable {
         cacheTranslucentAll = new ModelCacheMultipleSame<>(PluggableKey::getKeys, cacheTranslucentSingle);
     }
 
-    private static <K extends PluggableModelKey> List<BakedQuad> generate(K key) {
+    private static <K extends PluggableModelKey> List<MutableQuad> generate(K key) {
         if (key == null) {
             return ImmutableList.of();
         }

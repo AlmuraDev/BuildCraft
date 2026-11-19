@@ -42,7 +42,6 @@ def portedPackages = [
 def deferredSources = [
         'buildcraft/lib/client/ToastInformation.java',
         'buildcraft/lib/client/guide/**',
-        'buildcraft/lib/client/model/plug/**',
         'buildcraft/lib/client/model/ModelPluggableItem.java',
         'buildcraft/lib/client/model/ModelItemSimple.java',
         'buildcraft/lib/client/model/ModelNotifyOfRF.java',
@@ -50,8 +49,7 @@ def deferredSources = [
         'buildcraft/lib/client/resource/**',
         'buildcraft/lib/client/render/CuboidRenderer.java',
         'buildcraft/lib/client/render/HudRenderer.java',
-        'buildcraft/lib/client/render/ItemRenderUtil.java',
-        'buildcraft/lib/client/render/fluid/**',
+        'buildcraft/lib/client/render/fluid/SpriteFluidFrozen.java',
         'buildcraft/lib/client/render/font/**',
         'buildcraft/lib/client/render/tile/RenderMachineWave.java',
         'buildcraft/lib/client/render/tile/RenderPartCube.java',
@@ -93,13 +91,8 @@ def deferredSources = [
 
 // transport client and GUIs (render batch / GUIs batch)
 deferredSources += [
-        'buildcraft/transport/client/*.java',
-        'buildcraft/transport/client/model/*.java',
-        'buildcraft/transport/client/model/plug/**',
-        'buildcraft/transport/client/render/**',
         'buildcraft/transport/gui/**',
         'buildcraft/transport/container/**',
-        'buildcraft/transport/BCTransportModels.java',
 ]
 
 def mainResourceDirs = ['buildcraft_resources', 'BuildCraft-Localization', 'BuildCraftGuide/guide_resources']

@@ -10,7 +10,7 @@ import java.util.List;
 
 import org.joml.Vector3f;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
@@ -27,7 +27,7 @@ import buildcraft.api.transport.pipe.IPipeFlowRenderer;
 import buildcraft.lib.client.model.ModelUtil;
 import buildcraft.lib.client.model.ModelUtil.UvFaceData;
 import buildcraft.lib.client.model.MutableQuad;
-import buildcraft.lib.client.render.ItemRenderUtil;
+import buildcraft.api.transport.pipe.IPipeRenderOutput;
 import buildcraft.lib.misc.ColourUtil;
 
 import buildcraft.transport.BCTransportSprites;
@@ -59,10 +59,11 @@ public enum PipeFlowRendererItems implements IPipeFlowRenderer<PipeFlowItems> {
     }
 
     @Override
-    public void render(PipeFlowItems flow, double x, double y, double z, float partialTicks, BufferBuilder bb) {
+    public void render(PipeFlowItems flow, float partialTicks, IPipeRenderOutput out) {
         Level world = flow.pipe.getHolder().getPipeWorld();
         long now = world.getGameTime();
-        int lightc = world.getCombinedLight(flow.pipe.getHolder().getPipePos(), 0);
+        int lightc = out.light();
+        VertexConsumer bb = out.cutout();
 
         List<TravellingItem> toRender = flow.getAllItemsForRender();
 
@@ -71,25 +72,21 @@ public enum PipeFlowRendererItems implements IPipeFlowRenderer<PipeFlowItems> {
 
             ItemStack stack = item.clientItemLink.get();
             if (stack != null && !stack.isEmpty()) {
-                ItemRenderUtil.renderItemStack(x + pos.x, y + pos.y, z + pos.z, //
-                    stack, item.stackSize, lightc, item.getRenderDirection(now, partialTicks), bb);
+                out.addItem(stack, pos, item.getRenderDirection(now, partialTicks), item.stackSize);
             }
-            if (item.colour != null) {
-                bb.setTranslation(x + pos.x, y + pos.y, z + pos.z);
+            if (item.colour != null && COLOURED_QUADS[0] != null) {
                 int col = ColourUtil.getLightHex(item.colour);
                 int r = (col >> 16) & 0xFF;
                 int g = (col >> 8) & 0xFF;
                 int b = col & 0xFF;
                 for (MutableQuad q : COLOURED_QUADS) {
                     MutableQuad q2 = new MutableQuad(q);
+                    q2.translated(pos.x, pos.y, pos.z);
                     q2.lighti(lightc);
                     q2.multColouri(r, g, b, 255);
                     q2.render(bb);
                 }
-                bb.setTranslation(0, 0, 0);
             }
         }
-
-        ItemRenderUtil.endItemBatch();
     }
 }

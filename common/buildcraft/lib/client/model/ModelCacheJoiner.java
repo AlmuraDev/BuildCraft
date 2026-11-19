@@ -11,7 +11,6 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 
 import buildcraft.lib.client.model.ModelCache.IModelGenerator;
 
@@ -24,8 +23,8 @@ public class ModelCacheJoiner<K> implements IModelCache<K> {
         this.mainCache = new ModelCache<>(this::load);
     }
 
-    private List<BakedQuad> load(K key) {
-        List<BakedQuad> quads = new ArrayList<>();
+    private List<MutableQuad> load(K key) {
+        List<MutableQuad> quads = new ArrayList<>();
         for (ModelKeyWrapper<K, ?> wrapper : modelKeyWrappers) {
             quads.addAll(wrapper.getQuads(key));
         }
@@ -33,7 +32,7 @@ public class ModelCacheJoiner<K> implements IModelCache<K> {
     }
 
     @Override
-    public List<BakedQuad> bake(K key) {
+    public List<MutableQuad> bake(K key) {
         if (ModelCache.cacheJoined) {
             return mainCache.bake(key);
         } else {
@@ -63,7 +62,7 @@ public class ModelCacheJoiner<K> implements IModelCache<K> {
             this.cache = cache;
         }
 
-        public List<BakedQuad> getQuads(K key) {
+        public List<MutableQuad> getQuads(K key) {
             return cache.bake(mapper.getInternKey(key));
         }
     }

@@ -6,9 +6,10 @@
 
 package buildcraft.transport.client.render;
 
+import buildcraft.api.transport.pipe.IPipeRenderOutput;
 import org.joml.Vector3f;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
@@ -36,7 +37,8 @@ public enum PipeFlowRendererRf implements IPipeFlowRenderer<PipeFlowRedstoneFlux
     INSTANCE;
 
     @Override
-    public void render(PipeFlowRedstoneFlux flow, double x, double y, double z, float partialTicks, BufferBuilder bb) {
+    public void render(PipeFlowRedstoneFlux flow, float partialTicks, IPipeRenderOutput out) {
+        VertexConsumer bb = out.cutout();
         double centrePower = 0;
         double[] power = new double[6];
         for (Direction side : Direction.values()) {
@@ -45,8 +47,6 @@ public enum PipeFlowRendererRf implements IPipeFlowRenderer<PipeFlowRedstoneFlux
             power[i] = s.displayPower / (double) MjAPI.MJ;
             centrePower = Math.max(centrePower, power[i]);
         }
-
-        bb.setTranslation(x, y, z);
 
         if (centrePower > 0) {
             for (Direction side : Direction.values()) {
@@ -67,8 +67,6 @@ public enum PipeFlowRendererRf implements IPipeFlowRenderer<PipeFlowRedstoneFlux
 
             renderCentrePower(centrePower, offsetX, offsetY, offsetZ, bb);
         }
-
-        bb.setTranslation(0, 0, 0);
     }
 
     private static double computeOffset(double tick0, double tick1, float partialTicks) {
@@ -87,7 +85,7 @@ public enum PipeFlowRendererRf implements IPipeFlowRenderer<PipeFlowRedstoneFlux
     }
 
     private static void renderSidePower(Direction side, double power, double centrePower, double offset,
-        BufferBuilder bb) {
+        VertexConsumer bb) {
         if (power < 0) {
             return;
         }
@@ -125,7 +123,7 @@ public enum PipeFlowRendererRf implements IPipeFlowRenderer<PipeFlowRedstoneFlux
         }
     }
 
-    private static void renderCentrePower(double power, double offsetX, double offsetY, double offsetZ, BufferBuilder bb) {
+    private static void renderCentrePower(double power, double offsetX, double offsetY, double offsetZ, VertexConsumer bb) {
         boolean overload = false;
         float radius = 0.248f * (float) power;
         if (radius > 0.248f) {

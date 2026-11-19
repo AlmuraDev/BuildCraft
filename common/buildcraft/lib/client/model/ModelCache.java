@@ -13,21 +13,20 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 
 /** Implements a caching system for models with potentially infinite variants. Automatically expires entries after a
  * configurable time period, and up to a maximum number. */
 public class ModelCache<K> implements IModelCache<K> {
     public static boolean cacheJoined = true;
 
-    private final LoadingCache<K, List<BakedQuad>> modelCache;
+    private final LoadingCache<K, List<MutableQuad>> modelCache;
 
     public ModelCache(IModelGenerator<K> generator) {
         modelCache = CacheBuilder.newBuilder().expireAfterAccess(1, TimeUnit.MINUTES).build(CacheLoader.from(generator::generate));
     }
 
     @Override
-    public List<BakedQuad> bake(K key) {
+    public List<MutableQuad> bake(K key) {
         return modelCache.getUnchecked(key);
     }
 
@@ -37,6 +36,6 @@ public class ModelCache<K> implements IModelCache<K> {
     }
 
     public interface IModelGenerator<T> {
-        List<BakedQuad> generate(T key);
+        List<MutableQuad> generate(T key);
     }
 }

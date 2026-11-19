@@ -6,15 +6,14 @@
 
 package buildcraft.transport.client.model;
 
+import buildcraft.lib.client.model.MutableQuad;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureMap;
 
 import buildcraft.api.transport.pipe.PipeDefinition;
 
@@ -28,8 +27,8 @@ public enum PipeBaseModelGenConnected implements IPipeBaseModelGen {
     private static final Map<PipeDefinition, TextureAtlasSprite[]> sprites = new IdentityHashMap<>();
 
     @Override
-    public void onTextureStitchPre(TextureMap map) {
-        PipeBaseModelGenStandard.INSTANCE.onTextureStitchPre(map);
+    public void onResourcesReloaded() {
+        PipeBaseModelGenStandard.INSTANCE.onResourcesReloaded();
 
         // TODO: Custom sprite creation + stitching
     }
@@ -42,12 +41,12 @@ public enum PipeBaseModelGenConnected implements IPipeBaseModelGen {
     // Models
 
     @Override
-    public List<BakedQuad> generateTranslucent(PipeBaseTranslucentKey key) {
+    public List<MutableQuad> generateTranslucent(PipeBaseTranslucentKey key) {
         return PipeBaseModelGenStandard.INSTANCE.generateTranslucent(key);
     }
 
     @Override
-    public List<BakedQuad> generateCutout(PipeBaseCutoutKey key) {
+    public List<MutableQuad> generateCutout(PipeBaseCutoutKey key) {
         return ImmutableList.of();
     }
 

@@ -6,11 +6,11 @@
 
 package buildcraft.transport.client.model;
 
+import buildcraft.lib.client.model.MutableQuad;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 import buildcraft.api.core.BCRenderLayer;
 
 import buildcraft.lib.client.model.IModelCache;
@@ -38,11 +38,11 @@ public class PipeModelCacheAll {
         cacheTranslucent = new ModelCacheJoiner<>(translucent);
     }
 
-    public static List<BakedQuad> getCutoutModel(TilePipeHolder tile) {
+    public static List<MutableQuad> getCutoutModel(TilePipeHolder tile) {
         return cacheCutout.bake(new PipeAllCutoutKey(tile));
     }
 
-    public static List<BakedQuad> getTranslucentModel(TilePipeHolder tile) {
+    public static List<MutableQuad> getTranslucentModel(TilePipeHolder tile) {
         return cacheTranslucent.bake(new PipeAllTranslucentKey(tile));
     }
 
