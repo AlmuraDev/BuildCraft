@@ -11,14 +11,15 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import buildcraft.lib.net.IMessage;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.BCLog;
 
@@ -50,7 +51,7 @@ public class WidgetPhantomSlot extends Widget_Neptune<ContainerBC_Neptune> {
     }
 
     @Override
-    public IMessage handleWidgetDataServer(MessageContext ctx, PacketBufferBC buffer) throws IOException {
+    public IMessage handleWidgetDataServer(IPayloadContext ctx, PacketBufferBC buffer) throws IOException {
         byte id = buffer.readByte();
         if (id == NET_CLIENT_TO_SERVER_CLICK) {
             byte flags = buffer.readByte();
@@ -64,16 +65,16 @@ public class WidgetPhantomSlot extends Widget_Neptune<ContainerBC_Neptune> {
         boolean single = (flags & CLICK_FLAG_SINGLE) == CLICK_FLAG_SINGLE;
         boolean clone = (flags & CLICK_FLAG_CLONE) == CLICK_FLAG_CLONE;
         if (clone) {
-            if (container.player.capabilities.isCreativeMode) {
+            if (container.player.isCreative()) {
                 ItemStack get = getStack();
-                if (!get.isEmpty() && container.player.inventory.getItemStack().isEmpty()) {
-                    container.player.inventory.setItemStack(get.copy());
+                if (!get.isEmpty() && container.player.getInventory().getItemStack().isEmpty()) {
+                    container.player.getInventory().setItemStack(get.copy());
                 }
             }
         } else if (shift) {
             setStack(StackUtil.EMPTY, true);
         } else {
-            ItemStack toSet = container.player.inventory.getItemStack();
+            ItemStack toSet = container.player.getInventory().getItemStack();
             if (toSet.isEmpty()) {
                 setStack(StackUtil.EMPTY, true);
             } else {
@@ -87,7 +88,7 @@ public class WidgetPhantomSlot extends Widget_Neptune<ContainerBC_Neptune> {
     }
 
     @Override
-    public IMessage handleWidgetDataClient(MessageContext ctx, PacketBufferBC buffer) throws IOException {
+    public IMessage handleWidgetDataClient(IPayloadContext ctx, PacketBufferBC buffer) throws IOException {
         byte id = buffer.readByte();
         if (id == NET_SERVER_TO_CLIENT_ITEM) {
             stack = StackUtil.asNonNull(buffer.readItemStack());
@@ -111,7 +112,7 @@ public class WidgetPhantomSlot extends Widget_Neptune<ContainerBC_Neptune> {
         if (stack.getCount() > max) {
             this.stack.setCount(max);
         }
-        if (tellClient && !container.player.world.isRemote) {
+        if (tellClient && !container.player.level().isClientSide()) {
             sendWidgetData(buffer -> {
                 buffer.writeByte(NET_SERVER_TO_CLIENT_ITEM);
                 buffer.writeItemStack(stack);
@@ -122,7 +123,7 @@ public class WidgetPhantomSlot extends Widget_Neptune<ContainerBC_Neptune> {
 
     protected void onSetStack() {}
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public class GuiElementPhantomSlot extends GuiElementSimple implements IInteractionElement {
         private final ToolTip tooltip = GuiUtil.createToolTip(this::getStack);
 
@@ -154,8 +155,8 @@ public class WidgetPhantomSlot extends Widget_Neptune<ContainerBC_Neptune> {
             if (contains(gui.mouse)) {
                 byte flags = 0;
                 if (button == 1) flags |= CLICK_FLAG_SINGLE;
-                if (GuiScreen.isShiftKeyDown()) flags |= CLICK_FLAG_SHIFT;
-                if (gui.mc.gameSettings.keyBindPickBlock.isActiveAndMatches(button - 100)) {
+                if (Screen.isShiftKeyDown()) flags |= CLICK_FLAG_SHIFT;
+                if (gui.mc.options.keyBindPickBlock.isActiveAndMatches(button - 100)) {
                     flags |= CLICK_FLAG_CLONE;
                     BCLog.logger.info("clone");
                 }

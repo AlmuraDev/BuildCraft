@@ -15,19 +15,20 @@ import javax.vecmath.Tuple3f;
 import javax.vecmath.Tuple4f;
 import javax.vecmath.Vector3f;
 
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.block.model.BakedQuad;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.renderer.vertex.VertexFormat;
-import net.minecraft.client.renderer.vertex.VertexFormatElement;
-import net.minecraft.client.renderer.vertex.VertexFormatElement.EnumUsage;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormatElement;
+import com.mojang.renderpearl.api.vertex.VertexFormatElement.EnumUsage;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.Vec3i;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 
@@ -42,7 +43,7 @@ import buildcraft.api.core.render.ISprite;
  * will take in 3 doubles and set them to the position element, and {@link #colouri(int, int, int, int)} will take in 4
  * int's and set them to the colour elements.
  */
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class MutableVertex {
     /** The position of this vertex. */
     public float position_x, position_y, position_z;
@@ -163,7 +164,7 @@ public class MutableVertex {
 
     public void render(BufferBuilder bb) {
         VertexFormat vf = bb.getVertexFormat();
-        if (vf == DefaultVertexFormats.BLOCK) {
+        if (vf == DefaultVertexFormat.BLOCK) {
             renderAsBlock(bb);
         } else {
             for (VertexFormatElement vfe : vf.getElements()) {
@@ -180,7 +181,7 @@ public class MutableVertex {
     }
 
     /** Renders this vertex into the given {@link BufferBuilder}, assuming that the {@link VertexFormat} is
-     * {@link DefaultVertexFormats#BLOCK}.
+     * {@link DefaultVertexFormat#BLOCK}.
      * <p>
      * Slight performance increase over {@link #render(BufferBuilder)}. */
     public void renderAsBlock(BufferBuilder bb) {
@@ -437,7 +438,7 @@ public class MutableVertex {
         return translatei(vec.getX(), vec.getY(), vec.getZ());
     }
 
-    public MutableVertex translatevd(Vec3d vec) {
+    public MutableVertex translatevd(Vec3 vec) {
         return translated(vec.x, vec.y, vec.z);
     }
 
@@ -466,22 +467,22 @@ public class MutableVertex {
 
     /** Rotates around the X axis by angle. */
     public void rotateX(float angle) {
-        float cos = MathHelper.cos(angle);
-        float sin = MathHelper.sin(angle);
+        float cos = Mth.cos(angle);
+        float sin = Mth.sin(angle);
         rotateDirectlyX(cos, sin);
     }
 
     /** Rotates around the Y axis by angle. */
     public void rotateY(float angle) {
-        float cos = MathHelper.cos(angle);
-        float sin = MathHelper.sin(angle);
+        float cos = Mth.cos(angle);
+        float sin = Mth.sin(angle);
         rotateDirectlyY(cos, sin);
     }
 
     /** Rotates around the Z axis by angle. */
     public void rotateZ(float angle) {
-        float cos = MathHelper.cos(angle);
-        float sin = MathHelper.sin(angle);
+        float cos = Mth.cos(angle);
+        float sin = Mth.sin(angle);
         rotateDirectlyZ(cos, sin);
     }
 

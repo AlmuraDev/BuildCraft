@@ -9,13 +9,13 @@ import gnu.trove.set.hash.TIntHashSet;
 import org.lwjgl.opengl.GL11;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.lib.BCLibSprites;
 import buildcraft.lib.expression.api.IVariableNode.IVariableNodeBoolean;
@@ -27,21 +27,21 @@ import buildcraft.lib.gui.pos.IGuiPosition;
 import buildcraft.lib.gui.pos.MousePosition;
 import buildcraft.lib.misc.GuiUtil;
 
-/** A gui element that allows for easy implementation of an actual {@link GuiScreen} class.
+/** A gui element that allows for easy implementation of an actual {@link Screen} class.
  * <p>
  * This isn't final, although you should generally only subclass this for additional library functionality, not to
  * render out a particular gui.
  * <p>
- * Classes extending {@link GuiScreen} (either directly or indirectly) need to call the following methods:
+ * Classes extending {@link Screen} (either directly or indirectly) need to call the following methods:
  * <ul>
- * <li>{@link #tick()} once per tick (usually in {@link GuiScreen#updateScreen()}</li>
+ * <li>{@link #tick()} once per tick (usually in {@link Screen#updateScreen()}</li>
  * <li>{@link #drawBackgroundLayer(float, int, int, Runnable)} before drawing anything else, except for your own
  * backgrounds</li>
  * <li>{@link #drawElementBackgrounds()} after {@link #drawBackgroundLayer(float, int, int, Runnable)},but before
  * sub-display backgrounds</li>
  * <li>{@link #drawElementForegrounds(Runnable)} after drawing everything else.</li>
  * <li>{@link #preDrawForeground()} if your base gui class offsets the call to drawing the foreground by the gui's
- * position, for example, {@link GuiContainer}.</li>
+ * position, for example, {@link AbstractContainerScreen}.</li>
  * <li>{@link #postDrawForeground()} after {@link #preDrawForeground()} (and the same rules apply). These two calls
  * should wrap around and calls to this that occur while the gl state is translated.
  * <li>{@link #onMouseClicked(int, int, int)} whenever the mouse is clicked. If this returns true you shouldn't do any
@@ -61,15 +61,15 @@ public class BuildCraftGui {
     public static final IVariableNodeBoolean isDebuggingShown;
 
     static {
-        ResourceLocation debugDef = new ResourceLocation("buildcraftlib", "base");
+        Identifier debugDef = Identifier.fromNamespaceAndPath("buildcraftlib", "base");
         isDebuggingShown = GuiConfigManager.getOrAddBoolean(debugDef, "debugging_is_shown", false);
         isDebuggingEnabled = GuiConfigManager.getOrAddBoolean(debugDef, "debugging_is_enabled", false);
     }
 
     public static final GuiSpriteScaled SPRITE_DEBUG = new GuiSpriteScaled(BCLibSprites.DEBUG, 16, 16);
 
-    public final Minecraft mc = Minecraft.getMinecraft();
-    public final GuiScreen gui;
+    public final Minecraft mc = Minecraft.getInstance();
+    public final Screen gui;
     public final MousePosition mouse = new MousePosition();
 
     /** The area that encompasses the entire screen. */
@@ -88,7 +88,7 @@ public class BuildCraftGui {
     public IGuiPosition lowerLeftLedgerPos, lowerRightLedgerPos;
     private float lastPartialTicks;
 
-    public BuildCraftGui(GuiScreen gui, IGuiArea rootElement) {
+    public BuildCraftGui(Screen gui, IGuiArea rootElement) {
         this.gui = gui;
         this.screenElement = GuiUtil.AREA_WHOLE_SCREEN;
         this.rootElement = rootElement;
@@ -99,7 +99,7 @@ public class BuildCraftGui {
 
     /** Creates a new {@link BuildCraftGui} that uses the entire screen for display. Ledgers are displayed on the
      * opposite side (so that they expand properly). */
-    public BuildCraftGui(GuiScreen gui) {
+    public BuildCraftGui(Screen gui) {
         this.gui = gui;
         this.screenElement = GuiUtil.AREA_WHOLE_SCREEN;
         this.rootElement = screenElement;
@@ -108,9 +108,9 @@ public class BuildCraftGui {
         lowerRightLedgerPos = screenElement.offset(5, 5);
     }
 
-    /** Creates a new {@link BuildCraftGui} that takes it's {@link #rootElement} from the {@link GuiContainer}'s
+    /** Creates a new {@link BuildCraftGui} that takes it's {@link #rootElement} from the {@link AbstractContainerScreen}'s
      * size. */
-    public static IGuiArea createWindowedArea(GuiContainer gui) {
+    public static IGuiArea createWindowedArea(AbstractContainerScreen gui) {
         return IGuiArea.create(gui::getGuiLeft, gui::getGuiTop, gui::getXSize, gui::getYSize);
     }
 
@@ -168,12 +168,12 @@ public class BuildCraftGui {
         int _y = (int) Math.round(y);
         int _w = (int) Math.round(screenElement.getWidth());
         int _h = (int) Math.round(screenElement.getHeight());
-        return 4 + GuiUtil.drawHoveringText(tooltip, _x, _y, _w, _h, -1, mc.fontRenderer);
+        return 4 + GuiUtil.drawHoveringText(tooltip, _x, _y, _w, _h, -1, mc.font);
     }
 
     public void drawBackgroundLayer(float partialTicks, int mouseX, int mouseY, Runnable menuBackgroundRenderer) {
         // FIX FOR MC-121719 // https://bugs.mojang.com/browse/MC-121719
-        partialTicks = mc.getRenderPartialTicks();
+        partialTicks = mc.getDeltaTracker();
         // END FIX
 
         RenderHelper.disableStandardItemLighting();
@@ -257,7 +257,7 @@ public class BuildCraftGui {
             int y = 18;
             List<String> info = new ArrayList<>();
             TIntHashSet xAxisFilled = new TIntHashSet();
-            FontRenderer fr = mc.fontRenderer;
+            Font fr = mc.font;
             for (IGuiElement elem : this.getElementsAt(mouse.getX(), mouse.getY())) {
                 String name = elem.getDebugInfo(info);
                 int sx = (int) elem.getX();

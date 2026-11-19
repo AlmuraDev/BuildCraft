@@ -28,10 +28,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResourceManager;
 import net.minecraft.client.resources.IResourceManagerReloadListener;
 import net.minecraft.client.resources.Language;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.profiler.Profiler;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
@@ -81,10 +81,10 @@ public enum GuideManager implements IResourceManagerReloadListener {
     /** The keys are the partial paths, not the full ones!
      * <p>
      * For example a partial path might be "buildcraftcore:wrench.md" and the */
-    private final Map<ResourceLocation, GuidePageFactory> pages = new HashMap<>();
+    private final Map<Identifier, GuidePageFactory> pages = new HashMap<>();
     private final Map<ItemStack, GuidePageFactory> generatedPages = new HashMap<>();
 
-    /** Internal use only! Use {@link #addChild(ResourceLocation, JsonTypeTags, PageLink)} instead! */
+    /** Internal use only! Use {@link #addChild(Identifier, JsonTypeTags, PageLink)} instead! */
     public ISuffixArray<PageLink> quickSearcher;
     /** Every {@link PageLink} that has been added to {@link #quickSearcher}. */
     private final Set<PageLink> pageLinksAdded = new HashSet<>();
@@ -120,7 +120,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
     }
 
     public void reload() {
-        reload(Minecraft.getMinecraft().getResourceManager());
+        reload(Minecraft.getInstance().getResourceManager());
     }
 
     private void reload(IResourceManager resourceManager) {
@@ -136,18 +136,18 @@ public enum GuideManager implements IResourceManagerReloadListener {
     }
 
     private void reload0(IResourceManager resourceManager) {
-        Profiler prof = new Profiler();
+        ProfilerFiller prof = new ProfilerFiller();
         prof.profilingEnabled = DEBUG;
-        prof.startSection("root");
-        prof.startSection("reload");
+        prof.push("root");
+        prof.push("reload");
         Stopwatch watch = Stopwatch.createStarted();
 
         GuideGroupManager.get("lols", "hi");
-        prof.startSection("book_registry");
+        prof.push("book_registry");
         GuideBookRegistry.INSTANCE.reload();
-        prof.endStartSection("page_registry");
+        prof.popPush("page_registry");
         GuidePageRegistry.INSTANCE.reload();
-        prof.endStartSection("setup");
+        prof.popPush("setup");
         entries.clear();
         // Don't add permanent as we need the resource domain
         GuidePageRegistry manager = GuidePageRegistry.INSTANCE;
@@ -157,9 +157,9 @@ public enum GuideManager implements IResourceManagerReloadListener {
             domains.put(book, new HashSet<>());
         }
 
-        prof.endStartSection("index_crafting");
+        prof.popPush("index_crafting");
         GuideCraftingRecipes.INSTANCE.generateIndices();
-        prof.endStartSection("add_pages");
+        prof.popPush("add_pages");
 
         for (PageEntry<?> entry : manager.getAllEntries()) {
             domains.get(null).add(entry.typeTags.domain);
@@ -171,7 +171,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
             entries.add(entry);
         }
 
-        prof.endStartSection("generate_books");
+        prof.popPush("generate_books");
         BOOK_ALL_DATA.generate(domains.get(null));
         for (Entry<GuideBook, Set<String>> entry : domains.entrySet()) {
             if (entry.getKey() == null) {
@@ -181,8 +181,8 @@ public enum GuideManager implements IResourceManagerReloadListener {
         }
         pages.clear();
 
-        prof.endStartSection("load_lang");
-        Language currentLanguage = Minecraft.getMinecraft().getLanguageManager().getCurrentLanguage();
+        prof.popPush("load_lang");
+        Language currentLanguage = Minecraft.getInstance().getLanguageManager().getCurrentLanguage();
         String langCode;
         if (currentLanguage == null) {
             BCLog.logger.warn("Current language was null!");
@@ -199,17 +199,17 @@ public enum GuideManager implements IResourceManagerReloadListener {
             loadLangInternal(resourceManager, langCode, prof);
         }
 
-        prof.endStartSection("contents_page");
+        prof.popPush("contents_page");
         generateContentsPage(prof);
-        prof.endSection();
+        prof.pop();
 
         watch.stop();
         long time = watch.elapsed(TimeUnit.MICROSECONDS);
         int p = entries.size();
         int a = pages.size();
         int e = p - a;
-        prof.endSection();
-        prof.endSection();
+        prof.pop();
+        prof.pop();
         if (prof.profilingEnabled) {
             BCLog.logger.info("[lib.guide] " + pageLinksAdded.size() + " search terms");
             BCLog.logger.info(
@@ -222,16 +222,16 @@ public enum GuideManager implements IResourceManagerReloadListener {
         }
     }
 
-    private void loadLangInternal(IResourceManager resourceManager, String lang, Profiler prof) {
+    private void loadLangInternal(IResourceManager resourceManager, String lang, ProfilerFiller prof) {
         ProfilerBC p = new ProfilerBC(prof);
-        main_iteration: for (Entry<ResourceLocation, PageEntry<?>> mapEntry : GuidePageRegistry.INSTANCE
+        main_iteration: for (Entry<Identifier, PageEntry<?>> mapEntry : GuidePageRegistry.INSTANCE
             .getReloadableEntryMap().entrySet()) {
-            ResourceLocation entryKey = mapEntry.getKey();
-            String domain = entryKey.getResourceDomain();
-            String path = "compat/buildcraft/guide/" + lang + "/" + entryKey.getResourcePath();
+            Identifier entryKey = mapEntry.getKey();
+            String domain = entryKey.getNamespace();
+            String path = "compat/buildcraft/guide/" + lang + "/" + entryKey.getPath();
 
             for (Entry<String, IPageLoader> entry : PAGE_LOADERS.entrySet()) {
-                ResourceLocation fLoc = new ResourceLocation(domain, path + "." + entry.getKey());
+                Identifier fLoc = Identifier.fromNamespaceAndPath(domain, path + "." + entry.getKey());
 
                 try (IProfilerSection s = p.start("get_resource"); InputStream stream = resourceManager.getResource(
                     fLoc
@@ -268,22 +268,22 @@ public enum GuideManager implements IResourceManagerReloadListener {
         }
     }
 
-    private void generateContentsPage(Profiler prof) {
-        prof.startSection("clear");
+    private void generateContentsPage(ProfilerFiller prof) {
+        prof.push("clear");
         objectsAdded.clear();
         contents.clear();
-        prof.endStartSection("setup");
+        prof.popPush("setup");
         genTypeMap(null);
         for (GuideBook book : GuideBookRegistry.INSTANCE.getAllEntries()) {
             genTypeMap(book);
         }
         quickSearcher = false ? new VanillaSuffixArray<>() : new SimpleSuffixArray<>();
         pageLinksAdded.clear();
-        prof.endStartSection("add_pages");
+        prof.popPush("add_pages");
 
-        for (Entry<ResourceLocation, PageEntry<?>> mapEntry : GuidePageRegistry.INSTANCE.getReloadableEntryMap()
+        for (Entry<Identifier, PageEntry<?>> mapEntry : GuidePageRegistry.INSTANCE.getReloadableEntryMap()
             .entrySet()) {
-            ResourceLocation partialLocation = mapEntry.getKey();
+            Identifier partialLocation = mapEntry.getKey();
             GuidePageFactory entryFactory = GuideManager.INSTANCE.getFactoryFor(partialLocation);
 
             PageEntry<?> entry = mapEntry.getValue();
@@ -294,13 +294,13 @@ public enum GuideManager implements IResourceManagerReloadListener {
             if (entryFactory != null) {
                 objectsAdded.add(entry.getBasicValue());
                 PageLinkNormal pageLink = new PageLinkNormal(line, true, entry.getTooltip(), entryFactory);
-                prof.startSection("add_child");
+                prof.push("add_child");
                 addChild(entry.book, entry.typeTags, pageLink);
-                prof.endSection();
+                prof.pop();
             }
         }
 
-        prof.endStartSection("add_default");
+        prof.popPush("add_default");
         ContentsNode othersRoot = new ContentsNode(LocaleUtil.localize("buildcraft.guide.contents.all_group"), 0);
         for (Entry<GuideBook, Map<TypeOrder, ContentsNode>> bookEntry : contents.entrySet()) {
             @Nullable
@@ -315,7 +315,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
         final IEntryLinkConsumer adder = (tags, page) -> {
             assert tags.domain == null;
             assert tags.subType == null;
-            prof.startSection("add_child");
+            prof.push("add_child");
             if (pageLinksAdded.add(page)) {
                 quickSearcher.add(page, page.getSearchName());
             }
@@ -330,24 +330,24 @@ public enum GuideManager implements IResourceManagerReloadListener {
             } else {
                 throw new IllegalStateException("Unknown node type " + subNode.getClass());
             }
-            prof.endSection();
+            prof.pop();
         };
         for (PageValueType<?> type : GuidePageRegistry.INSTANCE.types.values()) {
-            prof.startSection(type.getClass().getName().replace('.', '/'));
+            prof.push(type.getClass().getName().replace('.', '/'));
             type.iterateAllDefault(adder, prof);
-            prof.endSection();
+            prof.pop();
         }
 
-        prof.endStartSection("generate_quick_search");
+        prof.popPush("generate_quick_search");
         quickSearcher.generate(prof);
 
-        prof.endStartSection("sort");
+        prof.popPush("sort");
         for (Map<TypeOrder, ContentsNode> map : contents.values()) {
             for (ContentsNode node : map.values()) {
                 node.sort();
             }
         }
-        prof.endSection();
+        prof.pop();
     }
 
     private void genTypeMap(GuideBook book) {
@@ -358,7 +358,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
         }
     }
 
-    private void addChild(ResourceLocation bookType, JsonTypeTags tags, PageLink page) {
+    private void addChild(Identifier bookType, JsonTypeTags tags, PageLink page) {
         if (pageLinksAdded.add(page)) {
             quickSearcher.add(page, page.getSearchName());
         }
@@ -401,7 +401,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
     }
 
     @Nullable
-    public GuidePageFactory getFactoryFor(ResourceLocation partialLocation) {
+    public GuidePageFactory getFactoryFor(Identifier partialLocation) {
         return pages.get(partialLocation);
     }
 
@@ -418,8 +418,8 @@ public enum GuideManager implements IResourceManagerReloadListener {
         return getFactoryFor(getEntryFor(value));
     }
 
-    public static ResourceLocation getEntryFor(Object obj) {
-        for (Entry<ResourceLocation, PageEntry<?>> entry : GuidePageRegistry.INSTANCE.getReloadableEntryMap()
+    public static Identifier getEntryFor(Object obj) {
+        for (Entry<Identifier, PageEntry<?>> entry : GuidePageRegistry.INSTANCE.getReloadableEntryMap()
             .entrySet()) {
             if (entry.getValue().matches(obj)) {
                 return entry.getKey();
@@ -438,7 +438,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
         // we will also need to ensure we don't generate groups or recipes multiple times.
         // Although we do need to generate the info for it first and cache it?
         // Also the "Recipes" chapter title needs a JEI integration button!
-        ResourceLocation entry = getEntryFor(stack);
+        Identifier entry = getEntryFor(stack);
         if (entry != null) {
             GuidePageFactory factory = getFactoryFor(entry);
             if (factory != null) {

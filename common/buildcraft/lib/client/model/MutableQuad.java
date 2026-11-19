@@ -12,13 +12,13 @@ import javax.vecmath.Tuple2f;
 import javax.vecmath.Tuple4f;
 import javax.vecmath.Vector3f;
 
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.block.model.BakedQuad;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.Vec3i;
 
 import buildcraft.lib.expression.VecDouble;
 import buildcraft.lib.expression.VecLong;
@@ -34,17 +34,17 @@ public class MutableQuad {
     public final MutableVertex vertex_3 = new MutableVertex();
 
     private int tintIndex = -1;
-    private EnumFacing face = null;
+    private Direction face = null;
     private boolean shade = false;
     private TextureAtlasSprite sprite = null;
 
     public MutableQuad() {}
 
-    public MutableQuad(int tintIndex, EnumFacing face) {
+    public MutableQuad(int tintIndex, Direction face) {
         this(tintIndex, face, false);
     }
 
-    public MutableQuad(int tintIndex, EnumFacing face, boolean shade) {
+    public MutableQuad(int tintIndex, Direction face, boolean shade) {
         this.tintIndex = tintIndex;
         this.face = face;
         this.shade = shade;
@@ -75,12 +75,12 @@ public class MutableQuad {
         return tintIndex;
     }
 
-    public MutableQuad setFace(EnumFacing face) {
+    public MutableQuad setFace(Direction face) {
         this.face = face;
         return this;
     }
 
-    public EnumFacing getFace() {
+    public Direction getFace() {
         return face;
     }
 
@@ -106,7 +106,7 @@ public class MutableQuad {
         vertex_1.toBakedBlock(data, 7);
         vertex_2.toBakedBlock(data, 14);
         vertex_3.toBakedBlock(data, 21);
-        return new BakedQuad(data, tintIndex, face, sprite, shade, DefaultVertexFormats.BLOCK);
+        return new BakedQuad(data, tintIndex, face, sprite, shade, DefaultVertexFormat.BLOCK);
     }
 
     public BakedQuad toBakedItem() {
@@ -115,7 +115,7 @@ public class MutableQuad {
         vertex_1.toBakedItem(data, 7);
         vertex_2.toBakedItem(data, 14);
         vertex_3.toBakedItem(data, 21);
-        return new BakedQuad(data, tintIndex, face, sprite, shade, DefaultVertexFormats.ITEM);
+        return new BakedQuad(data, tintIndex, face, sprite, shade, DefaultVertexFormat.ITEM);
     }
 
     public MutableQuad fromBakedBlock(BakedQuad quad) {
@@ -291,8 +291,8 @@ public class MutableQuad {
         return normalf(vec.x, vec.y, vec.z);
     }
 
-    /** Sets the normal for all vertices to the specified {@link Vec3d}. */
-    public MutableQuad normalvd(Vec3d vec) {
+    /** Sets the normal for all vertices to the specified {@link Vec3}. */
+    public MutableQuad normalvd(Vec3 vec) {
         return normald(vec.x, vec.y, vec.z);
     }
 
@@ -308,10 +308,10 @@ public class MutableQuad {
         return new Vector3f(vertex_0.normal_x, vertex_0.normal_y, vertex_0.normal_z);
     }
 
-    /** @return A new {@link Vec3d} with the normal of the first vertex. Only useful if the normal is expected to be the
+    /** @return A new {@link Vec3} with the normal of the first vertex. Only useful if the normal is expected to be the
      *         same for every vertex. */
-    public Vec3d normalvd() {
-        return new Vec3d(vertex_0.normal_x, vertex_0.normal_y, vertex_0.normal_z);
+    public Vec3 normalvd() {
+        return new Vec3(vertex_0.normal_x, vertex_0.normal_y, vertex_0.normal_z);
     }
 
     /* Colour */
@@ -473,7 +473,7 @@ public class MutableQuad {
         return translatef(vec.x, vec.y, vec.z);
     }
 
-    public MutableQuad translatevd(Vec3d vec) {
+    public MutableQuad translatevd(Vec3 vec) {
         return translated(vec.x, vec.y, vec.z);
     }
 
@@ -543,7 +543,7 @@ public class MutableQuad {
         vertex_3.rotateDirectlyZ(cos, sin);
     }
 
-    public MutableQuad rotate(EnumFacing from, EnumFacing to, float ox, float oy, float oz) {
+    public MutableQuad rotate(Direction from, Direction to, float ox, float oy, float oz) {
         if (from == to) {
             // don't bother rotating: there is nothing to rotate!
             return this;
@@ -553,28 +553,28 @@ public class MutableQuad {
         // @formatter:off
         switch (from.getAxis()) {
             case X: {
-                int mult = from.getFrontOffsetX();
+                int mult = from.getStepX();
                 switch (to.getAxis()) {
                     case X: rotateY_180(); break;
-                    case Y: rotateZ_90(mult * to.getFrontOffsetY()); break;
-                    case Z: rotateY_90(mult * to.getFrontOffsetZ()); break;
+                    case Y: rotateZ_90(mult * to.getStepY()); break;
+                    case Z: rotateY_90(mult * to.getStepZ()); break;
                 }
                 break;
             }
             case Y: {
-                int mult = from.getFrontOffsetY();
+                int mult = from.getStepY();
                 switch (to.getAxis()) {
-                    case X: rotateZ_90(-mult * to.getFrontOffsetX()); break;
+                    case X: rotateZ_90(-mult * to.getStepX()); break;
                     case Y: rotateZ_180(); break;
-                    case Z: rotateX_90(mult * to.getFrontOffsetZ()); break;
+                    case Z: rotateX_90(mult * to.getStepZ()); break;
                 }
                 break;
             }
             case Z: {
-                int mult = -from.getFrontOffsetZ();
+                int mult = -from.getStepZ();
                 switch (to.getAxis()) {
-                    case X: rotateY_90(mult * to.getFrontOffsetX()); break;
-                    case Y: rotateX_90(mult * to.getFrontOffsetY()); break;
+                    case X: rotateY_90(mult * to.getStepX()); break;
+                    case Y: rotateX_90(mult * to.getStepY()); break;
                     case Z: rotateY_180(); break;
                 }
                 break;

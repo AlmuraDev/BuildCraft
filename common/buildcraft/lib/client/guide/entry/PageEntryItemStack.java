@@ -12,12 +12,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.profiler.Profiler;
-import net.minecraft.util.JsonUtils;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.Identifier;
 
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
@@ -58,7 +58,7 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
     }
 
     @Override
-    public void iterateAllDefault(IEntryLinkConsumer consumer, Profiler prof) {
+    public void iterateAllDefault(IEntryLinkConsumer consumer, ProfilerFiller prof) {
 
         // For now, we can always re-enable this as a last resort fix.
         boolean limitDomains = ForgeRegistries.ITEMS.getKeys().size() > BCLibConfig.guideItemSearchLimit;
@@ -80,23 +80,23 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
         }
 
         for (Item item : ForgeRegistries.ITEMS) {
-            ResourceLocation regName = item.getRegistryName();
-            if (regName == null || (limitDomains && !domains.contains(regName.getResourceDomain()))) {
+            Identifier regName = item.getRegistryName();
+            if (regName == null || (limitDomains && !domains.contains(regName.getNamespace()))) {
                 continue;
             }
             if (!GuideManager.INSTANCE.objectsAdded.add(item)) {
                 continue;
             }
             NonNullList<ItemStack> stacks = NonNullList.create();
-            prof.startSection("search");
+            prof.push("search");
             item.getSubItems(CreativeTabs.SEARCH, stacks);
-            prof.endStartSection("itr_search");
+            prof.popPush("itr_search");
             if (stacks.size() > 200) {
                 // Likely a "super-item" which is constructed from a different registry
                 // and so it has thousands of useless permutations
                 // Instead lets replace it with a custom tooltip
                 consumer.addChild(TAGS, PageLinkItemPermutations.create(false, stacks, prof));
-                prof.endSection();
+                prof.pop();
                 BCLog.logger.info(
                     "[lib.guide] Squished " + regName + " and all of it's " + stacks.size()
                         + " variants down into one page entry."
@@ -115,12 +115,12 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
                     );
                 }
             }
-            prof.endSection();
+            prof.pop();
         }
     }
 
     @Override
-    public OptionallyDisabled<PageLink> createLink(String to, Profiler prof) {
+    public OptionallyDisabled<PageLink> createLink(String to, ProfilerFiller prof) {
         OptionallyDisabled<ItemStack> stackq = MarkdownPageLoader.parseItemStack(to);
         if (stackq.isPresent()) {
             return new OptionallyDisabled<>(PageLinkItemStack.create(true, stackq.get(), prof));
@@ -130,7 +130,7 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
     }
 
     @Override
-    public OptionallyDisabled<PageEntry<ItemStackValueFilter>> deserialize(ResourceLocation name, JsonObject json,
+    public OptionallyDisabled<PageEntry<ItemStackValueFilter>> deserialize(Identifier name, JsonObject json,
         JsonDeserializationContext ctx) {
         JsonElement jStack = json.get("stack");
         if (jStack == null) {
@@ -141,7 +141,7 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
         final ItemStack stack;
         final boolean matchMeta, matchNbt;
         if (jStack.isJsonPrimitive()) {
-            String str = JsonUtils.getString(jStack, "stack");
+            String str = GsonHelper.getString(jStack, "stack");
             if (str.startsWith("{") && str.endsWith("}")) {
                 stack = MarkdownPageLoader.loadComplexItemStack(str.substring(1, str.length() - 1));
                 stack.setCount(1);
@@ -151,7 +151,7 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
                 if (str.startsWith("(") && str.endsWith(")")) {
                     str = str.substring(1, str.length() - 1);
                 }
-                ResourceLocation loc = new ResourceLocation(str);
+                Identifier loc = Identifier.parse(str);
                 Item item = ForgeRegistries.ITEMS.getValue(loc);
                 if (item == null) {
                     if (RegistryConfig.hasItemBeenDisabled(loc)) {
@@ -176,7 +176,7 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
 
     @Override
     public String getTitle(ItemStackValueFilter value) {
-        return value.stack.baseStack.getDisplayName();
+        return value.stack.baseStack.getHoverName();
     }
 
     @Override
@@ -202,12 +202,12 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
                 return false;
             }
             if (entry.matchMeta) {
-                if (base.getMetadata() != test.getMetadata()) {
+                if (base.getDamageValue() != test.getDamageValue()) {
                     return false;
                 }
             }
             if (entry.matchNbt) {
-                if (!ItemStack.areItemStackTagsEqual(base, test)) {
+                if (!ItemStack.isSameItemSameComponents(base, test)) {
                     return false;
                 }
             }
@@ -229,6 +229,6 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
 
     @Override
     public void addPageEntries(ItemStackValueFilter value, GuiGuide gui, List<GuidePart> parts) {
-        XmlPageLoader.appendAllCrafting(value.stack.baseStack, parts, gui, new Profiler());
+        XmlPageLoader.appendAllCrafting(value.stack.baseStack, parts, gui, new ProfilerFiller());
     }
 }

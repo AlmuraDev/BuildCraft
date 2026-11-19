@@ -2,12 +2,12 @@ package buildcraft.lib.recipe;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.inventory.InventoryCrafting;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.World;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
 
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.oredict.ShapedOreRecipe;
@@ -15,13 +15,13 @@ import net.minecraftforge.oredict.ShapedOreRecipe;
 public class BCRecipeShaped extends ShapedOreRecipe {
     private final boolean enabled;
 
-    public BCRecipeShaped(ResourceLocation group, @Nonnull ItemStack result, CraftingHelper.ShapedPrimer primer, boolean enabled) {
+    public BCRecipeShaped(Identifier group, @Nonnull ItemStack result, CraftingHelper.ShapedPrimer primer, boolean enabled) {
         super(group, enabled ? result : ItemStack.EMPTY, primer);
         this.enabled = enabled;
     }
 
     @Override
-    public boolean matches(@Nonnull InventoryCrafting inventory, @Nonnull World world) {
+    public boolean matches(@Nonnull CraftingContainer inventory, @Nonnull Level world) {
         return enabled && super.matches(inventory, world);
     }
 

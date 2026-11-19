@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.Set;
 
 import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.fml.common.Loader;
+import net.neoforged.fml.ModList;
 import net.minecraftforge.fml.common.LoaderState;
 
 import buildcraft.api.core.BCDebugging;
@@ -29,12 +29,12 @@ public class ModelHolderRegistry {
     static final List<ModelHolder> HOLDERS = new ArrayList<>();
 
     public static void onTextureStitchPre(TextureMap map) {
-        Set<ResourceLocation> toStitch = new HashSet<>();
+        Set<Identifier> toStitch = new HashSet<>();
         for (ModelHolder holder : HOLDERS) {
             holder.onTextureStitchPre(toStitch);
         }
 
-        for (ResourceLocation res : toStitch) {
+        for (Identifier res : toStitch) {
             map.setTextureEntry(AtlasSpriteVariants.createForConfig(res));
         }
     }
@@ -43,7 +43,7 @@ public class ModelHolderRegistry {
         for (ModelHolder holder : HOLDERS) {
             holder.onModelBake();
         }
-        if (DEBUG && Loader.instance().isInState(LoaderState.AVAILABLE)) {
+        if (DEBUG && ModList.get().isInState(LoaderState.AVAILABLE)) {
             BCLog.logger.info("[lib.model.holder] List of registered Models:");
             List<ModelHolder> holders = new ArrayList<>();
             holders.addAll(HOLDERS);

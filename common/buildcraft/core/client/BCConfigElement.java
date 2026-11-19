@@ -10,9 +10,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import net.minecraftforge.common.config.ConfigCategory;
+import buildcraft.lib.config.ConfigCategory;
 import net.minecraftforge.common.config.ConfigElement;
-import net.minecraftforge.common.config.Property;
+import buildcraft.lib.config.Property;
 import net.minecraftforge.fml.client.config.IConfigElement;
 
 public class BCConfigElement extends ConfigElement {

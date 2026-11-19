@@ -26,7 +26,7 @@ public class WorldState {
         // if (blueprint instanceof Blueprint) {
         // this.world = new FakeWorld((Blueprint) blueprint);
         // } else {
-        // this.world = new FakeWorld((Template) blueprint, Blocks.BRICK_BLOCK.getDefaultState());
+        // this.world = new FakeWorld((Template) blueprint, Blocks.BRICK_BLOCK.defaultBlockState());
         // }
         this.labels = ImmutableList.copyOf(info.labels);
         this.cameraPos = null;// TODO Utils.convertFloat(info.cameraPos);

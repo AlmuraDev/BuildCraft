@@ -9,9 +9,9 @@ package buildcraft.lib.net.cache;
 import java.io.IOException;
 import java.util.Objects;
 
-import net.minecraftforge.fluids.Fluid;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 import buildcraft.lib.net.PacketBufferBC;
 
@@ -57,21 +57,21 @@ public class NetworkedFluidStackCache extends NetworkedObjectCache<FluidStack> {
     @Override
     protected void writeObject(FluidStack obj, PacketBufferBC buffer) {
         Fluid f = obj.getFluid();
-        buffer.writeString(FluidRegistry.getFluidName(f));
+        buffer.writeUtf(FluidRegistry.getFluidName(f));
         if (obj.tag == null) {
             buffer.writeBoolean(false);
         } else {
             buffer.writeBoolean(true);
-            buffer.writeCompoundTag(obj.tag);
+            buffer.writeNbt(obj.tag);
         }
     }
 
     @Override
     protected FluidStack readObject(PacketBufferBC buffer) throws IOException {
-        Fluid fluid = FluidRegistry.getFluid(buffer.readString(255));
+        Fluid fluid = FluidRegistry.getFluid(buffer.readUtf(255));
         FluidStack stack = new FluidStack(fluid, FLUID_AMOUNT);
         if (buffer.readBoolean()) {
-            stack.tag = buffer.readCompoundTag();
+            stack.tag = buffer.readNbt();
         }
         return stack;
     }

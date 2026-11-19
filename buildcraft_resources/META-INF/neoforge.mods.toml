@@ -1,0 +1,46 @@
+# One jar, several BuildCraft mods. Each mod is added here when its part of BuildCraft is ported to 26.3.
+modLoader = "javafml"
+loaderVersion = "${neoforge_loader_version_range}"
+license = "${mod_license}"
+issueTrackerURL = "https://github.com/AlmuraDev/BuildCraft/issues"
+
+[[mods]]
+modId = "buildcraftlib"
+version = "${version}"
+displayName = "BuildCraft Lib"
+logoFile = "assets/buildcraft/logo.png"
+credits = "Created by SpaceToad"
+authors = "SpaceToad, BuildCraft Team, AlmuraDev"
+displayURL = "https://www.mod-buildcraft.com/"
+description = '''Library mod used by BuildCraft.'''
+
+[[dependencies.buildcraftlib]]
+modId = "neoforge"
+type = "required"
+versionRange = "[${neoforge_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.buildcraftlib]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft_version_range}"
+ordering = "NONE"
+side = "BOTH"
+
+[[mods]]
+modId = "buildcraftcore"
+version = "${version}"
+displayName = "BuildCraft"
+logoFile = "assets/buildcraft/logo.png"
+credits = "Created by SpaceToad"
+authors = "SpaceToad, BuildCraft Team, AlmuraDev"
+displayURL = "https://www.mod-buildcraft.com/"
+description = '''Extending Minecraft with pipes, auto-crafting, quarries, engines and much more!'''
+
+[[dependencies.buildcraftcore]]
+modId = "buildcraftlib"
+type = "required"
+versionRange = "[${version}]"
+ordering = "AFTER"
+side = "BOTH"

@@ -18,8 +18,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.client.resources.IResource;
 import net.minecraft.client.resources.IResourceManager;
-import net.minecraft.profiler.Profiler;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.resources.Identifier;
 
 import net.minecraftforge.fml.client.FMLClientHandler;
 
@@ -48,31 +48,31 @@ public abstract class AtlasSpriteSwappable extends TextureAtlasSprite {
     @Override
     public void updateAnimation() {
         if (current == null) {
-            copyFrom(Minecraft.getMinecraft().getTextureMapBlocks().getMissingSprite());
+            copyFrom(Minecraft.getInstance().getTextureMapBlocks().getMissingSprite());
             return;
         }
-        Profiler p = Minecraft.getMinecraft().mcProfiler;
-        // MAPPING: func_194340_a: Profiler.startSection
+        ProfilerFiller p = Minecraft.getInstance().mcProfiler;
+        // MAPPING: func_194340_a: ProfilerFiller.startSection
         p.func_194340_a(getClass()::getSimpleName);
         if (needsSwapping) {
-            p.startSection("copy");
+            p.push("copy");
             current.copyFrom(this);
-            p.endSection();
+            p.pop();
         }
         if (current.hasAnimationMetadata() && BCLibConfig.enableAnimatedSprites) {
-            p.startSection("update");
+            p.push("update");
             p.startSection(getIconName());
             current.updateAnimation();
-            p.endSection();
-            p.endSection();
+            p.pop();
+            p.pop();
         } else if (needsSwapping) {
-            p.startSection("swap");
+            p.push("swap");
             TextureUtil.uploadTextureMipmap(current.getFrameTextureData(0), current.getIconWidth(),
                 current.getIconHeight(), current.getOriginX(), current.getOriginY(), false, false);
-            p.endSection();
+            p.pop();
         }
         needsSwapping = false;
-        p.endSection();
+        p.pop();
     }
 
     public boolean swapWith(TextureAtlasSprite other) {
@@ -82,7 +82,7 @@ public abstract class AtlasSpriteSwappable extends TextureAtlasSprite {
                 this.width = other.getIconWidth();
                 this.height = other.getIconHeight();
             }
-            generateMipmaps(Minecraft.getMinecraft().gameSettings.mipmapLevels);
+            generateMipmaps(Minecraft.getInstance().options.mipmapLevels);
             needsSwapping = true;
             return true;
         }
@@ -90,10 +90,10 @@ public abstract class AtlasSpriteSwappable extends TextureAtlasSprite {
     }
 
     /** Actually loads the given location. Note that subclasses should override this, and possibly call
-     * {@link #loadSprite(IResourceManager, String, ResourceLocation, boolean)} to load all of the possible variants. */
+     * {@link #loadSprite(IResourceManager, String, Identifier, boolean)} to load all of the possible variants. */
     @Override
-    public boolean load(IResourceManager manager, ResourceLocation location,
-        Function<ResourceLocation, TextureAtlasSprite> textureGetter) {
+    public boolean load(IResourceManager manager, Identifier location,
+        Function<Identifier, TextureAtlasSprite> textureGetter) {
         TextureAtlasSprite sprite = loadSprite(manager, super.getIconName(), location, true);
         if (sprite != null) {
             swapWith(sprite);
@@ -101,21 +101,21 @@ public abstract class AtlasSpriteSwappable extends TextureAtlasSprite {
         return false;
     }
 
-    public static TextureAtlasSprite loadSprite(String name, ResourceLocation location, boolean careIfMissing) {
-        return loadSprite(Minecraft.getMinecraft().getResourceManager(), name, location, careIfMissing);
+    public static TextureAtlasSprite loadSprite(String name, Identifier location, boolean careIfMissing) {
+        return loadSprite(Minecraft.getInstance().getResourceManager(), name, location, careIfMissing);
     }
 
-    public static TextureAtlasSprite loadSprite(IResourceManager manager, String name, ResourceLocation location,
+    public static TextureAtlasSprite loadSprite(IResourceManager manager, String name, Identifier location,
         boolean careIfMissing) {
         // Load the initial variant
-        TextureAtlasSprite sprite = makeAtlasSprite(new ResourceLocation(name));
+        TextureAtlasSprite sprite = makeAtlasSprite(Identifier.parse(name));
         try {
             // Copied almost directly from TextureMap.
             PngSizeInfo pngsizeinfo = PngSizeInfo.makeFromResource(manager.getResource(location));
             try (IResource iresource = manager.getResource(location)) {
                 boolean flag = iresource.getMetadata("animation") != null;
                 sprite.loadSprite(pngsizeinfo, flag);
-                sprite.loadSpriteFrames(iresource, Minecraft.getMinecraft().gameSettings.mipmapLevels + 1);
+                sprite.loadSpriteFrames(iresource, Minecraft.getInstance().options.mipmapLevels + 1);
                 return sprite;
             }
         } catch (IOException io) {
@@ -128,7 +128,7 @@ public abstract class AtlasSpriteSwappable extends TextureAtlasSprite {
     }
 
     @Override
-    public boolean hasCustomLoader(IResourceManager manager, ResourceLocation location) {
+    public boolean hasCustomLoader(IResourceManager manager, Identifier location) {
         return true;
     }
 

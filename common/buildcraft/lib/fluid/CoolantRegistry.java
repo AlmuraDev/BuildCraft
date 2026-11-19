@@ -10,10 +10,11 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
+import buildcraft.lib.misc.FluidUtilBC;
 import buildcraft.api.fuels.ICoolant;
 import buildcraft.api.fuels.ICoolantManager;
 import buildcraft.api.fuels.ISolidCoolant;
@@ -58,7 +59,7 @@ public enum CoolantRegistry implements ICoolantManager {
 
     @Override
     public ICoolant getCoolant(FluidStack fluid) {
-        if (fluid == null || fluid.amount == 0) {
+        if (fluid == null || fluid.getAmount() == 0) {
             return null;
         }
         for (ICoolant coolant : coolants) {
@@ -71,7 +72,7 @@ public enum CoolantRegistry implements ICoolantManager {
 
     @Override
     public float getDegreesPerMb(FluidStack fluid, float heat) {
-        if (fluid == null || fluid.amount == 0) {
+        if (fluid == null || fluid.getAmount() == 0) {
             return 0;
         }
         for (ICoolant coolant : coolants) {
@@ -104,7 +105,7 @@ public enum CoolantRegistry implements ICoolantManager {
 
         @Override
         public boolean matchesFluid(FluidStack stack) {
-            return fluid.isFluidEqual(stack);
+            return FluidUtilBC.isFluidEqual(fluid, stack);
         }
 
         @Override
@@ -129,10 +130,10 @@ public enum CoolantRegistry implements ICoolantManager {
 
         @Override
         public FluidStack getFluidFromSolidCoolant(ItemStack stack) {
-            if (stack == null || !stack.isItemEqual(solid)) {
+            if (stack == null || !ItemStack.isSameItem(stack, solid)) {
                 return null;
             }
-            int liquidAmount = (int) (stack.getCount() * fluid.amount * multiplier / solid.getCount());
+            int liquidAmount = (int) (stack.getCount() * fluid.getAmount() * multiplier / solid.getCount());
             return new FluidStack(fluid.getFluid(), liquidAmount);
         }
     }

@@ -10,11 +10,11 @@ import java.io.IOException;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
 
 import buildcraft.api.lists.ListMatchHandler;
 import buildcraft.api.lists.ListMatchHandler.Type;
@@ -62,7 +62,7 @@ public class ContainerList extends ContainerBC_Neptune {
         }
     }
 
-    public ContainerList(EntityPlayer iPlayer) {
+    public ContainerList(Player iPlayer) {
         super(iPlayer);
 
         lines = ListHandler.getLines(getListItemStack());
@@ -80,18 +80,18 @@ public class ContainerList extends ContainerBC_Neptune {
     }
 
     @Override
-    public boolean canInteractWith(EntityPlayer player) {
+    public boolean canInteractWith(Player player) {
         return !getListItemStack().isEmpty();
     }
 
     @Nonnull
     public ItemStack getListItemStack() {
-        ItemStack toTry = player.getHeldItemMainhand();
+        ItemStack toTry = player.getMainHandItem();
         if (!toTry.isEmpty() && toTry.getItem() instanceof ItemList_BC8) {
             return toTry;
         }
 
-        toTry = player.getHeldItemOffhand();
+        toTry = player.getOffhandItem();
         if (!toTry.isEmpty() && toTry.getItem() instanceof ItemList_BC8) {
             return toTry;
         }
@@ -106,7 +106,7 @@ public class ContainerList extends ContainerBC_Neptune {
     public void switchButton(final int lineIndex, final int button) {
         lines[lineIndex].toggleOption(button);
 
-        if (player.world.isRemote) {
+        if (player.level().isClientSide()) {
             sendMessage(ID_BUTTON, (buffer) -> {
                 buffer.writeByte(lineIndex);
                 buffer.writeByte(button);
@@ -127,21 +127,21 @@ public class ContainerList extends ContainerBC_Neptune {
     public void setLabel(final String text) {
         BCCoreItems.list.setName(getListItemStack(), text);
 
-        if (player.world.isRemote) {
-            sendMessage(ID_LABEL, (buffer) -> buffer.writeString(text));
+        if (player.level().isClientSide()) {
+            sendMessage(ID_LABEL, (buffer) -> buffer.writeUtf(text));
         }
     }
 
     @Override
-    public void readMessage(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+    public void readMessage(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         super.readMessage(id, buffer, side, ctx);
-        if (side == Side.SERVER) {
+        if (side == LogicalSide.SERVER) {
             if (id == ID_BUTTON) {
                 int lineIndex = buffer.readUnsignedByte();
                 int button = buffer.readUnsignedByte();
                 switchButton(lineIndex, button);
             } else if (id == ID_LABEL) {
-                setLabel(buffer.readString(1024));
+                setLabel(buffer.readUtf(1024));
             }
         }
     }

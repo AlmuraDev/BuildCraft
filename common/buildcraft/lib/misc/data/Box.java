@@ -14,16 +14,17 @@ import javax.annotation.Nullable;
 
 import com.google.common.base.Objects;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.Vec3i;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.IAreaProvider;
 import buildcraft.api.core.IBox;
@@ -35,19 +36,19 @@ import buildcraft.lib.misc.NBTUtilBC;
 import buildcraft.lib.misc.PositionUtil;
 import buildcraft.lib.misc.VecUtil;
 
-/** MUTABLE integer variant of AxisAlignedBB, with a few BC-specific methods */
+/** MUTABLE integer variant of AABB, with a few BC-specific methods */
 public class Box implements IBox {
 
     // Client side cache: used to compare current laser type with previously
     // rendered data.
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public LaserData_BC8[] laserData;
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public BlockPos lastMin, lastMax;
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public LaserType lastType;
 
     private BlockPos min, max;
@@ -62,8 +63,8 @@ public class Box implements IBox {
         this.max = VecUtil.max(min, max);
     }
 
-    public Box(TileEntity e) {
-        this(e.getPos(), e.getPos());
+    public Box(BlockEntity e) {
+        this(e.getBlockPos(), e.getBlockPos());
     }
 
     public void reset() {
@@ -102,25 +103,25 @@ public class Box implements IBox {
         extendToEncompassBoth(a.min(), a.max());
     }
 
-    public void initialize(NBTTagCompound nbt) {
+    public void initialize(CompoundTag nbt) {
         reset();
-        if (nbt.hasKey("xMin")) {
-            min = new BlockPos(nbt.getInteger("xMin"), nbt.getInteger("yMin"), nbt.getInteger("zMin"));
-            max = new BlockPos(nbt.getInteger("xMax"), nbt.getInteger("yMax"), nbt.getInteger("zMax"));
+        if (nbt.contains("xMin")) {
+            min = new BlockPos(nbt.getIntOr("xMin", 0), nbt.getIntOr("yMin", 0), nbt.getIntOr("zMin", 0));
+            max = new BlockPos(nbt.getIntOr("xMax", 0), nbt.getIntOr("yMax", 0), nbt.getIntOr("zMax", 0));
         } else {
-            min = NBTUtilBC.readBlockPos(nbt.getTag("min"));
-            max = NBTUtilBC.readBlockPos(nbt.getTag("max"));
+            min = NBTUtilBC.readBlockPos(nbt.get("min"));
+            max = NBTUtilBC.readBlockPos(nbt.get("max"));
         }
         extendToEncompassBoth(min, max);
     }
 
-    public void writeToNBT(NBTTagCompound nbt) {
-        if (min != null) nbt.setTag("min", NBTUtilBC.writeBlockPos(min));
-        if (max != null) nbt.setTag("max", NBTUtilBC.writeBlockPos(max));
+    public void writeToNBT(CompoundTag nbt) {
+        if (min != null) nbt.put("min", NBTUtilBC.writeBlockPos(min));
+        if (max != null) nbt.put("max", NBTUtilBC.writeBlockPos(max));
     }
 
-    public NBTTagCompound writeToNBT() {
-        NBTTagCompound nbt = new NBTTagCompound();
+    public CompoundTag writeToNBT() {
+        CompoundTag nbt = new CompoundTag();
         writeToNBT(nbt);
         return nbt;
     }
@@ -130,7 +131,7 @@ public class Box implements IBox {
     }
 
     public void initializeCenter(BlockPos center, Vec3i size) {
-        extendToEncompassBoth(center.subtract(size), center.add(size));
+        extendToEncompassBoth(center.subtract(size), center.offset(size));
     }
 
     public List<BlockPos> getBlocksInArea() {
@@ -152,7 +153,7 @@ public class Box implements IBox {
         if (!isInitialized()) return this;
         Vec3i am = new BlockPos(amount, amount, amount);
         setMin(min().subtract(am));
-        setMax(max().add(am));
+        setMax(max().offset(am));
         return this;
     }
 
@@ -162,8 +163,8 @@ public class Box implements IBox {
     }
 
     @Override
-    public boolean contains(Vec3d p) {
-        AxisAlignedBB bb = getBoundingBox();
+    public boolean contains(Vec3 p) {
+        AABB bb = getBoundingBox();
         if (p.x < bb.minX || p.x >= bb.maxX) return false;
         if (p.y < bb.minY || p.y >= bb.maxY) return false;
         if (p.z < bb.minZ || p.z >= bb.maxZ) return false;
@@ -171,7 +172,7 @@ public class Box implements IBox {
     }
 
     public boolean contains(BlockPos i) {
-        return contains(new Vec3d(i));
+        return contains(new Vec3(i));
     }
 
     @Override
@@ -187,15 +188,15 @@ public class Box implements IBox {
     @Override
     public BlockPos size() {
         if (!isInitialized()) return BlockPos.ORIGIN;
-        return max.subtract(min).add(VecUtil.POS_ONE);
+        return max.subtract(min).offset(VecUtil.POS_ONE);
     }
 
     public BlockPos center() {
         return new BlockPos(centerExact());
     }
 
-    public Vec3d centerExact() {
-        return new Vec3d(size()).scale(0.5).add(new Vec3d(min()));
+    public Vec3 centerExact() {
+        return new Vec3(size()).scale(0.5).add(new Vec3(min()));
     }
 
     @Override
@@ -211,13 +212,13 @@ public class Box implements IBox {
         return this;
     }
 
-    /** IMPORTANT: Use {@link #contains(Vec3d)}instead of the returned {@link AxisAlignedBB#contains(Vec3d)} as the
+    /** IMPORTANT: Use {@link #contains(Vec3)}instead of the returned {@link AABB#contains(Vec3)} as the
      * logic is different! */
-    public AxisAlignedBB getBoundingBox() {
-        return new AxisAlignedBB(min, max.add(VecUtil.POS_ONE));
+    public AABB getBoundingBox() {
+        return new AABB(min, max.offset(VecUtil.POS_ONE));
     }
 
-    public Box extendToEncompass(Vec3d toBeContained) {
+    public Box extendToEncompass(Vec3 toBeContained) {
         setMin(VecUtil.min(min, VecUtil.convertFloor(toBeContained)));
         setMax(VecUtil.max(max, VecUtil.convertCeiling(toBeContained)));
         return this;
@@ -236,7 +237,7 @@ public class Box implements IBox {
 
     @Override
     public double distanceToSquared(BlockPos index) {
-        return closestInsideTo(index).distanceSq(index);
+        return closestInsideTo(index).distSqr(index);
     }
 
     public BlockPos closestInsideTo(BlockPos toTest) {
@@ -245,7 +246,7 @@ public class Box implements IBox {
 
     @Override
     public BlockPos getRandomBlockPos(Random rand) {
-        return PositionUtil.randomBlockPos(rand, min, max.add(1, 1, 1));
+        return PositionUtil.randomBlockPos(rand, min, max.offset(1, 1, 1));
     }
 
     /** Delegate for {@link PositionUtil#isCorner(BlockPos, BlockPos, BlockPos)} */
@@ -291,7 +292,7 @@ public class Box implements IBox {
         return PositionUtil.getCountOnEdge(min(), max());
     }
 
-    public void readData(PacketBuffer stream) {
+    public void readData(FriendlyByteBuf stream) {
         if (stream.readBoolean()) {
             min = MessageUtil.readBlockPos(stream);
             max = MessageUtil.readBlockPos(stream);
@@ -301,7 +302,7 @@ public class Box implements IBox {
         }
     }
 
-    public void writeData(PacketBuffer stream) {
+    public void writeData(FriendlyByteBuf stream) {
         boolean isValid = isInitialized();
         stream.writeBoolean(isValid);
         if (isValid) {

@@ -1,6 +1,6 @@
 package buildcraft.lib.gui.button;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.render.ISprite;
 
@@ -23,7 +23,7 @@ public class StandardSpriteButtons {
     public static final GuiButtonDrawable.Builder TINY_BUTTON_DRAWABLE;
 
     static {
-        ResourceLocation buttonSheet = new ResourceLocation("buildcraftlib:textures/gui/buttons.png");
+        Identifier buttonSheet = Identifier.parse("buildcraftlib:textures/gui/buttons.png");
 
         ISprite sprite = new SpriteRaw(buttonSheet, 0, 0, 1, 1);
 

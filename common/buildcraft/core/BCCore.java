@@ -7,11 +7,11 @@ package buildcraft.core;
 import java.io.File;
 import java.util.function.Consumer;
 
-import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Item;
 
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.common.Mod;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -75,7 +75,7 @@ public class BCCore {
         NetworkRegistry.INSTANCE.registerGuiHandler(INSTANCE, BCCoreProxy.getProxy());
 
         OreDictionary.registerOre("craftingTableWood", Blocks.CRAFTING_TABLE);
-        MinecraftForge.EVENT_BUS.register(BCCoreEventDist.INSTANCE);
+        NeoForge.EVENT_BUS.register(BCCoreEventDist.INSTANCE);
         BCCoreConfig.saveConfigs();
     }
 

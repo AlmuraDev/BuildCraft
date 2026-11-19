@@ -1,6 +1,6 @@
 package buildcraft.lib.gui.json;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.render.ISprite;
 
@@ -75,7 +75,7 @@ public class ElementTypeSprite extends ElementType {
         ISprite sprite = gui.properties.get(origin, ISprite.class);
 
         if (sprite == null) {
-            ResourceLocation loc = SpriteUtil.transformLocation(new ResourceLocation(origin));
+            Identifier loc = SpriteUtil.transformLocation(Identifier.parse(origin));
             sprite = new SpriteRaw(loc, 0, 0, 1, 1);
         }
 

@@ -8,9 +8,9 @@ package buildcraft.lib.misc;
 
 import java.util.List;
 
-import net.minecraft.inventory.InventoryCrafting;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.world.World;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.level.Level;
 
 import net.minecraftforge.fml.common.registry.GameRegistry;
 
@@ -22,9 +22,9 @@ public final class CraftingUtil {
     private CraftingUtil() {
     }
 
-    public static IRecipe findMatchingRecipe(InventoryCrafting par1InventoryCrafting, World par2World) {
-            List<IRecipe> recipes = GameRegistry.findRegistry(IRecipe.class).getValues();
-            for (IRecipe recipe : recipes) {
+    public static Recipe findMatchingRecipe(CraftingContainer par1InventoryCrafting, Level par2World) {
+            List<Recipe> recipes = GameRegistry.findRegistry(Recipe.class).getValues();
+            for (Recipe recipe : recipes) {
                 if (recipe.matches(par1InventoryCrafting, par2World)) {
                     return recipe;
                 }

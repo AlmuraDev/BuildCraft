@@ -8,12 +8,12 @@ package buildcraft.core.item;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.EntityEquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.item.ItemArmor;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.DamageSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.damagesource.DamageSource;
 
 import net.minecraftforge.common.ISpecialArmor;
 
@@ -24,7 +24,7 @@ public class ItemGoggles extends ItemArmor implements IItemBuildCraft, ISpecialA
     private final String id;
 
     public ItemGoggles(String id) {
-        super(ArmorMaterial.CHAIN, 0, EntityEquipmentSlot.HEAD);
+        super(ArmorMaterial.CHAIN, 0, EquipmentSlot.HEAD);
         this.id = id;
         init();
     }
@@ -35,17 +35,17 @@ public class ItemGoggles extends ItemArmor implements IItemBuildCraft, ISpecialA
     }
 
     @Override
-    public ArmorProperties getProperties(EntityLivingBase player, @Nonnull ItemStack armor, DamageSource source, double damage, int slot) {
+    public ArmorProperties getProperties(LivingEntity player, @Nonnull ItemStack armor, DamageSource source, double damage, int slot) {
         return HELMET_PROPERTIES;
     }
 
     @Override
-    public int getArmorDisplay(EntityPlayer player, @Nonnull ItemStack armor, int slot) {
+    public int getArmorDisplay(Player player, @Nonnull ItemStack armor, int slot) {
         return 0;
     }
 
     @Override
-    public void damageArmor(EntityLivingBase entity, @Nonnull ItemStack stack, DamageSource source, int damage, int slot) {
+    public void damageArmor(LivingEntity entity, @Nonnull ItemStack stack, DamageSource source, int damage, int slot) {
         // Invulnerable goggles
     }
 }

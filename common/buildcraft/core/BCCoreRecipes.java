@@ -6,16 +6,16 @@
  */
 package buildcraft.core;
 
-import net.minecraft.init.Blocks;
-import net.minecraft.init.Items;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.minecraftforge.oredict.ShapelessOreRecipe;
 
 import buildcraft.api.BCBlocks;
@@ -31,11 +31,11 @@ import buildcraft.core.item.ItemPaintbrush_BC8;
 public class BCCoreRecipes {
 
     public static void fmlPreInit() {
-        MinecraftForge.EVENT_BUS.register(BCCoreRecipes.class);
+        NeoForge.EVENT_BUS.register(BCCoreRecipes.class);
     }
 
     @SubscribeEvent
-    public static void registerRecipes(RegistryEvent.Register<IRecipe> event) {
+    public static void registerRecipes(RegistryEvent.Register<Recipe> event) {
         // TODO (1.13): define these in json
 
         if (BCItems.Core.PAINTBRUSH != null) {
@@ -51,7 +51,7 @@ public class BCCoreRecipes {
             builder.setResult(cleanPaintbrush);
             builder.register();
 
-            for (EnumDyeColor colour : EnumDyeColor.values()) {
+            for (DyeColor colour : DyeColor.values()) {
                 ItemPaintbrush_BC8.Brush brush = BCCoreItems.paintbrush.new Brush(colour);
                 ItemStack out = brush.save();
 
@@ -59,7 +59,7 @@ public class BCCoreRecipes {
                     cleanPaintbrush, //
                     ColourUtil.getDyeName(colour),//
                 };
-                ResourceLocation group = BCModules.CORE.createLocation("paintbrush_colouring");
+                Identifier group = BCModules.CORE.createLocation("paintbrush_colouring");
                 ShapelessOreRecipe recipe = new ShapelessOreRecipe(group, out, inputs);
                 recipe.setRegistryName(BCModules.CORE.createLocation("paintbrush_" + colour.getName()));
                 event.getRegistry().register(recipe);
@@ -71,7 +71,7 @@ public class BCCoreRecipes {
         // long mjCost = 2_000 * MjAPI.MJ;
         // ImmutableSet<StackDefinition> required = ImmutableSet.of(//
         // ArrayStackFilter.definition(8, Items.PAPER), //
-        // OreStackFilter.definition(ColourUtil.getDyeName(EnumDyeColor.GREEN)), //
+        // OreStackFilter.definition(ColourUtil.getDyeName(DyeColor.GREEN)), //
         // OreStackFilter.definition("dustRedstone")//
         // );
         // BuildcraftRecipeRegistry.assemblyRecipes

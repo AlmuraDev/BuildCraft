@@ -8,11 +8,11 @@ package buildcraft.core.client.render;
 
 import org.lwjgl.opengl.GL11;
 
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.entity.player.EntityPlayer;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.world.entity.player.Player;
 
 import buildcraft.lib.client.render.DetachedRenderer;
 import buildcraft.lib.client.render.laser.LaserBoxRenderer;
@@ -29,12 +29,12 @@ public enum RenderVolumeBoxes implements DetachedRenderer.IDetachedRenderer {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void render(EntityPlayer player, float partialTicks) {
+    public void render(Player player, float partialTicks) {
         GlStateManager.enableBlend();
 
         BufferBuilder bb = Tessellator.getInstance().getBuffer();
 
-        bb.begin(GL11.GL_QUADS, DefaultVertexFormats.BLOCK);
+        bb.begin(GL11.GL_QUADS, DefaultVertexFormat.BLOCK);
 
         ClientVolumeBoxes.INSTANCE.volumeBoxes.forEach(volumeBox -> {
             LaserType type;

@@ -9,9 +9,9 @@ package buildcraft.lib.recipe;
 import javax.annotation.Nonnull;
 
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.util.NonNullList;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.core.NonNullList;
 
 import net.minecraftforge.oredict.OreDictionary;
 
@@ -49,7 +49,7 @@ public final class ChangingItemStack extends ChangingObject<ItemStackKey> {
         if (stack.isEmpty()) {
             return new ItemStackKey[] { ItemStackKey.EMPTY };
         }
-        if (stack.getItemDamage() == OreDictionary.WILDCARD_VALUE) {
+        if (stack.getDamageValue() == OreDictionary.WILDCARD_VALUE) {
             NonNullList<ItemStack> subs = NonNullList.create();
             stack.getItem().getSubItems(CreativeTabs.SEARCH, subs);
             return makeListArray(subs);

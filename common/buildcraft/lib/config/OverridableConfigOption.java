@@ -6,10 +6,11 @@
 
 package buildcraft.lib.config;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 public class OverridableConfigOption extends DetailedConfigOption {
     private final String assetName;
@@ -18,12 +19,12 @@ public class OverridableConfigOption extends DetailedConfigOption {
     public OverridableConfigOption(String assetLoc, String assetName, String defaultVal) {
         super(assetLoc + "|" + assetName, defaultVal);
         this.assetName = assetName;
-        ResourceLocation loc = new ResourceLocation("buildcraftconfig:", assetLoc.replace(".", "/") + ".properties");
+        Identifier loc = Identifier.fromNamespaceAndPath("buildcraftconfig:", assetLoc.replace(".", "/") + ".properties");
         this.manager = RoamingConfigManager.getOrCreateDefault(loc);
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     protected boolean refresh() {
         if (manager.exists()) {
             return manager.refresh(this, assetName);

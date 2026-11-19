@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
 
 import net.minecraftforge.fml.client.IModGuiFactory;
 import net.minecraftforge.fml.client.config.GuiConfig;
@@ -20,7 +20,7 @@ import buildcraft.core.BCCoreConfig;
 
 public class ConfigGuiFactoryBC implements IModGuiFactory {
     public static class GuiConfigManager extends GuiConfig {
-        public GuiConfigManager(GuiScreen parentScreen) {
+        public GuiConfigManager(Screen parentScreen) {
             super(parentScreen, new ArrayList<>(), "buildcraftcore", "config", false, false, I18n.format("config.buildcraft"));
 
             for (String s : BCCoreConfig.config.getCategoryNames()) {
@@ -58,7 +58,7 @@ public class ConfigGuiFactoryBC implements IModGuiFactory {
     }
 
     @Override
-    public GuiScreen createConfigGui(GuiScreen parentScreen) {
+    public Screen createConfigGui(Screen parentScreen) {
         return new GuiConfigManager(parentScreen);
     }
 }

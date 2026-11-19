@@ -1,8 +1,8 @@
 package buildcraft.lib.tile.item;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
-import net.minecraftforge.items.IItemHandler;
+import buildcraft.api.transfer.IItemHandler;
 
 import buildcraft.api.inventory.IItemHandlerFiltered;
 

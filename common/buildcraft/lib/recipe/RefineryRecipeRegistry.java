@@ -17,8 +17,9 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
+import buildcraft.lib.misc.FluidUtilBC;
 import buildcraft.api.recipes.IRefineryRecipeManager;
 
 public enum RefineryRecipeRegistry implements IRefineryRecipeManager {
@@ -78,7 +79,7 @@ public enum RefineryRecipeRegistry implements IRefineryRecipeManager {
                 return null;
             }
             for (R recipe : allRecipes) {
-                if (recipe.in().isFluidEqual(fluid)) {
+                if (FluidUtilBC.isFluidEqual(recipe.in(), fluid)) {
                     return recipe;
                 }
             }
@@ -105,7 +106,7 @@ public enum RefineryRecipeRegistry implements IRefineryRecipeManager {
             ListIterator<R> iter = allRecipes.listIterator();
             while (iter.hasNext()) {
                 R existing = iter.next();
-                if (existing.in().isFluidEqual(recipe.in())) {
+                if (FluidUtilBC.isFluidEqual(existing.in(), recipe.in())) {
                     iter.set(recipe);
                     return recipe;
                 }

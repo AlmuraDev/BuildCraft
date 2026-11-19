@@ -7,9 +7,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.inventory.Slot;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.BCLog;
 import buildcraft.api.core.render.ISprite;
@@ -33,7 +33,7 @@ import buildcraft.lib.misc.data.ModelVariableData;
  * via json, more complex ones must be implemented in code. */
 public class BuildCraftJsonGui extends BuildCraftGui {
 
-    public final ResourceLocation jsonGuiDefinition;
+    public final Identifier jsonGuiDefinition;
 
     public final TypedKeyMap<String, Object> properties = TypedKeyMap.createHierachy();
     public final FunctionContext context = DefaultContexts.createWithAll();
@@ -50,12 +50,12 @@ public class BuildCraftJsonGui extends BuildCraftGui {
         time = context.putVariableDouble("time");
     }
 
-    public BuildCraftJsonGui(GuiScreen gui, ResourceLocation jsonGuiDefinition) {
+    public BuildCraftJsonGui(Screen gui, Identifier jsonGuiDefinition) {
         super(gui);
         this.jsonGuiDefinition = jsonGuiDefinition;
     }
 
-    public BuildCraftJsonGui(GuiScreen gui, IGuiArea rootElement, ResourceLocation jsonGuiDefinition) {
+    public BuildCraftJsonGui(Screen gui, IGuiArea rootElement, Identifier jsonGuiDefinition) {
         super(gui, rootElement);
         this.jsonGuiDefinition = jsonGuiDefinition;
     }

@@ -5,7 +5,7 @@ import java.util.List;
 
 import net.minecraft.client.gui.recipebook.GuiButtonRecipe;
 import net.minecraft.client.gui.recipebook.RecipeBookPage;
-import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.world.item.crafting.Recipe;
 
 public class RecipeBookPagePhantom extends RecipeBookPage {
 
@@ -36,7 +36,7 @@ public class RecipeBookPagePhantom extends RecipeBookPage {
     public boolean mouseClicked(int mouseX, int mouseY, int mouseButton, int p_194196_4_, int p_194196_5_,
         int p_194196_6_, int p_194196_7_) {
         if (super.mouseClicked(mouseX, mouseY, mouseButton, p_194196_4_, p_194196_5_, p_194196_6_, p_194196_7_)) {
-            IRecipe recipe = getLastClickedRecipe();
+            Recipe recipe = getLastClickedRecipe();
             if (recipe != null) {
                 gui.recipeSetter.accept(recipe);
             }

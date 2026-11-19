@@ -3,16 +3,16 @@ package buildcraft.lib.client.render.font;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.resources.IResourceManager;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-public class DelegateFontRenderer extends FontRenderer {
-    public final FontRenderer delegate;
+public class DelegateFontRenderer extends Font {
+    public final Font delegate;
 
-    public DelegateFontRenderer(FontRenderer delegate) {
-        super(Minecraft.getMinecraft().gameSettings, new ResourceLocation("textures/font/ascii.png"),
-            Minecraft.getMinecraft().renderEngine, delegate.getUnicodeFlag());
+    public DelegateFontRenderer(Font delegate) {
+        super(Minecraft.getInstance().options, Identifier.parse("textures/font/ascii.png"),
+            Minecraft.getInstance().renderEngine, delegate.getUnicodeFlag());
         this.delegate = delegate;
     }
 

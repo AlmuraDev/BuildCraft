@@ -11,8 +11,8 @@ import java.util.Map.Entry;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.item.crafting.FurnaceRecipes;
 
 import buildcraft.lib.client.guide.GuiGuide;
@@ -32,7 +32,7 @@ public class GuideSmeltingFactory implements GuidePartFactory {
 
     public static GuideSmeltingFactory create(ItemStack stack) {
         for (Entry<ItemStack, ItemStack> entry : FurnaceRecipes.instance().getSmeltingList().entrySet()) {
-            if (ItemStack.areItemsEqual(stack, entry.getValue())) {
+            if (ItemStack.isSameItem(stack, entry.getValue())) {
                 return new GuideSmeltingFactory(entry.getKey(), stack);
             }
         }

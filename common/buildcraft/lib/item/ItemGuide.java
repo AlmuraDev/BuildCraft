@@ -7,15 +7,15 @@
 package buildcraft.lib.item;
 
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import buildcraft.api.core.ActionResult;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
 
 import net.minecraftforge.common.util.Constants;
 
@@ -27,7 +27,7 @@ import buildcraft.lib.misc.NBTUtilBC;
 
 public class ItemGuide extends ItemBC_Neptune {
     private static final String DEFAULT_BOOK = "buildcraftcore:main";
-    private static final ResourceLocation ADVANCEMENT = new ResourceLocation("buildcraftcore:guide");
+    private static final Identifier ADVANCEMENT = Identifier.parse("buildcraftcore:guide");
     private static final String TAG_BOOK_NAME = "BookName";
 
     public ItemGuide(String id) {
@@ -36,10 +36,10 @@ public class ItemGuide extends ItemBC_Neptune {
     }
 
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand) {
+    public ActionResult<ItemStack> onItemRightClick(Level world, Player player, InteractionHand hand) {
         AdvancementUtil.unlockAdvancement(player, ADVANCEMENT);
-        player.openGui(BCLib.INSTANCE, 0, world, hand == EnumHand.MAIN_HAND ? 0 : 1, 0, 0);
-        return new ActionResult<>(EnumActionResult.SUCCESS, player.getHeldItem(hand));
+        player.openGui(BCLib.INSTANCE, 0, world, hand == InteractionHand.MAIN_HAND ? 0 : 1, 0, 0);
+        return new ActionResult<>(InteractionResult.SUCCESS, player.getItemInHand(hand));
     }
 
     @Override
@@ -64,16 +64,16 @@ public class ItemGuide extends ItemBC_Neptune {
     }
 
     public static String getBookName(ItemStack stack) {
-        NBTTagCompound nbt = stack.getTagCompound();
-        if (nbt == null || !nbt.hasKey(TAG_BOOK_NAME, Constants.NBT.TAG_STRING)) {
+        CompoundTag nbt = stack.getTagCompound();
+        if (nbt == null || !nbt.contains(TAG_BOOK_NAME)) {
             // So that existing guide books continue to work
             return ItemGuide.DEFAULT_BOOK;
         }
-        return nbt.getString(TAG_BOOK_NAME);
+        return nbt.getStringOr(TAG_BOOK_NAME, "");
     }
 
     public static void setBookName(ItemStack stack, String book) {
-        NBTTagCompound nbt = NBTUtilBC.getItemData(stack);
-        nbt.setString(TAG_BOOK_NAME, book);
+        CompoundTag nbt = NBTUtilBC.getItemData(stack);
+        nbt.putString(TAG_BOOK_NAME, book);
     }
 }

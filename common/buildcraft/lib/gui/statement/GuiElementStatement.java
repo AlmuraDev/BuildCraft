@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.statements.IStatement;
 
@@ -26,7 +26,7 @@ import buildcraft.lib.statement.StatementContext.StatementGroup;
 public class GuiElementStatement<S extends IStatement> extends GuiElementSimple
     implements IInteractionElement, IReference<S> {
 
-    public static final ResourceLocation TEXTURE_SELECTOR;
+    public static final Identifier TEXTURE_SELECTOR;
 
     public static final GuiIcon SLOT_COLOUR;
     public static final GuiIcon ICON_SLOT_BLOCKED;
@@ -36,7 +36,7 @@ public class GuiElementStatement<S extends IStatement> extends GuiElementSimple
     public static final SpriteNineSliced SELECTION_HOVER;
 
     static {
-        TEXTURE_SELECTOR = new ResourceLocation("buildcraftlib:textures/gui/misc_slots.png");
+        TEXTURE_SELECTOR = Identifier.parse("buildcraftlib:textures/gui/misc_slots.png");
         SLOT_COLOUR = new GuiIcon(TEXTURE_SELECTOR, 0, 0, 18, 18);
         ICON_SLOT_BLOCKED = SLOT_COLOUR.offset(18, 0);
         ICON_SLOT_NOT_SET = ICON_SLOT_BLOCKED.offset(18, 0);
@@ -119,7 +119,7 @@ public class GuiElementStatement<S extends IStatement> extends GuiElementSimple
             return;
         }
         if (ref.canInteract && button == 0) {
-            if (GuiScreen.isShiftKeyDown()) {
+            if (Screen.isShiftKeyDown()) {
                 set(null);
                 return;
             }

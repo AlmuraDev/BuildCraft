@@ -8,14 +8,14 @@ package buildcraft.lib.gui.slot;
 
 import java.util.function.IntFunction;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.InventoryBasic;
-import net.minecraft.inventory.Slot;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 
 public class SlotDisplay extends Slot {
-    private static IInventory emptyInventory = new InventoryBasic("[Null]", true, 0);
+    private static Container emptyInventory = new SimpleContainer("[Null]", true, 0);
     private final IntFunction<ItemStack> getter;
 
     public SlotDisplay(IntFunction<ItemStack> getter, int index, int xPosition, int yPosition) {
@@ -24,7 +24,7 @@ public class SlotDisplay extends Slot {
     }
 
     @Override
-    public ItemStack onTake(EntityPlayer player, ItemStack stack) {
+    public ItemStack onTake(Player player, ItemStack stack) {
         return ItemStack.EMPTY;
     }
 
@@ -43,7 +43,7 @@ public class SlotDisplay extends Slot {
     }
 
     @Override
-    public boolean canTakeStack(EntityPlayer player) {
+    public boolean canTakeStack(Player player) {
         return false;
     }
 

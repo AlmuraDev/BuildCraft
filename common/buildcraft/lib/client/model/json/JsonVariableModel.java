@@ -26,8 +26,8 @@ import com.google.gson.JsonSyntaxException;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.util.JsonUtils;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.BCLog;
 
@@ -52,12 +52,12 @@ public class JsonVariableModel extends JsonVariableObject {
     public final JsonModelRule[] rules;
     public final JsonVariableModelPart[] cutoutElements, translucentElements;
 
-    public static JsonVariableModel deserialize(ResourceLocation from, FunctionContext fnCtx)
+    public static JsonVariableModel deserialize(Identifier from, FunctionContext fnCtx)
         throws JsonParseException, IOException {
         return deserialize(from, fnCtx, new ResourceLoaderContext());
     }
 
-    public static JsonVariableModel deserialize(ResourceLocation from, FunctionContext fnCtx, ResourceLoaderContext ctx)
+    public static JsonVariableModel deserialize(Identifier from, FunctionContext fnCtx, ResourceLoaderContext ctx)
         throws JsonParseException, IOException {
         try (InputStreamReader isr = ctx.startLoading(from)) {
             return new JsonVariableModel(JsonUtil.inlineCustom(new Gson().fromJson(isr, JsonObject.class)), fnCtx, ctx);
@@ -98,13 +98,13 @@ public class JsonVariableModel extends JsonVariableObject {
 
         if (obj.has("values")) {
             fnCtx = new FunctionContext(fnCtx);
-            putVariables(JsonUtils.getJsonObject(obj, "values"), fnCtx);
+            putVariables(GsonHelper.getJsonObject(obj, "values"), fnCtx);
         }
 
         if (obj.has("parent")) {
-            String parentName = JsonUtils.getString(obj, "parent");
+            String parentName = GsonHelper.getString(obj, "parent");
             parentName += ".json";
-            ResourceLocation from = new ResourceLocation(parentName);
+            Identifier from = Identifier.parse(parentName);
             JsonVariableModel parent;
             try {
                 parent = deserialize(from, fnCtx, ctx);
@@ -112,26 +112,26 @@ public class JsonVariableModel extends JsonVariableObject {
                 throw new JsonParseException("Didn't find the parent '" + parentName + "'!", e);
             }
             ambf = parent.ambientOcclusion;
-            if (!JsonUtils.getBoolean(obj, "textures_reset", false)) {
+            if (!GsonHelper.getBoolean(obj, "textures_reset", false)) {
                 textures.putAll(parent.textures);
             }
             variables.putAll(parent.variables);
-            if (!JsonUtils.getBoolean(obj, "cutout_replace", false)) {
+            if (!GsonHelper.getBoolean(obj, "cutout_replace", false)) {
                 Collections.addAll(cutout, parent.cutoutElements);
             }
-            if (!JsonUtils.getBoolean(obj, "translucent_replace", false)) {
+            if (!GsonHelper.getBoolean(obj, "translucent_replace", false)) {
                 Collections.addAll(translucent, parent.translucentElements);
             }
-            if (!JsonUtils.getBoolean(obj, "rules_replace", false)) {
+            if (!GsonHelper.getBoolean(obj, "rules_replace", false)) {
                 Collections.addAll(rulesP, parent.rules);
             }
         }
 
-        ambientOcclusion = JsonUtils.getBoolean(obj, "ambientocclusion", ambf);
+        ambientOcclusion = GsonHelper.getBoolean(obj, "ambientocclusion", ambf);
         deserializeTextures(obj.get("textures"));
         if (obj.has("variables")) {
             fnCtx = new FunctionContext(fnCtx);
-            putVariables(JsonUtils.getJsonObject(obj, "variables"), fnCtx);
+            putVariables(GsonHelper.getJsonObject(obj, "variables"), fnCtx);
         }
         finaliseVariables();
 
@@ -166,7 +166,7 @@ public class JsonVariableModel extends JsonVariableObject {
         ambientOcclusion = from.ambientOcclusion;
     }
 
-    public void onTextureStitchPre(ResourceLocation modelLocation, Set<ResourceLocation> toRegisterSprites) {
+    public void onTextureStitchPre(Identifier modelLocation, Set<Identifier> toRegisterSprites) {
         if (ModelHolderRegistry.DEBUG) {
             BCLog.logger.info("[lib.model] The model " + modelLocation + " requires these sprites:");
         }
@@ -178,7 +178,7 @@ public class JsonVariableModel extends JsonVariableObject {
                 // its somewhere else in the map so we don't need to register it twice
                 continue;
             }
-            ResourceLocation textureLoc = new ResourceLocation(location);
+            Identifier textureLoc = Identifier.parse(location);
             toRegisterSprites.add(textureLoc);
             // Allow transitive deps
             ReloadSource srcSprite = new ReloadSource(SpriteUtil.transformLocation(textureLoc), SourceType.SPRITE);
@@ -222,7 +222,7 @@ public class JsonVariableModel extends JsonVariableObject {
             attempts++;
         }
         lookup = texture.location;
-        sprite = Minecraft.getMinecraft().getTextureMapBlocks().getAtlasSprite(lookup);
+        sprite = Minecraft.getInstance().getTextureMapBlocks().getAtlasSprite(lookup);
         TexturedFace face = new TexturedFace();
         face.sprite = sprite;
         face.faceData = texture.faceData;

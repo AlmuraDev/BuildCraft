@@ -8,8 +8,9 @@ import gnu.trove.map.hash.TIntObjectHashMap;
 
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.enums.EnumDecoratedBlock;
 
@@ -31,7 +32,7 @@ public class ItemBlockDecorated extends ItemBlockBCMulti {
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
         for (EnumDecoratedBlock type : EnumDecoratedBlock.VALUES) {
             addVariant(variants, type.ordinal(), type.getName());

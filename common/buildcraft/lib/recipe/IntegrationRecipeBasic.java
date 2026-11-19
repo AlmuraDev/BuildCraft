@@ -7,9 +7,9 @@ import javax.annotation.Nonnull;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.BuildCraftAPI;
 import buildcraft.api.recipes.IngredientStack;
@@ -23,7 +23,7 @@ public class IntegrationRecipeBasic extends IntegrationRecipe {
     protected final ImmutableList<IngredientStack> toIntegrate;
     protected final @Nonnull ItemStack output;
 
-    public IntegrationRecipeBasic(ResourceLocation name, long requiredMicroJoules, IngredientStack target, List<IngredientStack> toIntegrate, @Nonnull ItemStack output) {
+    public IntegrationRecipeBasic(Identifier name, long requiredMicroJoules, IngredientStack target, List<IngredientStack> toIntegrate, @Nonnull ItemStack output) {
         super(name);
         this.requiredMicroJoules = requiredMicroJoules;
         this.target = target;

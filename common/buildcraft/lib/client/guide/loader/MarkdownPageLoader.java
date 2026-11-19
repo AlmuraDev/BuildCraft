@@ -10,12 +10,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.JsonToNBT;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.nbt.NBTException;
-import net.minecraft.profiler.Profiler;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.resources.Identifier;
 
 import net.minecraftforge.oredict.OreDictionary;
 
@@ -86,7 +86,7 @@ public enum MarkdownPageLoader implements IPageLoaderText {
 
         String nbtString = args[3];
         try {
-            stack.setTagCompound(JsonToNBT.getTagFromJson(nbtString));
+            stack.setTagCompound(TagParser.getTagFromJson(nbtString));
         } catch (NBTException e) {
             return new OptionallyDisabled<>(nbtString + " was not a valid nbt tag: " + e.getLocalizedMessage());
         }
@@ -94,9 +94,9 @@ public enum MarkdownPageLoader implements IPageLoaderText {
     }
 
     @Override
-    public GuidePageFactory loadPage(BufferedReader reader, ResourceLocation name, PageEntry<?> entry, Profiler prof)
+    public GuidePageFactory loadPage(BufferedReader reader, Identifier name, PageEntry<?> entry, ProfilerFiller prof)
         throws IOException {
-        prof.startSection("md");
+        prof.push("md");
         StringBuilder replaced = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) {
@@ -107,7 +107,7 @@ public enum MarkdownPageLoader implements IPageLoaderText {
         }
 
         BufferedReader nReader = new BufferedReader(new StringReader(replaced.toString()));
-        prof.endSection();
+        prof.pop();
         return XmlPageLoader.INSTANCE.loadPage(nReader, name, entry, prof);
     }
 

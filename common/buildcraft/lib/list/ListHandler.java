@@ -13,15 +13,16 @@ import java.util.List;
 import javax.annotation.Nonnull;
 
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.NonNullList;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.core.NonNullList;
 
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.lists.ListMatchHandler;
 import buildcraft.api.lists.ListMatchHandler.Type;
@@ -109,7 +110,7 @@ public final class ListHandler {
                 for (ItemStack s : stacks) {
                     if (s != null && StackUtil.isMatchingItem(s, target, true, precise)) {
                         // If precise, re-check damage
-                        if (!precise || s.getItemDamage() == target.getItemDamage()) {
+                        if (!precise || s.getDamageValue() == target.getDamageValue()) {
                             return true;
                         }
                     }
@@ -123,37 +124,37 @@ public final class ListHandler {
                 : ListMatchHandler.Type.MATERIAL;
         }
 
-        public static Line fromNBT(NBTTagCompound data) {
+        public static Line fromNBT(CompoundTag data) {
             Line line = new Line();
 
-            if (data != null && data.hasKey("st")) {
-                NBTTagList l = data.getTagList("st", 10);
-                for (int i = 0; i < l.tagCount(); i++) {
-                    line.stacks.set(i, new ItemStack(l.getCompoundTagAt(i)));
+            if (data != null && data.contains("st")) {
+                ListTag l = data.getListOrEmpty("st");
+                for (int i = 0; i < l.size(); i++) {
+                    line.stacks.set(i, new ItemStack(l.getCompoundOrEmpty(i)));
                 }
 
-                line.precise = data.getBoolean("Fp");
-                line.byType = data.getBoolean("Ft");
-                line.byMaterial = data.getBoolean("Fm");
+                line.precise = data.getBooleanOr("Fp", false);
+                line.byType = data.getBooleanOr("Ft", false);
+                line.byMaterial = data.getBooleanOr("Fm", false);
             }
 
             return line;
         }
 
-        public NBTTagCompound toNBT() {
-            NBTTagCompound data = new NBTTagCompound();
-            NBTTagList stackList = new NBTTagList();
+        public CompoundTag toNBT() {
+            CompoundTag data = new CompoundTag();
+            ListTag stackList = new ListTag();
             for (ItemStack stack1 : stacks) {
-                NBTTagCompound stack = new NBTTagCompound();
+                CompoundTag stack = new CompoundTag();
                 if (stack1 != null) {
                     stack1.writeToNBT(stack);
                 }
-                stackList.appendTag(stack);
+                stackList.add(stack);
             }
-            data.setTag("st", stackList);
-            data.setBoolean("Fp", precise);
-            data.setBoolean("Ft", byType);
-            data.setBoolean("Fm", byMaterial);
+            data.put("st", stackList);
+            data.putBoolean("Fp", precise);
+            data.putBoolean("Ft", byType);
+            data.putBoolean("Fm", byMaterial);
             return data;
         }
 
@@ -178,7 +179,7 @@ public final class ListHandler {
             }
         }
 
-        @SideOnly(Side.CLIENT)
+        @OnlyIn(Dist.CLIENT)
         public NonNullList<ItemStack> getExamples() {
             ItemStack firstStack = stacks.get(0);
             if (firstStack.isEmpty()) {
@@ -238,12 +239,12 @@ public final class ListHandler {
     }
 
     public static Line[] getLines(@Nonnull ItemStack item) {
-        NBTTagCompound data = NBTUtilBC.getItemData(item);
-        if (data.hasKey("written") && data.hasKey("lines")) {
-            NBTTagList list = data.getTagList("lines", 10);
-            Line[] lines = new Line[list.tagCount()];
+        CompoundTag data = NBTUtilBC.getItemData(item);
+        if (data.contains("written") && data.contains("lines")) {
+            ListTag list = data.getListOrEmpty("lines");
+            Line[] lines = new Line[list.size()];
             for (int i = 0; i < lines.length; i++) {
-                lines[i] = Line.fromNBT(list.getCompoundTagAt(i));
+                lines[i] = Line.fromNBT(list.getCompoundOrEmpty(i));
             }
             return lines;
         } else {
@@ -266,19 +267,19 @@ public final class ListHandler {
         }
 
         if (hasLine) {
-            NBTTagCompound data = NBTUtilBC.getItemData(stackList);
-            data.setBoolean("written", true);
-            NBTTagList lineList = new NBTTagList();
+            CompoundTag data = NBTUtilBC.getItemData(stackList);
+            data.putBoolean("written", true);
+            ListTag lineList = new ListTag();
             for (Line saving : lines) {
-                lineList.appendTag(saving.toNBT());
+                lineList.add(saving.toNBT());
             }
-            data.setTag("lines", lineList);
+            data.put("lines", lineList);
         } else if (stackList.hasTagCompound()) {
-            NBTTagCompound data = NBTUtilBC.getItemData(stackList);
+            CompoundTag data = NBTUtilBC.getItemData(stackList);
             // No non-default lines, we can remove the old NBT data
-            data.removeTag("written");
-            data.removeTag("lines");
-            if (data.hasNoTags()) {
+            data.remove("written");
+            data.remove("lines");
+            if (data.isEmpty()) {
                 // We can safely remove the
                 stackList.setTagCompound(null);
             }
@@ -286,11 +287,11 @@ public final class ListHandler {
     }
 
     public static boolean matches(@Nonnull ItemStack stackList, @Nonnull ItemStack item) {
-        NBTTagCompound data = NBTUtilBC.getItemData(stackList);
-        if (data.hasKey("written") && data.hasKey("lines")) {
-            NBTTagList list = data.getTagList("lines", 10);
-            for (int i = 0; i < list.tagCount(); i++) {
-                Line line = Line.fromNBT(list.getCompoundTagAt(i));
+        CompoundTag data = NBTUtilBC.getItemData(stackList);
+        if (data.contains("written") && data.contains("lines")) {
+            ListTag list = data.getListOrEmpty("lines");
+            for (int i = 0; i < list.size(); i++) {
+                Line line = Line.fromNBT(list.getCompoundOrEmpty(i));
                 if (line.matches(item)) {
                     return true;
                 }

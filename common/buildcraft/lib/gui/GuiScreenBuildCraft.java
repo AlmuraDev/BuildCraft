@@ -3,8 +3,8 @@ package buildcraft.lib.gui;
 import java.io.IOException;
 import java.util.function.Function;
 
-import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.lib.gui.json.BuildCraftJsonGui;
 import buildcraft.lib.gui.ledger.LedgerHelp;
@@ -12,7 +12,7 @@ import buildcraft.lib.gui.pos.IGuiArea;
 import buildcraft.lib.misc.GuiUtil;
 
 /** Reference implementation for a gui that delegates to a {@link BuildCraftGui} for most of its functionality. */
-public class GuiScreenBuildCraft extends GuiScreen {
+public class GuiScreenBuildCraft extends Screen {
 
     public final BuildCraftGui mainGui;
 
@@ -34,7 +34,7 @@ public class GuiScreenBuildCraft extends GuiScreen {
     }
 
     /** Creates a new gui that will load its elements from the given json resource. */
-    public GuiScreenBuildCraft(ResourceLocation jsonGuiDef) {
+    public GuiScreenBuildCraft(Identifier jsonGuiDef) {
         BuildCraftJsonGui jsonGui = new BuildCraftJsonGui(this, jsonGuiDef);
         this.mainGui = jsonGui;
         standardLedgerInit();
@@ -42,7 +42,7 @@ public class GuiScreenBuildCraft extends GuiScreen {
 
     /** Creates a new gui that will load its elements from the given json resource. Like
      * {@link #GuiScreenBuildCraft(IGuiArea)} this will occupy only the given {@link IGuiArea} */
-    public GuiScreenBuildCraft(ResourceLocation jsonGuiDef, IGuiArea area) {
+    public GuiScreenBuildCraft(Identifier jsonGuiDef, IGuiArea area) {
         BuildCraftJsonGui jsonGui = new BuildCraftJsonGui(this, area, jsonGuiDef);
         this.mainGui = jsonGui;
         standardLedgerInit();

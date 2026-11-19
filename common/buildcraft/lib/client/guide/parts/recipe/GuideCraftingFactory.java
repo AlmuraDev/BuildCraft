@@ -8,12 +8,12 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.crafting.IRecipe;
-import net.minecraft.item.crafting.Ingredient;
-import net.minecraft.nbt.NBTTagList;
-import net.minecraft.util.NonNullList;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.core.NonNullList;
 
 import net.minecraftforge.common.crafting.IShapedRecipe;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
@@ -35,33 +35,33 @@ public class GuideCraftingFactory implements GuidePartFactory {
     public GuideCraftingFactory(Ingredient[][] input, ItemStack output) {
         this.input = new NonNullMatrix<>(input, Ingredient.EMPTY);
         this.output = StackUtil.asNonNull(output);
-        NBTTagList hashNbt = new NBTTagList();
+        ListTag hashNbt = new ListTag();
         for (Ingredient ingredient : this.input) {
-            NBTTagList list = new NBTTagList();
+            ListTag list = new ListTag();
             for (ItemStack stack : ingredient.getMatchingStacks()) {
-                list.appendTag(stack.serializeNBT());
+                list.add(stack.serializeNBT());
             }
-            hashNbt.appendTag(list);
+            hashNbt.add(list);
         }
         this.hash = hashNbt.hashCode();
     }
 
     public static GuidePartFactory create(@Nonnull ItemStack stack) {
-        for (IRecipe recipe : ForgeRegistries.RECIPES) {
+        for (Recipe recipe : ForgeRegistries.RECIPES) {
             if (OreDictionary.itemMatches(stack, StackUtil.asNonNull(recipe.getRecipeOutput()), false)) {
                 GuidePartFactory val = getFactory(recipe);
                 if (val != null) {
                     return val;
                 } else {
                     BCLog.logger.warn("[lib.guide.crafting] Found a matching recipe, but of an unknown "
-                        + recipe.getClass() + " for " + stack.getDisplayName());
+                        + recipe.getClass() + " for " + stack.getHoverName());
                 }
             }
         }
         return null;
     }
 
-    public static GuidePartFactory getFactory(IRecipe recipe) {
+    public static GuidePartFactory getFactory(Recipe recipe) {
         ItemStack output = recipe.getRecipeOutput();
         NonNullList<Ingredient> input = recipe.getIngredients();
         if (input == null || input.isEmpty() || output.isEmpty()) {
@@ -154,21 +154,21 @@ public class GuideCraftingFactory implements GuidePartFactory {
         // Shortcut out of this full itemstack comparison as its really expensive
         if (hash != other.hash) return false;
         if (input.getWidth() != other.input.getWidth() || input.getHeight() != other.input.getHeight()) return false;
-        NBTTagList nbtThis = new NBTTagList();
+        ListTag nbtThis = new ListTag();
         for (Ingredient ingredient : this.input) {
-            NBTTagList list = new NBTTagList();
+            ListTag list = new ListTag();
             for (ItemStack stack : ingredient.getMatchingStacks()) {
-                list.appendTag(stack.serializeNBT());
+                list.add(stack.serializeNBT());
             }
-            nbtThis.appendTag(list);
+            nbtThis.add(list);
         }
-        NBTTagList nbtThat = new NBTTagList();
+        ListTag nbtThat = new ListTag();
         for (Ingredient ingredient : other.input) {
-            NBTTagList list = new NBTTagList();
+            ListTag list = new ListTag();
             for (ItemStack stack : ingredient.getMatchingStacks()) {
-                list.appendTag(stack.serializeNBT());
+                list.add(stack.serializeNBT());
             }
-            nbtThat.appendTag(list);
+            nbtThat.add(list);
         }
         return nbtThis.equals(nbtThat);
     }

@@ -1,37 +1,38 @@
 package buildcraft.lib.misc.data;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.profiler.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
-/** An extension for minecraft's {@link Profiler} class that returns {@link AutoCloseable} profiler sections. */
+/** An extension for minecraft's {@link ProfilerFiller} class that returns {@link AutoCloseable} profiler sections. */
 public class ProfilerBC {
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public static ProfilerBC getClient() {
-        return new ProfilerBC(Minecraft.getMinecraft().mcProfiler);
+        return new ProfilerBC(Minecraft.getInstance().mcProfiler);
     }
 
-    private final Profiler profiler;
+    private final ProfilerFiller profiler;
 
-    public ProfilerBC(Profiler profiler) {
+    public ProfilerBC(ProfilerFiller profiler) {
         this.profiler = profiler;
     }
 
     public IProfilerSection start(String name) {
-        profiler.startSection(name);
+        profiler.push(name);
         return profiler::endSection;
     }
 
     public IProfilerSection start(String... names) {
         for (String s : names) {
-            profiler.startSection(s);
+            profiler.push(s);
         }
         return () -> {
             for (int i = 0; i < names.length; i++) {
-                profiler.endSection();
+                profiler.pop();
             }
         };
     }

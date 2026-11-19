@@ -10,11 +10,11 @@ import java.io.IOException;
 
 import io.netty.buffer.ByteBuf;
 
-import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.world.entity.player.Player;
 
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
-import net.minecraftforge.fml.relauncher.Side;
+import buildcraft.lib.net.IMessage;
+import buildcraft.lib.net.IMessageHandler;
+import net.neoforged.fml.LogicalSide;
 
 import buildcraft.lib.BCLibProxy;
 import buildcraft.lib.gui.ContainerBC_Neptune;
@@ -30,7 +30,7 @@ public class MessageContainer implements IMessage {
     public MessageContainer() {}
 
     public MessageContainer(int windowId, int msgId, PacketBufferBC payload) {
-        this.windowId = windowId;
+        this.containerId = windowId;
         this.msgId = msgId;
         this.payload = payload;
     }
@@ -60,16 +60,16 @@ public class MessageContainer implements IMessage {
 
     public static final IMessageHandler<MessageContainer, IMessage> HANDLER = (message, ctx) -> {
         try {
-            int id = message.windowId;
-            EntityPlayer player = BCLibProxy.getProxy().getPlayerForContext(ctx);
-            if (player != null && player.openContainer instanceof ContainerBC_Neptune
-                && player.openContainer.windowId == id) {
-                ContainerBC_Neptune container = (ContainerBC_Neptune) player.openContainer;
+            int id = message.containerId;
+            Player player = BCLibProxy.getProxy().getPlayerForContext(ctx);
+            if (player != null && player.containerMenu instanceof ContainerBC_Neptune
+                && player.containerMenu.containerId == id) {
+                ContainerBC_Neptune container = (ContainerBC_Neptune) player.containerMenu;
                 container.readMessage(message.msgId, message.payload, ctx.side, ctx);
 
                 // error checking
                 String extra = container.getClass() + ", id = " + container.getIdAllocator().getNameFor(message.msgId);
-                MessageUtil.ensureEmpty(message.payload, ctx.side == Side.CLIENT, extra);
+                MessageUtil.ensureEmpty(message.payload, ctx.side == LogicalSide.CLIENT, extra);
             }
             return null;
         } catch (IOException e) {

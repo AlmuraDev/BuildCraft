@@ -4,29 +4,19 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.lib.registry;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import com.google.common.collect.ImmutableList;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraft.util.ResourceLocation;
-
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.event.RegistryEvent.MissingMappings;
-import net.minecraftforge.event.RegistryEvent.MissingMappings.Mapping;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.registries.IForgeRegistryEntry;
-
-import buildcraft.api.core.BCDebugging;
-import buildcraft.api.core.BCLog;
-
+/** Records the names blocks and items had in older BuildCraft versions. 1.12.2 remapped them when a world loaded; on 26.3
+ * old worlds go through a separate converter, which can read these maps ({@link #getItemMigrations()},
+ * {@link #getBlockMigrations()}) instead. */
 public enum MigrationManager {
     INSTANCE;
-
-    public static final boolean DEBUG = BCDebugging.shouldDebugLog("lib.migrate");
 
     private final Map<String, Item> itemMigrations = new HashMap<>();
     private final Map<String, Block> blockMigrations = new HashMap<>();
@@ -37,72 +27,26 @@ public enum MigrationManager {
             return;
         }
         for (String old : oldNames) {
-            String oldLowerCase = old.toLowerCase(Locale.ROOT);
-            if (itemMigrations.containsKey(oldLowerCase)) {
-                throw new IllegalArgumentException("Already registered item migration \"" + oldLowerCase + "\"!");
-            }
-            itemMigrations.put(oldLowerCase, to);
-            if (DEBUG) {
-                BCLog.logger
-                    .info("[lib.migrate] Adding item migration from " + oldLowerCase + " to " + to.getRegistryName());
-            }
+            itemMigrations.put(old.toLowerCase(Locale.ROOT), to);
         }
     }
 
     public void addBlockMigration(Block to, String... oldNames) {
-        // If we mistakenly try to migrate null then it must have been disabled.
         if (to == null) {
             return;
         }
         for (String old : oldNames) {
-            String oldLowerCase = old.toLowerCase(Locale.ROOT);
-            if (blockMigrations.containsKey(oldLowerCase)) {
-                throw new IllegalArgumentException("Already registered block migration \"" + oldLowerCase + "\"!");
-            }
-            blockMigrations.put(oldLowerCase, to);
-            if (DEBUG) {
-                BCLog.logger
-                    .info("[lib.migrate] Adding item migration from " + oldLowerCase + " to " + to.getRegistryName());
-            }
+            blockMigrations.put(old.toLowerCase(Locale.ROOT), to);
         }
     }
 
-    @SubscribeEvent
-    public void onMissingBlocks(RegistryEvent.MissingMappings<Block> missing) {
-        onMissingMappings(missing, blockMigrations);
+    /** @return Old (lower case) registry paths to the items they became. */
+    public Map<String, Item> getItemMigrations() {
+        return Collections.unmodifiableMap(itemMigrations);
     }
 
-    @SubscribeEvent
-    public void onMissingItems(RegistryEvent.MissingMappings<Item> missing) {
-        onMissingMappings(missing, itemMigrations);
-    }
-
-    private static <T extends IForgeRegistryEntry<T>> void onMissingMappings(MissingMappings<T> missing,
-        Map<String, T> migrations) {
-        ImmutableList<Mapping<T>> all = missing.getAllMappings();
-        if (all.isEmpty()) {
-            return;
-        }
-        if (DEBUG) {
-            BCLog.logger.info("[lib.migrate] Received missing mappings event for " + missing.getGenericType() + " with "
-                + all.size() + " missing.");
-        }
-        for (MissingMappings.Mapping<T> mapping : all) {
-            ResourceLocation loc = mapping.key;
-            String domain = loc.getResourceDomain();
-            String path = loc.getResourcePath().toLowerCase(Locale.ROOT);
-            if (DEBUG) {
-                BCLog.logger.info("[lib.migrate]  - " + domain + ":" + path);
-            }
-            // TECHNICALLY this can pick up non-bc mods, but generally only addons
-            if (!domain.startsWith("buildcraft")) continue;
-            T to = migrations.get(path);
-            if (to != null) {
-                mapping.remap(to);
-                if (DEBUG) {
-                    BCLog.logger.info("[lib.migrate]    -> " + to.getRegistryName());
-                }
-            }
-        }
+    /** @return Old (lower case) registry paths to the blocks they became. */
+    public Map<String, Block> getBlockMigrations() {
+        return Collections.unmodifiableMap(blockMigrations);
     }
 }

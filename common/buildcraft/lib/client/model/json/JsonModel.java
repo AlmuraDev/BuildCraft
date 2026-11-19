@@ -23,8 +23,8 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
 import net.minecraft.client.renderer.block.model.ModelBlock;
-import net.minecraft.util.JsonUtils;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.lib.client.model.ResourceLoaderContext;
 import buildcraft.lib.misc.JsonUtil;
@@ -35,11 +35,11 @@ public class JsonModel {
     public final Map<String, String> textures;
     public final JsonModelPart[] cutoutElements, translucentElements;
 
-    public static JsonModel deserialize(ResourceLocation from) throws JsonParseException, IOException {
+    public static JsonModel deserialize(Identifier from) throws JsonParseException, IOException {
         return deserialize(from, new ResourceLoaderContext());
     }
 
-    public static JsonModel deserialize(ResourceLocation from, ResourceLoaderContext ctx) throws JsonParseException, IOException {
+    public static JsonModel deserialize(Identifier from, ResourceLoaderContext ctx) throws JsonParseException, IOException {
         try (InputStreamReader isr = ctx.startLoading(from)) {
             return new JsonModel(new Gson().fromJson(isr, JsonObject.class), ctx);
         } finally {
@@ -50,7 +50,7 @@ public class JsonModel {
     public static void deserializePart(List<JsonModelPart> to, boolean translucent, JsonElement json, ResourceLoaderContext ctx) throws JsonParseException, IOException {
         if (json.isJsonPrimitive() && json.getAsJsonPrimitive().isString()) {
             String str = json.getAsString();
-            ResourceLocation parent = new ResourceLocation(str);
+            Identifier parent = Identifier.parse(str);
             JsonModel model = deserialize(parent, ctx);
             if (translucent) {
                 Collections.addAll(to, model.translucentElements);
@@ -79,7 +79,7 @@ public class JsonModel {
     }
 
     public JsonModel(JsonObject obj, ResourceLoaderContext ctx) throws JsonParseException, IOException {
-        ambientOcclusion = JsonUtils.getBoolean(obj, "ambientocclusion", false);
+        ambientOcclusion = GsonHelper.getBoolean(obj, "ambientocclusion", false);
         textures = JsonUtil.getSubAsImmutableMap(obj, "textures", new TypeToken<HashMap<String, String>>() {});
         if (obj.has("elements")) {
             cutoutElements = deserializePartArray(obj, "elements", false, ctx);

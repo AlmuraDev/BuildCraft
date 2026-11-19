@@ -6,7 +6,7 @@
 
 package buildcraft.lib.client.guide.data;
 
-import net.minecraft.util.StringUtils;
+import net.minecraft.util.StringUtil;
 
 import buildcraft.api.core.BCLog;
 
@@ -78,7 +78,7 @@ public class JsonTypeTags {
         String current = null;
         for (String string : strings) {
             current = string;
-            if (!StringUtils.isNullOrEmpty(current)) {
+            if (!StringUtil.isNullOrEmpty(current)) {
                 break;
             }
         }

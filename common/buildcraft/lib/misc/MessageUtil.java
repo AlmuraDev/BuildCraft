@@ -19,20 +19,21 @@ import com.mojang.authlib.GameProfile;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.internal.StringUtil;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.properties.IProperty;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.network.PacketBuffer;
-import net.minecraft.server.management.PlayerChunkMapEntry;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.Level;
+import net.minecraft.server.level.ServerLevel;
 
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import buildcraft.lib.net.IMessage;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import buildcraft.api.core.BCLog;
 
@@ -73,61 +74,45 @@ public class MessageUtil {
         }
     }
 
-    public static void sendToAllWatching(World worldObj, BlockPos pos, IMessage message) {
-        if (worldObj instanceof WorldServer) {
-            WorldServer server = (WorldServer) worldObj;
-            PlayerChunkMapEntry playerChunkMap = server.getPlayerChunkMap().getEntry(pos.getX() >> 4, pos.getZ() >> 4);
-            if (playerChunkMap == null) {
-                // No-one was watching this chunk.
-                return;
-            }
-            if (!playerChunkMap.isSentToPlayers()) {
-                // Its players are waiting for the chunk itself, which brings the tile's full state: an update now would
-                // reach them before the tile exists and be dropped ("Dropped message ... (found null)"), as vanilla's
-                // sendPacket avoids by the same check
-                return;
-            }
-            // Slightly ugly hack to iterate through all players watching the chunk
-            playerChunkMap.hasPlayerMatchingInRange(0, player -> {
-                MessageManager.sendTo(message, player);
-                // Always return false so that the iteration doesn't stop early
-                return false;
-            });
-            // We could just use this instead, but that requires extra packet size as we are wrapping our
-            // packet in an FML packet and sending it through the vanilla system, which is not really desired
-            // playerChunkMap.sendPacket(MessageManager.getPacketFrom(message));
+    public static void sendToAllWatching(Level worldObj, BlockPos pos, IMessage message) {
+        if (worldObj instanceof ServerLevel) {
+            ServerLevel server = (ServerLevel) worldObj;
+            // Only players the chunk has already been sent to: the others will get the chunk, which brings the tile's full
+            // state, and an update sent before it would reach them before the tile exists and be dropped ("Dropped message
+            // ... (found null)"). NeoForge's chunk tracking skips chunks still waiting to be sent, as 1.12.2 needed a check for.
+            MessageManager.sendToPlayersTrackingChunk(message, server, new ChunkPos(pos));
         }
     }
 
-    public static void sendToPlayers(Iterable<EntityPlayer> players, IMessage message) {
-        for (EntityPlayer player : players) {
-            if (player instanceof EntityPlayerMP) {
-                MessageManager.sendTo(message, (EntityPlayerMP) player);
+    public static void sendToPlayers(Iterable<Player> players, IMessage message) {
+        for (Player player : players) {
+            if (player instanceof ServerPlayer) {
+                MessageManager.sendTo(message, (ServerPlayer) player);
             }
         }
     }
 
-    public static void writeBooleanArray(PacketBuffer buf, boolean[] bool) {
+    public static void writeBooleanArray(FriendlyByteBuf buf, boolean[] bool) {
         PacketBufferBC bufBc = PacketBufferBC.asPacketBufferBc(buf);
         for (boolean b : bool) {
             bufBc.writeBoolean(b);
         }
     }
 
-    public static boolean[] readBooleanArray(PacketBuffer buf, int length) {
+    public static boolean[] readBooleanArray(FriendlyByteBuf buf, int length) {
         boolean[] total = new boolean[length];
         readBooleanArray(buf, total);
         return total;
     }
 
-    public static void readBooleanArray(PacketBuffer buf, boolean[] into) {
+    public static void readBooleanArray(FriendlyByteBuf buf, boolean[] into) {
         PacketBufferBC bufBc = PacketBufferBC.asPacketBufferBc(buf);
         for (int i = 0; i < into.length; i++) {
             into[i] = bufBc.readBoolean();
         }
     }
 
-    public static void writeBlockPosArray(PacketBuffer buffer, BlockPos[] arr) {
+    public static void writeBlockPosArray(FriendlyByteBuf buffer, BlockPos[] arr) {
         boolean[] existsArray = new boolean[arr.length];
         for (int i = 0; i < arr.length; i++) {
             existsArray[i] = arr[i] != null;
@@ -140,7 +125,7 @@ public class MessageUtil {
         }
     }
 
-    public static BlockPos[] readBlockPosArray(PacketBuffer buffer, int length) {
+    public static BlockPos[] readBlockPosArray(FriendlyByteBuf buffer, int length) {
         BlockPos[] arr = new BlockPos[length];
         boolean[] existsArray = readBooleanArray(buffer, length);
         for (int i = 0; i < length; i++) {
@@ -151,98 +136,57 @@ public class MessageUtil {
         return arr;
     }
 
-    public static void writeBlockPos(PacketBuffer buffer, BlockPos pos) {
+    public static void writeBlockPos(FriendlyByteBuf buffer, BlockPos pos) {
         buffer.writeVarInt(pos.getX());
         buffer.writeVarInt(pos.getY());
         buffer.writeVarInt(pos.getZ());
     }
 
-    public static BlockPos readBlockPos(PacketBuffer buffer) {
+    public static BlockPos readBlockPos(FriendlyByteBuf buffer) {
         return new BlockPos(buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
     }
 
-    public static void writeVec3d(PacketBuffer buffer, Vec3d vec) {
+    public static void writeVec3d(FriendlyByteBuf buffer, Vec3 vec) {
         buffer.writeDouble(vec.x);
         buffer.writeDouble(vec.y);
         buffer.writeDouble(vec.z);
     }
 
-    public static Vec3d readVec3d(PacketBuffer buffer) {
-        return new Vec3d(buffer.readDouble(), buffer.readDouble(), buffer.readDouble());
+    public static Vec3 readVec3d(FriendlyByteBuf buffer) {
+        return new Vec3(buffer.readDouble(), buffer.readDouble(), buffer.readDouble());
     }
 
-    public static void writeGameProfile(PacketBuffer buffer, GameProfile profile) {
-        if (profile != null && profile.isComplete()) {
+    public static void writeGameProfile(FriendlyByteBuf buffer, GameProfile profile) {
+        if (profile != null && profile.id() != null && !profile.name().isEmpty()) {
             buffer.writeBoolean(true);
-            buffer.writeUniqueId(profile.getId());
-            buffer.writeString(profile.getName());
+            buffer.writeUUID(profile.id());
+            buffer.writeUtf(profile.name());
         } else {
             buffer.writeBoolean(false);
         }
     }
 
-    public static GameProfile readGameProfile(PacketBuffer buffer) {
+    public static GameProfile readGameProfile(FriendlyByteBuf buffer) {
         if (buffer.readBoolean()) {
-            UUID uuid = buffer.readUniqueId();
-            String name = buffer.readString(256);
-            GameProfile profile = new GameProfile(uuid, name);
-            if (profile.isComplete()) {
-                return profile;
+            UUID uuid = buffer.readUUID();
+            String name = buffer.readUtf(256);
+            if (uuid != null && !name.isEmpty()) {
+                return new GameProfile(uuid, name);
             }
         }
         return null;
     }
 
-    /** Writes a block state using the block ID and its metadata. Not suitable for full states. */
-    public static void writeBlockState(PacketBuffer buf, IBlockState state) {
-        Block block = state.getBlock();
-        buf.writeVarInt(Block.REGISTRY.getIDForObject(block));
-        int meta = block.getMetaFromState(state);
-        buf.writeByte(meta);
-        IBlockState readState = block.getStateFromMeta(meta);
-        if (readState != state) {
-            buf.writeBoolean(true);
-            Map<IProperty, Comparable<?>> differingProperties = new HashMap<>();
-            for (IProperty<?> property : state.getPropertyKeys()) {
-                Comparable<?> inputValue = state.getValue(property);
-                Comparable<?> readValue = readState.getValue(property);
-                if (!inputValue.equals(readValue)) {
-                    differingProperties.put(property, inputValue);
-                }
-            }
-            buf.writeByte(differingProperties.size());
-            for (Entry<IProperty, Comparable<?>> entry : differingProperties.entrySet()) {
-                buf.writeString(entry.getKey().getName());
-                buf.writeString(entry.getKey().getName(entry.getValue()));
-            }
-        } else {
-            buf.writeBoolean(false);
-        }
+    /** Writes a block state as its id in the global block state palette. */
+    public static void writeBlockState(FriendlyByteBuf buf, BlockState state) {
+        buf.writeVarInt(Block.getId(state));
     }
 
-    public static IBlockState readBlockState(PacketBuffer buf) {
-        int id = buf.readVarInt();
-        Block block = Block.REGISTRY.getObjectById(id);
-        int meta = buf.readUnsignedByte();
-        IBlockState state = block.getStateFromMeta(meta);
-        if (buf.readBoolean()) {
-            int count = buf.readByte();
-            for (int p = 0; p < count; p++) {
-                String name = buf.readString(256);
-                String value = buf.readString(256);
-                IProperty<?> prop = state.getBlock().getBlockState().getProperty(name);
-                state = propertyReadHelper(state, value, prop);
-            }
-        }
-        return state;
+    public static BlockState readBlockState(FriendlyByteBuf buf) {
+        return Block.stateById(buf.readVarInt());
     }
 
-    private static <T extends Comparable<T>> IBlockState propertyReadHelper(IBlockState state, String value,
-        IProperty<T> prop) {
-        return state.withProperty(prop, prop.parseValue(value).orNull());
-    }
-
-    /** {@link PacketBuffer#writeEnumValue(Enum)} can only write *actual* enum values - so not null. This method allows
+    /** {@link FriendlyByteBuf#writeEnumValue(Enum)} can only write *actual* enum values - so not null. This method allows
      * for writing an enum value, or null. */
     public static void writeEnumOrNull(ByteBuf buffer, Enum<?> value) {
         PacketBufferBC buf = PacketBufferBC.asPacketBufferBc(buffer);
@@ -250,16 +194,16 @@ public class MessageUtil {
             buf.writeBoolean(false);
         } else {
             buf.writeBoolean(true);
-            buf.writeEnumValue(value);
+            buf.writeEnum(value);
         }
     }
 
-    /** {@link PacketBuffer#readEnumValue(Class)} can only read *actual* enum values - so not null. This method allows
+    /** {@link FriendlyByteBuf#readEnumValue(Class)} can only read *actual* enum values - so not null. This method allows
      * for reading an enum value, or null. */
     public static <E extends Enum<E>> E readEnumOrNull(ByteBuf buffer, Class<E> clazz) {
         PacketBufferBC buf = PacketBufferBC.asPacketBufferBc(buffer);
         if (buf.readBoolean()) {
-            return buf.readEnumValue(clazz);
+            return buf.readEnum(clazz);
         } else {
             return null;
         }
@@ -287,21 +231,26 @@ public class MessageUtil {
         return set;
     }
 
-    public static void sendReturnMessage(MessageContext context, IMessage reply) {
-        EntityPlayer player = BCLibProxy.getProxy().getPlayerForContext(context);
-        if (player instanceof EntityPlayerMP) {
-            EntityPlayerMP playerMP = (EntityPlayerMP) player;
+    /** @return The side that received the message in the given context. */
+    public static LogicalSide getSide(IPayloadContext context) {
+        return context.flow().getReceptionSide();
+    }
+
+    public static void sendReturnMessage(IPayloadContext context, IMessage reply) {
+        Player player = BCLibProxy.getProxy().getPlayerForContext(context);
+        if (player instanceof ServerPlayer) {
+            ServerPlayer playerMP = (ServerPlayer) player;
             MessageManager.sendTo(reply, playerMP);
         } else if (player != null) {
             MessageManager.sendToServer(reply);
         }
     }
 
-    public static PacketBuffer asPacketBuffer(ByteBuf buf) {
-        if (buf instanceof PacketBuffer) {
-            return (PacketBuffer) buf;
+    public static FriendlyByteBuf asPacketBuffer(ByteBuf buf) {
+        if (buf instanceof FriendlyByteBuf) {
+            return (FriendlyByteBuf) buf;
         }
-        return new PacketBuffer(buf);
+        return new FriendlyByteBuf(buf);
     }
 
     /** Checks to make sure that this buffer has been *completely* read (so that there are no readable bytes left

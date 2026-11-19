@@ -8,21 +8,21 @@ package buildcraft.lib.inventory;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.inventory.ISidedInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.world.WorldlyContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.Direction;
 
 import buildcraft.api.core.IStackFilter;
 
 import buildcraft.lib.misc.StackUtil;
 
 public final class SidedInventoryWrapper extends AbstractInvItemTransactor {
-    private final ISidedInventory sided;
+    private final WorldlyContainer sided;
     private final InventoryWrapper normal;
-    private final EnumFacing face;
+    private final Direction face;
     private final int[] slots;
 
-    public SidedInventoryWrapper(ISidedInventory sided, EnumFacing face) {
+    public SidedInventoryWrapper(WorldlyContainer sided, Direction face) {
         this.sided = sided;
         this.normal = new InventoryWrapper(sided);
         this.face = face;
@@ -44,7 +44,7 @@ public final class SidedInventoryWrapper extends AbstractInvItemTransactor {
     @Override
     protected ItemStack extract(int externalSlot, IStackFilter filter, int min, int max, boolean simulate) {
         int sidedSlot = slots[externalSlot];
-        ItemStack current = sided.getStackInSlot(sidedSlot);
+        ItemStack current = sided.getItem(sidedSlot);
         if (sided.canExtractItem(sidedSlot, current, face)) {
             // Delegate to the normal inserter - its just easier.
             return normal.extract(sidedSlot, filter, min, max, simulate);

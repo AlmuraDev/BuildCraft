@@ -6,12 +6,13 @@
 
 package buildcraft.lib.inventory.filter;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.NonNullList;
 
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.transfer.fluid.FluidUtil;
 
+import buildcraft.lib.misc.FluidUtilBC;
 import buildcraft.api.core.IFluidFilter;
 
 import buildcraft.lib.misc.StackUtil;
@@ -52,7 +53,7 @@ public class ArrayFluidFilter implements IFluidFilter {
     @Override
     public boolean matches(FluidStack fluid) {
         for (FluidStack filter : fluids) {
-            if (filter != null && filter.isFluidEqual(fluid)) {
+            if (filter != null && FluidUtilBC.isFluidEqual(filter, fluid)) {
                 return true;
             }
         }

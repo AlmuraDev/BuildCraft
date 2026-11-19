@@ -8,8 +8,8 @@ package buildcraft.lib.inventory.filter;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntityFurnace;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 
 import buildcraft.api.core.IStackFilter;
 
@@ -26,7 +26,7 @@ public enum StackFilter implements IStackFilter {
     FUEL {
         @Override
         public boolean matches(@Nonnull ItemStack stack) {
-            return TileEntityFurnace.getItemBurnTime(stack) > 0;
+            return AbstractFurnaceBlockEntity.getItemBurnTime(stack) > 0;
         }
     };
 

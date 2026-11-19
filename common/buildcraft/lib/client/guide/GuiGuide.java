@@ -19,12 +19,12 @@ import org.lwjgl.input.Keyboard;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 
 import buildcraft.lib.BCLibItems;
 import buildcraft.lib.client.ToastInformation;
@@ -48,23 +48,23 @@ import buildcraft.lib.misc.GuiUtil;
 import buildcraft.lib.misc.GuiUtil.AutoGlScissor;
 import buildcraft.lib.misc.LocaleUtil;
 
-public class GuiGuide extends GuiScreen {
-    public static final ResourceLocation ICONS_1 = Gui.ICONS;
-    public static final ResourceLocation ICONS_2 = new ResourceLocation("buildcraftlib:textures/gui/guide/icons.png");
-    public static final ResourceLocation COVER = new ResourceLocation("buildcraftlib:textures/gui/guide/cover.png");
-    public static final ResourceLocation LEFT_PAGE =
-        new ResourceLocation("buildcraftlib:textures/gui/guide/left_page.png");
-    public static final ResourceLocation RIGHT_PAGE =
-        new ResourceLocation("buildcraftlib:textures/gui/guide/right_page.png");
-    public static final ResourceLocation LEFT_PAGE_BACK =
-        new ResourceLocation("buildcraftlib:textures/gui/guide/left_page_back.png");
-    public static final ResourceLocation RIGHT_PAGE_BACK =
-        new ResourceLocation("buildcraftlib:textures/gui/guide/right_page_back.png");
-    public static final ResourceLocation LEFT_PAGE_FIRST =
-        new ResourceLocation("buildcraftlib:textures/gui/guide/left_page_first.png");
-    public static final ResourceLocation RIGHT_PAGE_LAST =
-        new ResourceLocation("buildcraftlib:textures/gui/guide/right_page_last.png");
-    public static final ResourceLocation NOTE = new ResourceLocation("buildcraftlib:textures/gui/guide/note.png");
+public class GuiGuide extends Screen {
+    public static final Identifier ICONS_1 = Gui.ICONS;
+    public static final Identifier ICONS_2 = Identifier.parse("buildcraftlib:textures/gui/guide/icons.png");
+    public static final Identifier COVER = Identifier.parse("buildcraftlib:textures/gui/guide/cover.png");
+    public static final Identifier LEFT_PAGE =
+        Identifier.parse("buildcraftlib:textures/gui/guide/left_page.png");
+    public static final Identifier RIGHT_PAGE =
+        Identifier.parse("buildcraftlib:textures/gui/guide/right_page.png");
+    public static final Identifier LEFT_PAGE_BACK =
+        Identifier.parse("buildcraftlib:textures/gui/guide/left_page_back.png");
+    public static final Identifier RIGHT_PAGE_BACK =
+        Identifier.parse("buildcraftlib:textures/gui/guide/right_page_back.png");
+    public static final Identifier LEFT_PAGE_FIRST =
+        Identifier.parse("buildcraftlib:textures/gui/guide/left_page_first.png");
+    public static final Identifier RIGHT_PAGE_LAST =
+        Identifier.parse("buildcraftlib:textures/gui/guide/right_page_last.png");
+    public static final Identifier NOTE = Identifier.parse("buildcraftlib:textures/gui/guide/note.png");
 
     public static final GuiIcon BOOK_COVER = new GuiIcon(COVER, 0, 0, 202, 248);
     public static final GuiIcon BOOK_BINDING = new GuiIcon(COVER, 204, 0, 11, 248);
@@ -203,7 +203,7 @@ public class GuiGuide extends GuiScreen {
     private GuiGuide(@Nullable GuideBook book) {
         this.book = book;
         this.bookData = book != null ? book.data : GuideManager.BOOK_ALL_DATA;
-        mc = Minecraft.getMinecraft();
+        mc = Minecraft.getInstance();
         openPage(new GuidePageContents(this));
     }
 
@@ -316,7 +316,7 @@ public class GuiGuide extends GuiScreen {
         minY = (height - BOOK_COVER.height) / 2;
 
         float openingAngle = openingAngleLast * (1 - partialTicks) + openingAngleNext * partialTicks;
-        float sin = MathHelper.sin((float) (openingAngle * Math.PI / 180));
+        float sin = Mth.sin((float) (openingAngle * Math.PI / 180));
         if (sin < 0) {
             sin *= -1;
         }

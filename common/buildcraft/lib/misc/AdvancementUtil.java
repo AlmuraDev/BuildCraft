@@ -7,21 +7,21 @@ import java.util.UUID;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementManager;
 import net.minecraft.advancements.PlayerAdvancements;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.resources.Identifier;
 
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
 import buildcraft.api.core.BCLog;
 
 public class AdvancementUtil {
-    private static final Set<ResourceLocation> UNKNOWN_ADVANCEMENTS = new HashSet<>();
+    private static final Set<Identifier> UNKNOWN_ADVANCEMENTS = new HashSet<>();
 
-    public static void unlockAdvancement(EntityPlayer player, ResourceLocation advancementName) {
-        if (player instanceof EntityPlayerMP) {
-            EntityPlayerMP playerMP = (EntityPlayerMP) player;
+    public static void unlockAdvancement(Player player, Identifier advancementName) {
+        if (player instanceof ServerPlayer) {
+            ServerPlayer playerMP = (ServerPlayer) player;
             AdvancementManager advancementManager = playerMP.getServerWorld().getAdvancementManager();
             if (advancementManager == null) {
                 // Because this *can* happen
@@ -41,10 +41,10 @@ public class AdvancementUtil {
         }
     }
 
-    public static boolean unlockAdvancement(UUID player, ResourceLocation advancementName) {
+    public static boolean unlockAdvancement(UUID player, Identifier advancementName) {
         Entity entity = FMLCommonHandler.instance().getMinecraftServerInstance().getEntityFromUuid(player);
-        if (entity != null && entity instanceof EntityPlayerMP) {
-            unlockAdvancement((EntityPlayer) entity, advancementName);
+        if (entity != null && entity instanceof ServerPlayer) {
+            unlockAdvancement((Player) entity, advancementName);
             return true;
         }
         return false;

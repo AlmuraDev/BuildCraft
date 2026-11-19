@@ -15,19 +15,19 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.entity.player.InventoryPlayer;
-import net.minecraft.inventory.ClickType;
-import net.minecraft.inventory.Container;
-import net.minecraft.inventory.Slot;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.NonNullList;
 
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
+import buildcraft.api.transfer.IItemHandler;
+import buildcraft.api.transfer.IItemHandlerModifiable;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
@@ -42,7 +42,7 @@ import buildcraft.lib.net.MessageManager;
 import buildcraft.lib.net.PacketBufferBC;
 import buildcraft.lib.tile.item.IItemHandlerAdv;
 
-public abstract class ContainerBC_Neptune extends Container {
+public abstract class ContainerBC_Neptune extends AbstractContainerMenu {
     public static final boolean DEBUG = BCDebugging.shouldDebugLog("lib.container");
 
     protected static final IdAllocator IDS = new IdAllocator("container");
@@ -53,10 +53,10 @@ public abstract class ContainerBC_Neptune extends Container {
     public static final int NET_SET_PHANTOM = IDS.allocId("SET_PHANTOM");
     public static final int NET_SET_PHANTOM_MULTI = IDS.allocId("NET_SET_PHANTOM_MULTI");
 
-    public final EntityPlayer player;
+    public final Player player;
     private final List<Widget_Neptune<?>> widgets = new ArrayList<>();
 
-    public ContainerBC_Neptune(EntityPlayer player) {
+    public ContainerBC_Neptune(Player player) {
         this.player = player;
     }
 
@@ -70,12 +70,12 @@ public abstract class ContainerBC_Neptune extends Container {
     protected void addFullPlayerInventory(int startX, int startY) {
         for (int sy = 0; sy < 3; sy++) {
             for (int sx = 0; sx < 9; sx++) {
-                addSlotToContainer(new Slot(player.inventory, sx + sy * 9 + 9, startX + sx * 18, startY + sy * 18));
+                addSlotToContainer(new Slot(player.getInventory(), sx + sy * 9 + 9, startX + sx * 18, startY + sy * 18));
             }
         }
 
         for (int sx = 0; sx < 9; sx++) {
-            addSlotToContainer(new Slot(player.inventory, sx, startX + sx * 18, startY + 58));
+            addSlotToContainer(new Slot(player.getInventory(), sx, startX + sx * 18, startY + 58));
         }
     }
 
@@ -95,13 +95,13 @@ public abstract class ContainerBC_Neptune extends Container {
 
     @Nullable
     @Override
-    public ItemStack slotClick(int slotId, int dragType, ClickType clickType, EntityPlayer player) {
+    public ItemStack slotClick(int slotId, int dragType, ContainerInput clickType, Player player) {
         Slot slot = slotId < 0 ? null : this.inventorySlots.get(slotId);
         if (slot == null) {
             return super.slotClick(slotId, dragType, clickType, player);
         }
 
-        ItemStack playerStack = player.inventory.getItemStack();
+        ItemStack playerStack = player.getInventory().getItemStack();
         if (slot instanceof IPhantomSlot) {
             IPhantomSlot phantom = (IPhantomSlot) slot;
             if (playerStack.isEmpty()) {
@@ -123,12 +123,12 @@ public abstract class ContainerBC_Neptune extends Container {
     }
 
     @Override
-    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
+    public ItemStack transferStackInSlot(Player playerIn, int index) {
         ItemStack itemstack = ItemStack.EMPTY;
         Slot slot = this.inventorySlots.get(index);
         Slot firstSlot = this.inventorySlots.get(0);
         int playerInventorySize = 36;
-        boolean playerInventoryFirst = firstSlot.inventory instanceof InventoryPlayer;
+        boolean playerInventoryFirst = firstSlot.inventory instanceof Inventory;
 
         if (slot != null && slot.getHasStack()) {
             ItemStack itemstack1 = slot.getStack();
@@ -180,7 +180,7 @@ public abstract class ContainerBC_Neptune extends Container {
                 BCLog.logger.warn("[lib.container] Received an invalid widget sending request!");
                 BCLog.logger
                     .warn("[lib.container]   Widget {id = " + widgetId + ", class = " + widget.getClass() + "}");
-                BCLog.logger.warn("[lib.container]   Container {class = " + getClass() + "}");
+                BCLog.logger.warn("[lib.container]   AbstractContainerMenu {class = " + getClass() + "}");
                 BCLog.logger.warn(
                     "[lib.container]   Player {class = " + player.getClass() + ", name = " + player.getName() + "}");
             }
@@ -193,42 +193,42 @@ public abstract class ContainerBC_Neptune extends Container {
     }
 
     public final void sendMessage(int id) {
-        Side side = player.world.isRemote ? Side.CLIENT : Side.SERVER;
+        LogicalSide side = player.level().isClientSide() ? LogicalSide.CLIENT : LogicalSide.SERVER;
         sendMessage(id, (buffer) -> writeMessage(id, buffer, side));
     }
 
     public final void sendMessage(int id, IPayloadWriter writer) {
         PacketBufferBC payload = PacketBufferBC.write(writer);
         MessageContainer message = new MessageContainer(windowId, id, payload);
-        if (player.world.isRemote) {
+        if (player.level().isClientSide()) {
             MessageManager.sendToServer(message);
         } else {
-            MessageManager.sendTo(message, (EntityPlayerMP) player);
+            MessageManager.sendTo(message, (ServerPlayer) player);
         }
     }
 
-    public void writeMessage(int id, PacketBufferBC buffer, Side side) {}
+    public void writeMessage(int id, PacketBufferBC buffer, LogicalSide side) {}
 
-    public void readMessage(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+    public void readMessage(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         if (id == NET_WIDGET) {
             int widgetId = buffer.readUnsignedShort();
             if (widgetId < 0 || widgetId >= widgets.size()) {
                 if (DEBUG) {
                     String string = "Received unknown or invalid widget ID " + widgetId + " on side " + side;
-                    if (side == Side.SERVER) {
+                    if (side == LogicalSide.SERVER) {
                         string += " (for player " + player.getName() + ")";
                     }
                     BCLog.logger.warn(string);
                 }
             } else {
                 Widget_Neptune<?> widget = widgets.get(widgetId);
-                if (side == Side.SERVER) {
+                if (side == LogicalSide.SERVER) {
                     widget.handleWidgetDataServer(ctx, buffer);
-                } else if (side == Side.CLIENT) {
+                } else if (side == LogicalSide.CLIENT) {
                     widget.handleWidgetDataClient(ctx, buffer);
                 }
             }
-        } else if (side == Side.SERVER) {
+        } else if (side == LogicalSide.SERVER) {
             if (id == NET_SET_PHANTOM) {
                 readSingleSetPhantom(buffer, ctx);
             } else if (id == NET_SET_PHANTOM_MULTI) {
@@ -240,7 +240,7 @@ public abstract class ContainerBC_Neptune extends Container {
         }
     }
 
-    private void readSingleSetPhantom(PacketBufferBC buffer, MessageContext ctx) throws IOException {
+    private void readSingleSetPhantom(PacketBufferBC buffer, IPayloadContext ctx) throws IOException {
         int idx = buffer.readVarInt();
         ItemStack stack = buffer.readItemStack();
         if (idx >= 0 && idx < inventorySlots.size()) {
@@ -254,7 +254,7 @@ public abstract class ContainerBC_Neptune extends Container {
                     // log rather than throw an exception because of bugged/naughty clients
                     String s2 = "[lib.container] Received an illegal phantom slot setting request! ";
                     s2 += "[The item handler disallowed the replacement] (Client = ";
-                    s2 += ctx.getServerHandler().player.getName() + ", slot_index = " + idx;
+                    s2 += ctx.player().getName() + ", slot_index = " + idx;
                     s2 += ", stack = " + stack + ")";
                     BCLog.logger.warn(s2);
                 }
@@ -265,7 +265,7 @@ public abstract class ContainerBC_Neptune extends Container {
         // log rather than throw an exception because of bugged/naughty clients
         String s2 = "[lib.container] Received an illegal phantom slot setting request! ";
         s2 += "[Didn't find a phantom slot for the given index] (Client = ";
-        s2 += ctx.getServerHandler().player.getName() + ", slot_index = " + idx;
+        s2 += ctx.player().getName() + ", slot_index = " + idx;
         s2 += ", stack = " + stack + ")";
         BCLog.logger.warn(s2);
     }

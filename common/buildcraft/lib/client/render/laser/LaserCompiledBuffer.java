@@ -9,13 +9,14 @@ package buildcraft.lib.client.render.laser;
 import gnu.trove.list.array.TDoubleArrayList;
 import gnu.trove.list.array.TIntArrayList;
 
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class LaserCompiledBuffer {
     private static final int DOUBLE_STRIDE = 5;
     private static final int INT_STRIDE = 2;
@@ -29,7 +30,7 @@ public class LaserCompiledBuffer {
         this.ia = ia;
     }
 
-    /** Assumes the buffer uses {@link DefaultVertexFormats#BLOCK} */
+    /** Assumes the buffer uses {@link DefaultVertexFormat#BLOCK} */
     public void render(BufferBuilder buffer) {
         for (int i = 0; i < vertices; i++) {
             // POSITION_3F

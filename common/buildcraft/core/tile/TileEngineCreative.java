@@ -8,15 +8,17 @@ import java.io.IOException;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.util.text.TextComponentTranslation;
 
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
 
 import buildcraft.api.enums.EnumPowerStage;
 import buildcraft.api.mj.IMjConnector;
@@ -29,13 +31,17 @@ import buildcraft.lib.misc.MathUtil;
 import buildcraft.lib.net.PacketBufferBC;
 
 public class TileEngineCreative extends TileEngineBase_BC8 {
+    public TileEngineCreative(BlockPos pos, BlockState state) {
+        super(pos, state);
+    }
+
     public static final long[] outputs = { 1, 2, 4, 8, 16, 32, 64, 128, 256 };
     public int currentOutputIndex = 0;
 
     @Override
-    public void writePayload(int id, PacketBufferBC buffer, Side side) {
+    public void writePayload(int id, PacketBufferBC buffer, LogicalSide side) {
         super.writePayload(id, buffer, side);
-        if (side == Side.SERVER) {
+        if (side == LogicalSide.SERVER) {
             if (id == NET_RENDER_DATA) {
                 buffer.writeByte(currentOutputIndex);
             }
@@ -43,9 +49,9 @@ public class TileEngineCreative extends TileEngineBase_BC8 {
     }
 
     @Override
-    public void readPayload(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+    public void readPayload(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         super.readPayload(id, buffer, side, ctx);
-        if (side == Side.CLIENT) {
+        if (side == LogicalSide.CLIENT) {
             if (id == NET_RENDER_DATA) {
                 currentOutputIndex = buffer.readUnsignedByte() % outputs.length;
             }
@@ -115,11 +121,11 @@ public class TileEngineCreative extends TileEngineBase_BC8 {
     }
 
     @Override
-    public boolean onActivated(EntityPlayer player, EnumHand hand, EnumFacing side, float hitX, float hitY,
+    public boolean onActivated(Player player, InteractionHand hand, Direction side, float hitX, float hitY,
         float hitZ) {
-        ItemStack stack = player.getHeldItem(hand);
+        ItemStack stack = player.getItemInHand(hand);
         if (!stack.isEmpty() && stack.getItem() instanceof IToolWrench) {
-            if (!world.isRemote) {
+            if (!world.isClientSide()) {
                 currentOutputIndex++;
                 currentOutputIndex %= outputs.length;
                 player.sendStatusMessage(
@@ -132,16 +138,16 @@ public class TileEngineCreative extends TileEngineBase_BC8 {
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public CompoundTag writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
-        nbt.setInteger("currentOutputIndex", currentOutputIndex);
+        nbt.putInt("currentOutputIndex", currentOutputIndex);
         return nbt;
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         super.readFromNBT(nbt);
-        currentOutputIndex = nbt.getInteger("currentOutputIndex");
+        currentOutputIndex = nbt.getIntOr("currentOutputIndex", 0);
         currentOutputIndex = MathUtil.clamp(currentOutputIndex, 0, outputs.length);
     }
 }

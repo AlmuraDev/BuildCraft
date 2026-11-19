@@ -12,11 +12,11 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.WorldClient;
-import net.minecraft.entity.Entity;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.HitResult;
 
 import buildcraft.api.tiles.IDebuggable;
 
@@ -27,29 +27,29 @@ public class ClientDebuggables {
     public static final List<String> SERVER_RIGHT = new ArrayList<>();
 
     @Nullable
-    public static IDebuggable getDebuggableObject(RayTraceResult mouseOver) {
-        Minecraft mc = Minecraft.getMinecraft();
-        if (mc.gameSettings.reducedDebugInfo ||
+    public static IDebuggable getDebuggableObject(HitResult mouseOver) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.options.reducedDebugInfo ||
             mc.player.hasReducedDebug() ||
-            !mc.gameSettings.showDebugInfo ||
+            !mc.options.showDebugInfo ||
             !ItemDebugger.isShowDebugInfo(mc.player)) {
             return null;
         }
         if (mouseOver == null) {
             return null;
         }
-        RayTraceResult.Type type = mouseOver.typeOfHit;
-        WorldClient world = mc.world;
+        HitResult.Type type = mouseOver.typeOfHit;
+        ClientLevel world = mc.level;
         if (world == null) {
             return null;
         }
-        if (type == RayTraceResult.Type.BLOCK) {
+        if (type == HitResult.Type.BLOCK) {
             BlockPos pos = mouseOver.getBlockPos();
-            TileEntity tile = world.getTileEntity(pos);
+            BlockEntity tile = world.getBlockEntity(pos);
             if (tile instanceof IDebuggable) {
                 return (IDebuggable) tile;
             }
-        } else if (type == RayTraceResult.Type.ENTITY) {
+        } else if (type == HitResult.Type.ENTITY) {
             Entity entity = mouseOver.entityHit;
             if (entity instanceof IDebuggable) {
                 return (IDebuggable) entity;

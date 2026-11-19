@@ -1,94 +1,49 @@
-apply plugin: 'java'
-apply plugin: 'maven'
-apply plugin: 'maven-publish'
-apply plugin: 'eclipse'
-apply plugin: 'idea'
+// The expression engine is plain Java. The main build compiles its sources straight into the BuildCraft jar; this project only
+// runs the generator that writes src/autogen/java (not in git) and the engine's own tests.
+plugins {
+    id 'java'
+}
 
 repositories {
     mavenCentral()
 }
 
-dependencies {
-    compile "com.google.code.findbugs:jsr305:3.0.1"
-    testCompile "junit:junit:4.12"
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version)
 }
-
-group = "com.mod-buildcraft"
-archivesBaseName = "buildcraft-libexpression"
-
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
 
 sourceSets {
     main {
         java {
-            srcDir "src/main/java"
-            srcDir "src/autogen/java"
-        }
-        resources {
-            srcDir "src/main/resources"
+            srcDir 'src/autogen/java'
         }
     }
-    test {
-        java {
-            srcDir "src/test/java"
-        }
-    }
-    generator {
-        java {
-            srcDir "src/generator/java"
-        }
-        resources {
-            srcDir "src/generator/resources"
-        }
+    // src/generator/java and src/generator/resources (the default dirs)
+    generator {}
+}
+
+dependencies {
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    generatorImplementation 'com.google.code.findbugs:jsr305:3.0.2'
+    testImplementation 'junit:junit:4.13.2'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+def autogenDir = file('src/autogen/java')
+
+tasks.register('generateSources', JavaExec) {
+    classpath = sourceSets.generator.runtimeClasspath
+    mainClass = 'buildcraft.meta.generate.AutoGenerator'
+    args '-out', autogenDir.absolutePath, '-run', '-quiet'
+    workingDir = projectDir
+    inputs.files(sourceSets.generator.allSource)
+    outputs.dir(autogenDir)
+    doFirst {
+        delete new File(autogenDir, 'buildcraft')
     }
 }
 
-task srcJar (type:Jar) {
-    classifier = "sources"
-    from sourceSets.main.allSource
-}
-
-build.dependsOn(srcJar)
-
-task removeOldAutoGen {
-    doLast {
-        delete "src/autogen/java/buildcraft"
-    }
-}
-
-task generateSources(type: JavaExec, dependsOn: removeOldAutoGen) {
-    classpath sourceSets.generator.runtimeClasspath
-    main = "buildcraft.meta.generate.AutoGenerator"
-    args '-out', 'src/autogen/java', '-run', '-quiet'
-}
-
-eclipseClasspath.dependsOn generateSources
-ideaModule.dependsOn generateSources
-compileJava.dependsOn generateSources
-
-publishing {
-    repositories {
-        maven {
-            url System.getenv("MAVEN_DIR") ?: "build/maven"
-        }
-    }
-    publications {
-        pub_main(MavenPublication) {
-            groupId "com.mod-buildcraft"
-            artifactId "buildcraft-libexpression"
-            version project.version
-
-            artifact jar
-        }
-        pub_mainSrcJar(MavenPublication) {
-            groupId "com.mod-buildcraft"
-            artifactId "buildcraft-libexpression"
-            version project.version
-
-            artifact srcJar
-        }
-    }
-}
-
-
+tasks.named('compileJava') { dependsOn 'generateSources' }

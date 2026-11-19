@@ -9,8 +9,8 @@ package buildcraft.lib.net.cache;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import buildcraft.lib.net.IMessage;
+import buildcraft.lib.net.IMessageHandler;
 
 import buildcraft.lib.net.PacketBufferBC;
 

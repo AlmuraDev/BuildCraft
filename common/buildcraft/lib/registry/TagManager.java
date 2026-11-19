@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import net.minecraft.item.Item;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.resources.Identifier;
 
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
@@ -30,7 +30,7 @@ public class TagManager {
 
     public static Item getItem(String id) {
         String regTag = getTag(id, EnumTagType.REGISTRY_NAME);
-        ResourceLocation loc = new ResourceLocation(regTag);
+        Identifier loc = Identifier.parse(regTag);
         if (ForgeRegistries.ITEMS.containsKey(loc)) {
             return ForgeRegistries.ITEMS.getValue(loc);
         } else {

@@ -10,10 +10,10 @@ import java.util.Iterator;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumFacing.AxisDirection;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Direction.AxisDirection;
+import net.minecraft.core.BlockPos;
 
 import buildcraft.api.core.IBox;
 
@@ -49,28 +49,28 @@ public class BoxIterator implements Iterator<BlockPos> {
         this.current = current == null ? getStart() : current;
     }
 
-    public static BoxIterator readFromNbt(NBTTagCompound nbt) {
-        BlockPos min = NBTUtilBC.readBlockPos(nbt.getTag("min"));
-        BlockPos max = NBTUtilBC.readBlockPos(nbt.getTag("max"));
-        boolean invert = nbt.getBoolean("invert");
+    public static BoxIterator readFromNbt(CompoundTag nbt) {
+        BlockPos min = NBTUtilBC.readBlockPos(nbt.get("min"));
+        BlockPos max = NBTUtilBC.readBlockPos(nbt.get("max"));
+        boolean invert = nbt.getBooleanOr("invert", false);
         boolean repeat = false;
-        AxisOrder order = AxisOrder.readNbt(nbt.getCompoundTag("order"));
-        BlockPos current = NBTUtilBC.readBlockPos(nbt.getTag("current"));
+        AxisOrder order = AxisOrder.readNbt(nbt.getCompoundOrEmpty("order"));
+        BlockPos current = NBTUtilBC.readBlockPos(nbt.get("current"));
         if (min == null || max == null || order == null) {
             return null;
         }
         return new BoxIterator(min, max, invert, repeat, order, current);
     }
 
-    public NBTTagCompound writeToNbt() {
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setTag("min", NBTUtilBC.writeBlockPos(min));
-        nbt.setTag("max", NBTUtilBC.writeBlockPos(max));
-        nbt.setBoolean("invert", invert);
+    public CompoundTag writeToNbt() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.put("min", NBTUtilBC.writeBlockPos(min));
+        nbt.put("max", NBTUtilBC.writeBlockPos(max));
+        nbt.putBoolean("invert", invert);
         // repeat
-        nbt.setTag("order", order.writeNBT());
+        nbt.put("order", order.writeNBT());
         if (current != null) {
-            nbt.setTag("current", NBTUtilBC.writeBlockPos(current));
+            nbt.put("current", NBTUtilBC.writeBlockPos(current));
         }
         return nbt;
     }
@@ -82,7 +82,7 @@ public class BoxIterator implements Iterator<BlockPos> {
         return replace(pos, order.third);
     }
 
-    private BlockPos replace(BlockPos toReplace, EnumFacing facing) {
+    private BlockPos replace(BlockPos toReplace, Direction facing) {
         BlockPos with = facing.getAxisDirection() == AxisDirection.POSITIVE ? min : max;
         return VecUtil.replaceValue(toReplace, facing.getAxis(), VecUtil.getValue(with, facing.getAxis()));
     }
@@ -156,13 +156,13 @@ public class BoxIterator implements Iterator<BlockPos> {
         return getCurrent();
     }
 
-    private static BlockPos increment(BlockPos pos, EnumFacing facing) {
-        int diff = facing.getAxisDirection().getOffset();
+    private static BlockPos increment(BlockPos pos, Direction facing) {
+        int diff = facing.getAxisDirection().getStep();
         int value = VecUtil.getValue(pos, facing.getAxis()) + diff;
         return VecUtil.replaceValue(pos, facing.getAxis(), value);
     }
 
-    private boolean shouldReset(EnumFacing facing) {
+    private boolean shouldReset(Direction facing) {
         int lstReturned = VecUtil.getValue(current, facing.getAxis());
         BlockPos goingTo = facing.getAxisDirection() == AxisDirection.POSITIVE ? max : min;
         int to = VecUtil.getValue(goingTo, facing.getAxis());
@@ -218,10 +218,10 @@ public class BoxIterator implements Iterator<BlockPos> {
         return compare(pos, order.first);
     }
 
-    private int compare(BlockPos pos, EnumFacing direction) {
+    private int compare(BlockPos pos, Direction direction) {
         int argVal = VecUtil.getValue(pos, direction.getAxis());
         int currentVal = VecUtil.getValue(current, direction.getAxis());
-        return (currentVal - argVal) * direction.getAxisDirection().getOffset();
+        return (currentVal - argVal) * direction.getAxisDirection().getStep();
     }
 
     /** Moves this iterator so that {@link #advance()} will return the given block position next.
@@ -232,9 +232,9 @@ public class BoxIterator implements Iterator<BlockPos> {
             throw new IllegalArgumentException("This " + this + " doesn't contain " + pos + "!");
         }
 
-        EnumFacing a = order.first;
-        EnumFacing b = order.second;
-        EnumFacing c = order.third;
+        Direction a = order.first;
+        Direction b = order.second;
+        Direction c = order.third;
 
         int valueA = VecUtil.getValue(pos, a.getAxis());
         int valueB = VecUtil.getValue(pos, b.getAxis());
@@ -246,18 +246,18 @@ public class BoxIterator implements Iterator<BlockPos> {
 
         if (!invert) {
             if (valueA != boundA) {
-                current = pos.offset(a.getOpposite());
+                current = pos.relative(a.getOpposite());
                 return;
             }
 
             if (valueB != boundB) {
-                current = pos.offset(b.getOpposite());
+                current = pos.relative(b.getOpposite());
                 current = VecUtil.replaceValue(current, a.getAxis(), VecUtil.getValue(min, max, a));
                 return;
             }
 
             if (valueC != boundC) {
-                current = pos.offset(c.getOpposite());
+                current = pos.relative(c.getOpposite());
                 current = VecUtil.replaceValue(current, a.getAxis(), VecUtil.getValue(min, max, a));
                 current = VecUtil.replaceValue(current, b.getAxis(), VecUtil.getValue(min, max, b));
                 return;
@@ -292,12 +292,12 @@ public class BoxIterator implements Iterator<BlockPos> {
         boundC = VecUtil.getValue(max, min, c);
 
         if (valueA != boundA) {
-            current = pos.offset(order.first.getOpposite());
+            current = pos.relative(order.first.getOpposite());
         } else if (valueB != boundB) {
-            current = pos.offset(order.second.getOpposite());
+            current = pos.relative(order.second.getOpposite());
             order = order.invertFirst();
         } else if (valueC != boundC) {
-            current = pos.offset(order.third.getOpposite());
+            current = pos.relative(order.third.getOpposite());
             order = order.invertFirst();
             order = order.invertSecond();
         } else {

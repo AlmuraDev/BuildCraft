@@ -17,16 +17,16 @@ import java.util.function.Supplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.util.EnumFacing;
+import net.minecraft.core.Direction;
 
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.neoforged.neoforge.capabilities.BlockCapability;
+import buildcraft.api.core.ICapabilityProvider;
 
 import buildcraft.api.core.EnumPipePart;
 
 /** Provides a simple way of mapping {@link Capability}'s to instances. Also allows for additional providers */
 public class CapabilityHelper implements ICapabilityProvider {
-    private final Map<EnumPipePart, Map<Capability<?>, Supplier<?>>> caps = new EnumMap<>(EnumPipePart.class);
+    private final Map<EnumPipePart, Map<BlockCapability<?, Direction>, Supplier<?>>> caps = new EnumMap<>(EnumPipePart.class);
     private final List<ICapabilityProvider> additional = new ArrayList<>();
 
     public CapabilityHelper() {
@@ -35,16 +35,16 @@ public class CapabilityHelper implements ICapabilityProvider {
         }
     }
 
-    private Map<Capability<?>, Supplier<?>> getCapMap(EnumFacing facing) {
+    private Map<BlockCapability<?, Direction>, Supplier<?>> getCapMap(Direction facing) {
         return caps.get(EnumPipePart.fromFacing(facing));
     }
 
-    public <T> void addCapabilityInstance(@Nullable Capability<T> cap, T instance, EnumPipePart... parts) {
+    public <T> void addCapabilityInstance(@Nullable BlockCapability<T, Direction> cap, T instance, EnumPipePart... parts) {
         Supplier<T> supplier = () -> instance;
         addCapability(cap, supplier, parts);
     }
 
-    public <T> void addCapability(@Nullable Capability<T> cap, Supplier<T> getter, EnumPipePart... parts) {
+    public <T> void addCapability(@Nullable BlockCapability<T, Direction> cap, Supplier<T> getter, EnumPipePart... parts) {
         if (cap == null) {
             return;
         }
@@ -53,7 +53,7 @@ public class CapabilityHelper implements ICapabilityProvider {
         }
     }
 
-    public <T> void addCapability(@Nullable Capability<T> cap, Function<EnumFacing, T> getter, EnumPipePart... parts) {
+    public <T> void addCapability(@Nullable BlockCapability<T, Direction> cap, Function<Direction, T> getter, EnumPipePart... parts) {
         if (cap == null) {
             return;
         }
@@ -70,14 +70,14 @@ public class CapabilityHelper implements ICapabilityProvider {
     }
 
     @Override
-    public boolean hasCapability(@Nonnull Capability<?> capability, EnumFacing facing) {
+    public boolean hasCapability(@Nonnull BlockCapability<?, Direction> capability, Direction facing) {
         return getCapability(capability, facing) != null;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T getCapability(@Nonnull Capability<T> capability, EnumFacing facing) {
-        Map<Capability<?>, Supplier<?>> capMap = getCapMap(facing);
+    public <T> T getCapability(@Nonnull BlockCapability<T, Direction> capability, Direction facing) {
+        Map<BlockCapability<?, Direction>, Supplier<?>> capMap = getCapMap(facing);
         Supplier<?> supplier = capMap.get(capability);
         if (supplier != null) {
             return (T) supplier.get();

@@ -8,15 +8,17 @@ package buildcraft.core.statements;
 
 import java.util.Locale;
 
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
 
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidTankProperties;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.transfer.fluid.FluidUtil;
+import buildcraft.lib.misc.FluidUtilBC;
+import buildcraft.api.transfer.IFluidHandler;
+import buildcraft.api.transfer.IFluidTankProperties;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.statements.IStatement;
 import buildcraft.api.statements.IStatementContainer;
@@ -43,7 +45,7 @@ public class TriggerFluidContainer extends BCStatement implements ITriggerExtern
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public SpriteHolder getSprite() {
         return BCCoreSprites.TRIGGER_FLUID.get(state);
     }
@@ -59,7 +61,7 @@ public class TriggerFluidContainer extends BCStatement implements ITriggerExtern
     }
 
     @Override
-    public boolean isTriggerActive(TileEntity tile, EnumFacing side, IStatementContainer statementContainer, IStatementParameter[] parameters) {
+    public boolean isTriggerActive(BlockEntity tile, Direction side, IStatementContainer statementContainer, IStatementParameter[] parameters) {
         IFluidHandler handler = tile.getCapability(CapUtil.CAP_FLUIDS, side.getOpposite());
 
         if (handler != null) {
@@ -70,7 +72,7 @@ public class TriggerFluidContainer extends BCStatement implements ITriggerExtern
             }
 
             if (searchedFluid != null) {
-                searchedFluid.amount = 1;
+                searchedFluid.setAmount(1);
             }
 
             IFluidTankProperties[] liquids = handler.getTankProperties();
@@ -81,12 +83,12 @@ public class TriggerFluidContainer extends BCStatement implements ITriggerExtern
             switch (state) {
                 case EMPTY:
                     FluidStack drained = handler.drain(1, false);
-                    return drained == null || drained.amount <= 0;
+                    return drained == null || drained.getAmount() <= 0;
                 case CONTAINS:
                     for (IFluidTankProperties c : liquids) {
                         if (c == null) continue;
                         FluidStack fluid = c.getContents();
-                        if (fluid != null && fluid.amount > 0 && (searchedFluid == null || searchedFluid.isFluidEqual(fluid))) {
+                        if (fluid != null && fluid.getAmount() > 0 && (searchedFluid == null || FluidUtilBC.isFluidEqual(searchedFluid, fluid))) {
                             return true;
                         }
                     }
@@ -96,7 +98,7 @@ public class TriggerFluidContainer extends BCStatement implements ITriggerExtern
                         for (IFluidTankProperties c : liquids) {
                             if (c == null) continue;
                             FluidStack fluid = c.getContents();
-                            if ((fluid == null || fluid.amount < c.getCapacity())) {
+                            if ((fluid == null || fluid.getAmount() < c.getCapacity())) {
                                 return true;
                             }
                         }
@@ -108,7 +110,7 @@ public class TriggerFluidContainer extends BCStatement implements ITriggerExtern
                         for (IFluidTankProperties c : liquids) {
                             if (c == null) continue;
                             FluidStack fluid = c.getContents();
-                            if ((fluid == null || fluid.amount < c.getCapacity())) {
+                            if ((fluid == null || fluid.getAmount() < c.getCapacity())) {
                                 return false;
                             }
                         }

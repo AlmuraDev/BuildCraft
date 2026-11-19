@@ -11,11 +11,12 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.NonNullList;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraftforge.oredict.OreDictionary;
 
 import buildcraft.api.lists.ListMatchHandler;
@@ -96,7 +97,7 @@ public class ListMatchHandlerOreDictionary extends ListMatchHandler {
         return s;
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     @Override
     public NonNullList<ItemStack> getClientExamples(Type type, @Nonnull ItemStack stack) {
         int[] oreIds = OreDictionary.getOreIDs(stack);
@@ -141,7 +142,7 @@ public class ListMatchHandlerOreDictionary extends ListMatchHandler {
         NonNullList<ItemStack> wildcard = NonNullList.create();
 
         for (ItemStack is : stacks) {
-            if (is != null && is.getItemDamage() == OreDictionary.WILDCARD_VALUE && is.getHasSubtypes()) {
+            if (is != null && is.getDamageValue() == OreDictionary.WILDCARD_VALUE && is.getHasSubtypes()) {
                 wildcard.add(is);
             }
         }

@@ -6,8 +6,8 @@
 
 package buildcraft.lib.fluid;
 
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidTankProperties;
+import net.neoforged.neoforge.fluids.FluidStack;
+import buildcraft.api.transfer.IFluidTankProperties;
 
 public class TankProperties implements IFluidTankProperties {
     private final Tank tank;

@@ -7,12 +7,12 @@ import java.util.Set;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonObject;
 
-import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.block.model.ModelRotation;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ResourceLocation;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
 
 import net.minecraftforge.client.model.ItemLayerModel;
 
@@ -64,15 +64,15 @@ public class VariablePartTextureExpand extends JsonVariableModelPart {
 
             VariableFaceData data = faceUv.evaluate(spriteLookup);
             // TODO: Use the UV data! (only take part of the texture)
-            ItemLayerModel model = new ItemLayerModel(ImmutableList.of(new ResourceLocation(".")));
-            IBakedModel baked = model.bake(ModelRotation.X0_Y0, DefaultVertexFormats.ITEM, (loc) -> data.sprite);
+            ItemLayerModel model = new ItemLayerModel(ImmutableList.of(Identifier.parse(".")));
+            IBakedModel baked = model.bake(ModelRotation.X0_Y0, DefaultVertexFormat.ITEM, (loc) -> data.sprite);
             List<BakedQuad> quads = baked.getQuads(null, null, 0);
             for (BakedQuad q : quads) {
                 MutableQuad mut = new MutableQuad();
                 mut.fromBakedItem(q);
                 mut.translated(0, 0, -(7.5 / 16.0));
                 mut.scaled(1, 1, 16);
-                mut.rotate(EnumFacing.SOUTH, evaluateFace(this.face), 0.5f, 0.5f, 0.5f);
+                mut.rotate(Direction.SOUTH, evaluateFace(this.face), 0.5f, 0.5f, 0.5f);
                 mut.scalef(size[0], size[1], size[2]);
                 mut.translated(f[0], f[1], f[2]);
                 mut.setCalculatedNormal();
@@ -85,14 +85,14 @@ public class VariablePartTextureExpand extends JsonVariableModelPart {
         }
     }
 
-    private EnumFacing evaluateFace(INodeObject<String> node) {
+    private Direction evaluateFace(INodeObject<String> node) {
         String s = node.evaluate();
-        EnumFacing side = EnumFacing.byName(s);
+        Direction side = Direction.byName(s);
         if (side == null) {
             if (invalidFaceStrings.add(s)) {
                 BCLog.logger.warn("Invalid facing '" + s + "' from expression '" + node + "'");
             }
-            return EnumFacing.UP;
+            return Direction.UP;
         } else {
             return side;
         }

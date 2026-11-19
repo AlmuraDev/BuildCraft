@@ -2,7 +2,7 @@ package buildcraft.lib.statement;
 
 import java.io.IOException;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 
 import buildcraft.api.core.InvalidInputDataException;
 import buildcraft.api.statements.IStatementParameter;
@@ -25,8 +25,8 @@ public class StatementTypeParam extends StatementType<IStatementParameter> {
     }
 
     @Override
-    public IStatementParameter readFromNbt(NBTTagCompound nbt) {
-        String kind = nbt.getString("kind");
+    public IStatementParameter readFromNbt(CompoundTag nbt) {
+        String kind = nbt.getStringOr("kind", "");
         IParameterReader reader = StatementManager.getParameterReader(kind);
         if (reader == null) {
             return null;
@@ -36,11 +36,11 @@ public class StatementTypeParam extends StatementType<IStatementParameter> {
     }
 
     @Override
-    public NBTTagCompound writeToNbt(IStatementParameter slot) {
-        NBTTagCompound nbt = new NBTTagCompound();
+    public CompoundTag writeToNbt(IStatementParameter slot) {
+        CompoundTag nbt = new CompoundTag();
         if (slot != null) {
             slot.writeToNbt(nbt);
-            nbt.setString("kind", slot.getUniqueTag());
+            nbt.putString("kind", slot.getUniqueTag());
         }
         return nbt;
     }
@@ -48,7 +48,7 @@ public class StatementTypeParam extends StatementType<IStatementParameter> {
     @Override
     public IStatementParameter readFromBuffer(PacketBufferBC buffer) throws IOException {
         if (buffer.readBoolean()) {
-            String tag = buffer.readString();
+            String tag = buffer.readUtf();
             IParamReaderBuf reader = StatementManager.paramsBuf.get(tag);
             if (reader == null) {
                 throw new InvalidInputDataException("Unknown paramater type " + tag);
@@ -65,7 +65,7 @@ public class StatementTypeParam extends StatementType<IStatementParameter> {
             buffer.writeBoolean(false);
         } else {
             buffer.writeBoolean(true);
-            buffer.writeString(slot.getUniqueTag());
+            buffer.writeUtf(slot.getUniqueTag());
             slot.writeToBuf(buffer);
         }
     }

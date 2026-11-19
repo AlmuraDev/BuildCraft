@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.common.config.Property;
+import net.neoforged.neoforge.common.NeoForge;
+import buildcraft.lib.config.Configuration;
+import buildcraft.lib.config.Property;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent;
-import net.minecraftforge.fml.common.Loader;
+import net.neoforged.fml.ModList;
 import net.minecraftforge.fml.common.LoaderState;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 
 import buildcraft.api.BCModules;
 import buildcraft.api.mj.MjAPI;
@@ -258,7 +258,7 @@ public class BCCoreConfig {
         reloadConfig(game);
         addReloadListener(BCCoreConfig::reloadConfig);
 
-        MinecraftForge.EVENT_BUS.register(BCCoreConfig.class);
+        NeoForge.EVENT_BUS.register(BCCoreConfig.class);
     }
 
     public static void addReloadListener(Consumer<EnumRestartRequirement> listener) {
@@ -269,7 +269,7 @@ public class BCCoreConfig {
     public static void onConfigChange(OnConfigChangedEvent cce) {
         if (BCModules.isBcMod(cce.getModID())) {
             EnumRestartRequirement req = EnumRestartRequirement.NONE;
-            if (Loader.instance().isInState(LoaderState.AVAILABLE)) {
+            if (ModList.get().isInState(LoaderState.AVAILABLE)) {
                 // The loaders state will be LoaderState.SERVER_STARTED when we are in a world
                 req = EnumRestartRequirement.WORLD;
             }

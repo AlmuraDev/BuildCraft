@@ -10,8 +10,9 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
+import buildcraft.lib.misc.FluidUtilBC;
 import buildcraft.api.fuels.IFuel;
 import buildcraft.api.fuels.IFuelManager;
 
@@ -47,7 +48,7 @@ public enum FuelRegistry implements IFuelManager {
             return null;
         }
         for (IFuel fuel : fuels) {
-            if (fuel.getFluid().isFluidEqual(fluid)) {
+            if (FluidUtilBC.isFluidEqual(fuel.getFluid(), fluid)) {
                 return fuel;
             }
         }

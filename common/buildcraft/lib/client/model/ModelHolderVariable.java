@@ -17,7 +17,7 @@ import com.google.gson.JsonParseException;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.BCLog;
 
@@ -52,7 +52,7 @@ public class ModelHolderVariable extends ModelHolder {
     }
 
     @Override
-    protected void onTextureStitchPre(Set<ResourceLocation> toRegisterSprites) {
+    protected void onTextureStitchPre(Set<Identifier> toRegisterSprites) {
         rawModel = null;
         failReason = null;
 
@@ -91,10 +91,10 @@ public class ModelHolderVariable extends ModelHolder {
         if (lookup.startsWith("~")) {
             sprite = customSprites.get(lookup.substring(1));
             if (sprite == null) {
-                sprite = Minecraft.getMinecraft().getTextureMapBlocks().getMissingSprite();
+                sprite = Minecraft.getInstance().getTextureMapBlocks().getMissingSprite();
             }
         } else {
-            sprite = Minecraft.getMinecraft().getTextureMapBlocks().getAtlasSprite(lookup);
+            sprite = Minecraft.getInstance().getTextureMapBlocks().getAtlasSprite(lookup);
         }
         TexturedFace face = new TexturedFace();
         face.sprite = sprite;

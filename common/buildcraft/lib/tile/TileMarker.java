@@ -8,7 +8,9 @@ package buildcraft.lib.tile;
 
 import java.util.List;
 
-import net.minecraft.util.EnumFacing;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.Direction;
 
 import buildcraft.api.tiles.IDebuggable;
 
@@ -17,6 +19,10 @@ import buildcraft.lib.marker.MarkerConnection;
 import buildcraft.lib.marker.MarkerSubCache;
 
 public abstract class TileMarker<C extends MarkerConnection<C>> extends TileBC_Neptune implements IDebuggable {
+    public TileMarker(BlockPos pos, BlockState state) {
+        super(pos, state);
+    }
+
     public abstract MarkerCache<? extends MarkerSubCache<C>> getCache();
 
     public MarkerSubCache<C> getLocalCache() {
@@ -38,14 +44,14 @@ public abstract class TileMarker<C extends MarkerConnection<C>> extends TileBC_N
     }
 
     @Override
-    public void onChunkUnload() {
-        super.onChunkUnload();
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
         getLocalCache().unloadMarker(getPos());
     }
 
     @Override
-    public void invalidate() {
-        super.invalidate();
+    public void setRemoved() {
+        super.setRemoved();
         // getLocalCache().removeMarker(getPos());
     }
 
@@ -63,7 +69,7 @@ public abstract class TileMarker<C extends MarkerConnection<C>> extends TileBC_N
     }
 
     @Override
-    public void getDebugInfo(List<String> left, List<String> right, EnumFacing side) {
+    public void getDebugInfo(List<String> left, List<String> right, Direction side) {
         C current = getCurrentConnection();
         MarkerSubCache<C> cache = getLocalCache();
         left.add("Exists = " + (cache.getMarker(getPos()) == this));

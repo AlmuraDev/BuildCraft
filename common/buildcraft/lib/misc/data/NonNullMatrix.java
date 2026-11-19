@@ -10,7 +10,7 @@ import java.util.AbstractList;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.util.NonNullList;
+import net.minecraft.core.NonNullList;
 
 /** Defines a non-null 2 dimensional matrix, where the width and height are known at creation time. Note that this
  * matrix cannot be resized. */

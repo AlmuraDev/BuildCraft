@@ -18,18 +18,18 @@ import com.google.gson.JsonSyntaxException;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.IResource;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class ResourceLoaderContext {
-    private final Set<ResourceLocation> loaded = new HashSet<>();
-    private final Deque<ResourceLocation> loadingStack = new ArrayDeque<>();
+    private final Set<Identifier> loaded = new HashSet<>();
+    private final Deque<Identifier> loadingStack = new ArrayDeque<>();
 
-    public InputStreamReader startLoading(ResourceLocation location) throws IOException {
+    public InputStreamReader startLoading(Identifier location) throws IOException {
         if (!loaded.add(location)) {
             throw new JsonSyntaxException("Already loaded " + location + " from " + loadingStack.peek());
         }
         loadingStack.push(location);
-        IResource res = Minecraft.getMinecraft().getResourceManager().getResource(location);
+        IResource res = Minecraft.getInstance().getResourceManager().getResource(location);
         return new InputStreamReader(res.getInputStream(), StandardCharsets.UTF_8);
     }
 

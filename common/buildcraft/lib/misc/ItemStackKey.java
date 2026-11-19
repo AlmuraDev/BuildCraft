@@ -8,7 +8,7 @@ package buildcraft.lib.misc;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 public class ItemStackKey {
     public static final ItemStackKey EMPTY = new ItemStackKey(StackUtil.EMPTY);
@@ -41,7 +41,7 @@ public class ItemStackKey {
         if (baseStack.getItem() != other.baseStack.getItem()) {
             return false;
         }
-        if (baseStack.getMetadata() != other.baseStack.getMetadata()) {
+        if (baseStack.getDamageValue() != other.baseStack.getDamageValue()) {
             return false;
         }
         return baseStack.serializeNBT().equals(other.baseStack.serializeNBT());

@@ -17,9 +17,9 @@ import javax.annotation.Nonnull;
 
 import com.google.common.collect.ImmutableList;
 
-import net.minecraft.init.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.item.crafting.FurnaceRecipes;
 
 import net.minecraftforge.oredict.OreDictionary;
@@ -36,7 +36,7 @@ public enum GuideSmeltingRecipes implements IStackRecipes {
         Map<ItemStack, ItemStack> recipes, old = FurnaceRecipes.instance().getSmeltingList();
         recipes = new TreeMap<>(Comparator.comparing(ItemStack::getDisplayName));
         recipes.putAll(old);
-        if (stack.getMetadata() == OreDictionary.WILDCARD_VALUE) {
+        if (stack.getDamageValue() == OreDictionary.WILDCARD_VALUE) {
             List<GuidePartFactory> list = new ArrayList<>();
             for (Entry<ItemStack, ItemStack> recipe : recipes.entrySet()) {
                 if (StackUtil.doesEitherStackMatch(stack, StackUtil.asNonNull(recipe.getValue()))//

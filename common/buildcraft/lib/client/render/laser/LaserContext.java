@@ -11,10 +11,11 @@ import javax.vecmath.Point3f;
 import javax.vecmath.Vector3f;
 import javax.vecmath.Vector4f;
 
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.phys.Vec3;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.MutableQuad;
 
@@ -32,14 +33,14 @@ public class LaserContext {
         this.useNormalColour = useNormalColour;
         this.drawBothSides = isCullEnabled;
         this.minBlockLight = data.minBlockLight;
-        Vec3d delta = data.start.subtract(data.end);
+        Vec3 delta = data.start.subtract(data.end);
         double dx = delta.x;
         double dy = delta.y;
         double dz = delta.z;
 
         final double angleY, angleZ;
 
-        double realLength = delta.lengthVector();
+        double realLength = delta.length();
         length = realLength / data.scale;
         angleZ = Math.PI - Math.atan2(dz, dx);
         double rl_squared = realLength * realLength;
@@ -93,7 +94,7 @@ public class LaserContext {
         holding.setIdentity();
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void setFaceNormal(double nx, double ny, double nz) {
         if (useNormalColour) {
             normal.x = (float) nx;
@@ -118,7 +119,7 @@ public class LaserContext {
     private final float[] n = { 0, 1, 0 };
     private float diffuse;
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void addPoint(double xIn, double yIn, double zIn, double uIn, double vIn) {
         point.x = (float) xIn;
         point.y = (float) yIn;

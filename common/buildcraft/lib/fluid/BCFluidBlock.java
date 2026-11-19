@@ -6,61 +6,47 @@
 
 package buildcraft.lib.fluid;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.init.Blocks;
-import net.minecraft.util.BlockRenderLayer;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockAccess;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.phys.Vec3;
 
-import net.minecraftforge.fluids.BlockFluidClassic;
-import net.minecraftforge.fluids.Fluid;
+/** The block of a {@link BCFluid}: flammable fluids burn, sticky ones slow entities like cobwebs. */
+public class BCFluidBlock extends LiquidBlock {
+    private final BCFluid definition;
 
-public class BCFluidBlock extends BlockFluidClassic {
-    private boolean sticky = false;
+    public BCFluidBlock(BCFluid definition, FlowingFluid fluid, BlockBehaviour.Properties properties) {
+        super(fluid, properties);
+        this.definition = definition;
+    }
 
-    public BCFluidBlock(Fluid fluid, Material material) {
-        super(fluid, material);
-        Boolean displaceWater = fluid.getDensity() > 1000;
-        displacements.put(Blocks.WATER, displaceWater);
-        displacements.put(Blocks.FLOWING_WATER, displaceWater);
-
-        Boolean displaceLava = fluid.getDensity() > 9000;
-        displacements.put(Blocks.LAVA, displaceLava);
-        displacements.put(Blocks.FLOWING_LAVA, displaceLava);
-
-        renderLayer = BlockRenderLayer.SOLID;
+    public BCFluid getDefinition() {
+        return definition;
     }
 
     @Override
-    public Boolean isEntityInsideMaterial(IBlockAccess world, BlockPos pos, IBlockState state, Entity entity, double yToTest, Material material, boolean testingHead) {
-        if (material == Material.WATER) {
-            return true;
+    public int getFlammability(BlockState state, BlockGetter world, BlockPos pos, Direction face) {
+        return definition.isFlammable() ? 200 : 0;
+    }
+
+    @Override
+    public int getFireSpreadSpeed(BlockState state, BlockGetter world, BlockPos pos, Direction face) {
+        return definition.isFlammable() ? 200 : 0;
+    }
+
+    @Override
+    protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity, InsideBlockEffectApplier effects,
+        boolean isPrecise) {
+        super.entityInside(state, world, pos, entity, effects, isPrecise);
+        if (definition.isSticky()) {
+            entity.makeStuckInBlock(state, new Vec3(0.25D, 0.05F, 0.25D));
         }
-        return null;
-    }
-
-    @Override
-    public int getFlammability(IBlockAccess world, BlockPos pos, EnumFacing face) {
-        return blockMaterial.getCanBurn() ? 200 : 0;
-    }
-
-    @Override
-    public int getFireSpreadSpeed(IBlockAccess world, BlockPos pos, EnumFacing face) {
-        return blockMaterial.getCanBurn() ? 200 : 0;
-    }
-
-    @Override
-    public void onEntityCollidedWithBlock(World worldIn, BlockPos pos, IBlockState state, Entity entityIn) {
-        if (sticky) {
-            entityIn.setInWeb();
-        }
-    }
-
-    public void setSticky(boolean sticky) {
-        this.sticky = sticky;
     }
 }

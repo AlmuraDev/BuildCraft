@@ -8,9 +8,9 @@ package buildcraft.lib.tile.item;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
-import net.minecraftforge.items.IItemHandlerModifiable;
+import buildcraft.api.transfer.IItemHandlerModifiable;
 
 @FunctionalInterface
 public interface StackChangeCallback {

@@ -6,14 +6,14 @@
 
 package buildcraft.lib.misc.data;
 
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 
-import net.minecraftforge.common.util.INBTSerializable;
+import buildcraft.api.core.INBTSerializable;
 
 import buildcraft.lib.misc.MathUtil;
 import buildcraft.lib.misc.NBTUtilBC;
 
-public class AverageDouble implements INBTSerializable<NBTTagCompound> {
+public class AverageDouble implements INBTSerializable<CompoundTag> {
     private double[] data;
     private int pos, precise;
     private double averageRaw, tickValue;
@@ -57,22 +57,22 @@ public class AverageDouble implements INBTSerializable<NBTTagCompound> {
     }
 
     @Override
-    public NBTTagCompound serializeNBT() {
-        NBTTagCompound nbt = new NBTTagCompound();
-        nbt.setInteger("pos", pos);
-        nbt.setInteger("precise", precise);
-        nbt.setDouble("averageRaw", averageRaw);
-        nbt.setDouble("tickValue", tickValue);
-        nbt.setTag("data", NBTUtilBC.writeDoubleArray(data));
+    public CompoundTag serializeNBT() {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putInt("pos", pos);
+        nbt.putInt("precise", precise);
+        nbt.putDouble("averageRaw", averageRaw);
+        nbt.putDouble("tickValue", tickValue);
+        nbt.put("data", NBTUtilBC.writeDoubleArray(data));
         return nbt;
     }
 
     @Override
-    public void deserializeNBT(NBTTagCompound nbt) {
-        precise = MathUtil.clamp(nbt.getInteger("precise"), 1, Short.MAX_VALUE);
-        pos = MathUtil.clamp(nbt.getInteger("pos"), 0, precise);
-        averageRaw = nbt.getDouble("averageRaw");
-        tickValue = nbt.getDouble("tickValue");
-        data = NBTUtilBC.readDoubleArray(nbt.getTag("data"), precise);
+    public void deserializeNBT(CompoundTag nbt) {
+        precise = MathUtil.clamp(nbt.getIntOr("precise", 0), 1, Short.MAX_VALUE);
+        pos = MathUtil.clamp(nbt.getIntOr("pos", 0), 0, precise);
+        averageRaw = nbt.getDoubleOr("averageRaw", 0D);
+        tickValue = nbt.getDoubleOr("tickValue", 0D);
+        data = NBTUtilBC.readDoubleArray(nbt.get("data"), precise);
     }
 }

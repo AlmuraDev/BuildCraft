@@ -16,10 +16,10 @@ import javax.annotation.Nonnull;
 import org.lwjgl.input.Keyboard;
 
 import net.minecraft.client.gui.GuiTextField;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.lists.ListMatchHandler;
 
@@ -41,8 +41,8 @@ import buildcraft.core.item.ItemList_BC8;
 import buildcraft.core.list.ContainerList.WidgetListSlot;
 
 public class GuiList extends GuiBC8<ContainerList> implements IButtonClickEventListener {
-    private static final ResourceLocation TEXTURE_BASE =
-        new ResourceLocation("buildcraftcore:textures/gui/list_new.png");
+    private static final Identifier TEXTURE_BASE =
+        Identifier.parse("buildcraftcore:textures/gui/list_new.png");
     private static final int SIZE_X = 176, SIZE_Y = 191;
     private static final GuiIcon ICON_GUI = new GuiIcon(TEXTURE_BASE, 0, 0, SIZE_X, SIZE_Y);
     private static final GuiIcon ICON_HIGHLIGHT = new GuiIcon(TEXTURE_BASE, 176, 0, 16, 16);
@@ -52,7 +52,7 @@ public class GuiList extends GuiBC8<ContainerList> implements IButtonClickEventL
     private final Map<Integer, Map<ListMatchHandler.Type, NonNullList<ItemStack>>> exampleCache = new HashMap<>();
     private GuiTextField textField;
 
-    public GuiList(EntityPlayer iPlayer) {
+    public GuiList(Player iPlayer) {
         super(new ContainerList(iPlayer));
         xSize = SIZE_X;
         ySize = SIZE_Y;

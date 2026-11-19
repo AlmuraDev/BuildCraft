@@ -1,5 +1,5 @@
 /* Copyright (c) 2016 SpaceToad and the BuildCraft team
- * 
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.lib.registry;
@@ -7,25 +7,21 @@ package buildcraft.lib.registry;
 import java.io.File;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraft.util.ResourceLocation;
-
-import net.minecraftforge.common.config.Configuration;
-import net.minecraftforge.common.config.Property;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.BCDebugging;
-import buildcraft.api.transport.pipe.IItemPipe;
 
+import buildcraft.lib.config.Configuration;
+import buildcraft.lib.config.Property;
+
+/** The per-module "objects" config, in which every block, item and pipe can be disabled (BuildCraft's objects.cfg).
+ * Modules share core's config, as on 1.12.2. */
 public class RegistryConfig {
     public static final boolean DEBUG = BCDebugging.shouldDebugLog("lib.registry");
-    private static final Map<ModContainer, Configuration> modObjectConfigs = new IdentityHashMap<>();
+    private static final Map<String, Configuration> modObjectConfigs = new HashMap<>();
     private static final Map<String, Set<String>> disabled = new HashMap<>();
 
     // #######################
@@ -35,21 +31,21 @@ public class RegistryConfig {
     // #######################
 
     public static Configuration setRegistryConfig(String modid, File file) {
-        Configuration cfg = new Configuration(file);
-        return setRegistryConfig(modid, cfg);
+        return setRegistryConfig(modid, new Configuration(file));
     }
 
     public static Configuration setRegistryConfig(String modid, Configuration config) {
-        modObjectConfigs.put(getMod(modid), config);
+        modObjectConfigs.put(modid, config);
         return config;
     }
 
+    /** Makes the mod "from" use the same object config as the mod "to". */
     public static Configuration useOtherModConfigFor(String from, String to) {
-        Configuration config = modObjectConfigs.get(getMod(to));
+        Configuration config = modObjectConfigs.get(to);
         if (config == null) {
             throw new IllegalStateException("Didn't find a config for " + to);
         }
-        modObjectConfigs.put(getMod(from), config);
+        modObjectConfigs.put(from, config);
         return config;
     }
 
@@ -59,56 +55,12 @@ public class RegistryConfig {
     //
     // #######################
 
-    public static boolean isEnabled(Item item) {
-        return isEnabled(getCategory(item), item.getRegistryName().getResourcePath(),
-            item.getUnlocalizedName() + ".name");
-    }
-
-    public static boolean isEnabled(Block block) {
-        return isEnabled(getCategory(block), block.getRegistryName().getResourcePath(),
-            block.getUnlocalizedName() + ".name");
-    }
-
-    public static boolean isEnabled(String category, String resourcePath, String langKey) {
-        return isEnabled(getActiveMod(), category, resourcePath, langKey);
-    }
-
-    public static boolean hasItemBeenDisabled(ResourceLocation loc) {
-        return hasObjectBeenDisabled("items", loc) || hasObjectBeenDisabled("pipes", loc);
-    }
-
-    public static boolean hasBlockBeenDisabled(ResourceLocation loc) {
-        return hasObjectBeenDisabled("blocks", loc);
-    }
-
-    /** @return True if the given location has been passed to {@link #isEnabled(Block)}, {@link #isEnabled(Item)}, or
-     *         {@link #isEnabled(String, String, String)}, and it returned false (because it has been disabled in the
-     *         appropriate mod's config) */
-    public static boolean hasObjectBeenDisabled(String category, ResourceLocation loc) {
-        Set<String> locations = disabled.get(category);
-        return locations != null && locations.contains(loc.getResourcePath());
-    }
-
-    // #######################
-    //
-    // Internals
-    //
-    // #######################
-
-    private static String getCategory(Object obj) {
-        if (obj instanceof IItemPipe) {
-            return "pipes";
-        } else if (obj instanceof Block) {
-            return "blocks";
-        } else {
-            return "items";
-        }
-    }
-
-    private static boolean isEnabled(ModContainer activeMod, String category, String resourcePath, String langKey) {
-        Configuration config = modObjectConfigs.get(activeMod);
+    /** @return true if the object hasn't been disabled in the given mod's object config. (Adds it to the config, enabled, if
+     *         it isn't there yet.) */
+    public static boolean isEnabled(String modId, String category, String resourcePath, String langKey) {
+        Configuration config = modObjectConfigs.get(modId);
         if (config == null) {
-            throw new RuntimeException("No config exists for the mod " + activeMod.getModId());
+            throw new RuntimeException("No object config exists for the mod " + modId);
         }
         Property prop = config.get(category, resourcePath, true);
         prop.setLanguageKey(langKey);
@@ -121,25 +73,22 @@ public class RegistryConfig {
         return isEnabled;
     }
 
+    public static boolean hasItemBeenDisabled(Identifier loc) {
+        return hasObjectBeenDisabled("items", loc) || hasObjectBeenDisabled("pipes", loc);
+    }
+
+    public static boolean hasBlockBeenDisabled(Identifier loc) {
+        return hasObjectBeenDisabled("blocks", loc);
+    }
+
+    /** @return True if the given location has been passed to {@link #isEnabled(String, String, String, String)}, and it
+     *         returned false (because it has been disabled in the appropriate mod's config) */
+    public static boolean hasObjectBeenDisabled(String category, Identifier loc) {
+        Set<String> locations = disabled.get(category);
+        return locations != null && locations.contains(loc.getPath());
+    }
+
     static void setDisabled(String category, String resourcePath) {
         disabled.computeIfAbsent(category, k -> new HashSet<>()).add(resourcePath);
-    }
-
-    private static ModContainer getMod(String modid) {
-        ModContainer container = Loader.instance().getIndexedModList().get(modid);
-        if (container == null) {
-            throw new RuntimeException("No mod with an id of \"" + modid + "\" is loaded!");
-        } else {
-            return container;
-        }
-    }
-
-    private static ModContainer getActiveMod() {
-        ModContainer container = Loader.instance().activeModContainer();
-        if (container == null) {
-            throw new RuntimeException("Was not called within the scope of an active mod!");
-        } else {
-            return container;
-        }
     }
 }

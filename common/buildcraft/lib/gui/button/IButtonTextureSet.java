@@ -6,7 +6,7 @@
 
 package buildcraft.lib.gui.button;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 @Deprecated
 public interface IButtonTextureSet {
@@ -19,5 +19,5 @@ public interface IButtonTextureSet {
 
     int getWidth();
 
-    ResourceLocation getTexture();
+    Identifier getTexture();
 }

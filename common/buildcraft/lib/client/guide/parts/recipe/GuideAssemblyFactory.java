@@ -8,7 +8,7 @@ package buildcraft.lib.client.guide.parts.recipe;
 
 import java.util.Arrays;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
 import buildcraft.lib.client.guide.GuiGuide;
 import buildcraft.lib.client.guide.parts.GuidePartFactory;
@@ -48,7 +48,7 @@ public class GuideAssemblyFactory implements GuidePartFactory {
     // return val;
     // } else {
     // BCLog.logger.warn("[lib.guide.crafting] Found a matching recipe, but of an unknown " + recipe.getClass() + " for
-    // " + stack.getDisplayName());
+    // " + stack.getHoverName());
     // }
     // }
     // }

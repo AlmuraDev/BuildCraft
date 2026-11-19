@@ -8,24 +8,25 @@ import javax.annotation.Nonnull;
 
 import gnu.trove.map.hash.TIntObjectHashMap;
 
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumActionResult;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.Level;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.blocks.CustomPaintHelper;
 
@@ -55,29 +56,29 @@ public class ItemPaintbrush_BC8 extends ItemBC_Neptune {
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
         addVariant(variants, 0, "clean");
-        for (EnumDyeColor colour : EnumDyeColor.values()) {
+        for (DyeColor colour : DyeColor.values()) {
             addVariant(variants, colour.getMetadata() + 1, colour.getName());
         }
     }
 
     @Override
-    public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
-        ItemStack stack = StackUtil.asNonNull(player.getHeldItem(hand));
+    public InteractionResult onItemUse(Player player, Level world, BlockPos pos, InteractionHand hand, Direction facing, float hitX, float hitY, float hitZ) {
+        ItemStack stack = StackUtil.asNonNull(player.getItemInHand(hand));
         Brush brush = new Brush(stack);
-        Vec3d hitPos = VecUtil.add(new Vec3d(hitX, hitY, hitZ), pos);
+        Vec3 hitPos = VecUtil.add(new Vec3(hitX, hitY, hitZ), pos);
         if (brush.useOnBlock(world, pos, world.getBlockState(pos), hitPos, facing, player)) {
             ItemStack newStack = brush.save(stack);
             if (!newStack.isEmpty()) {
-                player.setHeldItem(hand, newStack);
+                player.setItemInHand(hand, newStack);
             }
             // We just changed the damage NBT value
-            player.inventoryContainer.detectAndSendChanges();
-            return EnumActionResult.SUCCESS;
+            player.inventoryMenu.broadcastChanges();
+            return InteractionResult.SUCCESS;
         }
-        return EnumActionResult.FAIL;
+        return InteractionResult.FAIL;
     }
 
     public Brush getBrushFromStack(ItemStack stack) {
@@ -95,8 +96,8 @@ public class ItemPaintbrush_BC8 extends ItemBC_Neptune {
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
-    public FontRenderer getFontRenderer(ItemStack stack) {
+    @OnlyIn(Dist.CLIENT)
+    public Font getFontRenderer(ItemStack stack) {
         return SpecialColourFontRenderer.INSTANCE;
     }
 
@@ -135,23 +136,23 @@ public class ItemPaintbrush_BC8 extends ItemBC_Neptune {
 
     /** Delegate class for handling */
     public class Brush {
-        public EnumDyeColor colour;
+        public DyeColor colour;
         public int usesLeft;
 
-        public Brush(EnumDyeColor colour) {
+        public Brush(DyeColor colour) {
             this.colour = colour;
             usesLeft = MAX_USES;
         }
 
         public Brush(ItemStack stack) {
-            int meta = stack.getMetadata();
+            int meta = stack.getDamageValue();
             if (meta > 0 && meta <= 16) {
-                colour = EnumDyeColor.byMetadata(meta - 1);
-                NBTTagCompound nbt = stack.getTagCompound();
+                colour = DyeColor.byMetadata(meta - 1);
+                CompoundTag nbt = stack.getTagCompound();
                 if (nbt == null) {
                     usesLeft = MAX_USES;
                 } else {
-                    usesLeft = MAX_USES - nbt.getByte(DAMAGE);
+                    usesLeft = MAX_USES - nbt.getByteOr(DAMAGE, (byte) 0);
                 }
             } else {
                 usesLeft = 0;
@@ -166,16 +167,16 @@ public class ItemPaintbrush_BC8 extends ItemBC_Neptune {
         @Nonnull
         public ItemStack save(@Nonnull ItemStack existing) {
             ItemStack stack = existing;
-            if (existing.isEmpty() || existing.getMetadata() != getMeta()) {
+            if (existing.isEmpty() || existing.getDamageValue() != getMeta()) {
                 stack = new ItemStack(ItemPaintbrush_BC8.this, 1, getMeta());
             }
             if (usesLeft != MAX_USES && colour != null) {
-                NBTTagCompound nbt = stack.getTagCompound();
+                CompoundTag nbt = stack.getTagCompound();
                 if (nbt == null) {
-                    nbt = new NBTTagCompound();
+                    nbt = new CompoundTag();
                     stack.setTagCompound(nbt);
                 }
-                nbt.setByte(DAMAGE, (byte) (MAX_USES - usesLeft));
+                nbt.putByte(DAMAGE, (byte) (MAX_USES - usesLeft));
             }
             return stack == existing ? StackUtil.EMPTY : stack;
         }
@@ -184,14 +185,14 @@ public class ItemPaintbrush_BC8 extends ItemBC_Neptune {
             return (usesLeft <= 0 || colour == null) ? 0 : colour.getMetadata() + 1;
         }
 
-        public boolean useOnBlock(World world, BlockPos pos, IBlockState state, Vec3d hitPos, EnumFacing side, EntityPlayer player) {
+        public boolean useOnBlock(Level world, BlockPos pos, BlockState state, Vec3 hitPos, Direction side, Player player) {
             if (colour != null && usesLeft <= 0) {
                 return false;
             }
 
-            EnumActionResult result = CustomPaintHelper.INSTANCE.attemptPaintBlock(world, pos, state, hitPos, side, colour);
+            InteractionResult result = CustomPaintHelper.INSTANCE.attemptPaintBlock(world, pos, state, hitPos, side, colour);
 
-            if (result == EnumActionResult.SUCCESS) {
+            if (result == InteractionResult.SUCCESS) {
                 ParticleUtil.showChangeColour(world, hitPos, colour);
                 SoundUtil.playChangeColour(world, pos, colour);
 

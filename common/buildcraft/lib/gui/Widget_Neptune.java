@@ -8,10 +8,11 @@ package buildcraft.lib.gui;
 
 import java.io.IOException;
 
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import buildcraft.lib.net.IMessage;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.net.IPayloadReceiver;
 import buildcraft.lib.net.IPayloadWriter;
@@ -26,7 +27,7 @@ public abstract class Widget_Neptune<C extends ContainerBC_Neptune> implements I
     }
 
     public boolean isRemote() {
-        return container.player.world.isRemote;
+        return container.player.level().isClientSide();
     }
 
     // Net updating
@@ -35,18 +36,18 @@ public abstract class Widget_Neptune<C extends ContainerBC_Neptune> implements I
         container.sendWidgetData(this, writer);
     }
 
-    public IMessage handleWidgetDataServer(MessageContext ctx, PacketBufferBC buffer) throws IOException {
+    public IMessage handleWidgetDataServer(IPayloadContext ctx, PacketBufferBC buffer) throws IOException {
         return null;
     }
 
-    @SideOnly(Side.CLIENT)
-    public IMessage handleWidgetDataClient(MessageContext ctx, PacketBufferBC buffer) throws IOException {
+    @OnlyIn(Dist.CLIENT)
+    public IMessage handleWidgetDataClient(IPayloadContext ctx, PacketBufferBC buffer) throws IOException {
         return null;
     }
 
     @Override
-    public IMessage receivePayload(MessageContext ctx, PacketBufferBC buffer) throws IOException {
-        if (ctx.side == Side.CLIENT) {
+    public IMessage receivePayload(IPayloadContext ctx, PacketBufferBC buffer) throws IOException {
+        if (ctx.side == LogicalSide.CLIENT) {
             return handleWidgetDataClient(ctx, buffer);
         } else {
             return handleWidgetDataServer(ctx, buffer);

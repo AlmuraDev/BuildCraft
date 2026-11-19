@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import java.util.BitSet;
 
 import net.minecraft.client.gui.recipebook.RecipeList;
-import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.world.item.crafting.Recipe;
 
 public class RecipeListPhantom extends RecipeList {
 
@@ -33,7 +33,7 @@ public class RecipeListPhantom extends RecipeList {
     }
 
     @Override
-    public boolean isCraftable(IRecipe recipe) {
+    public boolean isCraftable(Recipe recipe) {
         return true;
     }
 

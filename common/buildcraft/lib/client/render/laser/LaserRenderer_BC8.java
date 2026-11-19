@@ -16,21 +16,22 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.cache.RemovalNotification;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BufferBuilder;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.renderer.vertex.VertexFormat;
-import net.minecraft.profiler.Profiler;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.EnumSkyBlock;
-import net.minecraft.world.World;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.Level;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.laser.LaserData_BC8.LaserType;
 import buildcraft.lib.misc.SpriteUtil;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class LaserRenderer_BC8 {
     private static final Map<LaserType, CompiledLaserType> COMPILED_LASER_TYPES = new HashMap<>();
     private static final LoadingCache<LaserData_BC8, LaserCompiledList> COMPILED_STATIC_LASERS;
@@ -49,15 +50,15 @@ public class LaserRenderer_BC8 {
             .build(CacheLoader.from(LaserRenderer_BC8::makeDynamicLaser));
 
         FORMAT_LESS = new VertexFormat();
-        FORMAT_LESS.addElement(DefaultVertexFormats.POSITION_3F);
-        FORMAT_LESS.addElement(DefaultVertexFormats.TEX_2F);
-        FORMAT_LESS.addElement(DefaultVertexFormats.TEX_2S);
+        FORMAT_LESS.addElement(DefaultVertexFormat.POSITION_3F);
+        FORMAT_LESS.addElement(DefaultVertexFormat.TEX_2F);
+        FORMAT_LESS.addElement(DefaultVertexFormat.TEX_2S);
 
         FORMAT_ALL = new VertexFormat();
-        FORMAT_ALL.addElement(DefaultVertexFormats.POSITION_3F);
-        FORMAT_ALL.addElement(DefaultVertexFormats.TEX_2F);
-        FORMAT_ALL.addElement(DefaultVertexFormats.TEX_2S);
-        FORMAT_ALL.addElement(DefaultVertexFormats.COLOR_4UB);
+        FORMAT_ALL.addElement(DefaultVertexFormat.POSITION_3F);
+        FORMAT_ALL.addElement(DefaultVertexFormat.TEX_2F);
+        FORMAT_ALL.addElement(DefaultVertexFormat.TEX_2S);
+        FORMAT_ALL.addElement(DefaultVertexFormat.COLOR_4UB);
     }
 
     public static void clearModels() {
@@ -98,15 +99,15 @@ public class LaserRenderer_BC8 {
     }
 
     public static int computeLightmap(double x, double y, double z, int minBlockLight) {
-        World world = Minecraft.getMinecraft().world;
+        Level world = Minecraft.getInstance().level;
         if (world == null) return 0;
         int blockLight =
-            minBlockLight >= 15 ? 15 : Math.max(minBlockLight, getLightFor(world, EnumSkyBlock.BLOCK, x, y, z));
-        int skyLight = getLightFor(world, EnumSkyBlock.SKY, x, y, z);
+            minBlockLight >= 15 ? 15 : Math.max(minBlockLight, getLightFor(world, LightLayer.BLOCK, x, y, z));
+        int skyLight = getLightFor(world, LightLayer.SKY, x, y, z);
         return skyLight << 20 | blockLight << 4;
     }
 
-    private static int getLightFor(World world, EnumSkyBlock type, double x, double y, double z) {
+    private static int getLightFor(Level world, LightLayer type, double x, double y, double z) {
         int max = 0;
         int count = 0;
         int sum = 0;
@@ -148,22 +149,22 @@ public class LaserRenderer_BC8 {
     }
 
     public static void renderLaserStatic(LaserData_BC8 data) {
-        Profiler profiler = Minecraft.getMinecraft().mcProfiler;
-        profiler.startSection("compute");
+        ProfilerFiller profiler = Minecraft.getInstance().mcProfiler;
+        profiler.push("compute");
         LaserCompiledList compiled = COMPILED_STATIC_LASERS.getUnchecked(data);
-        profiler.endStartSection("render");
+        profiler.popPush("render");
         SpriteUtil.bindBlockTextureMap();
         compiled.render();
-        profiler.endSection();
+        profiler.pop();
     }
 
-    /** Assumes the buffer uses {@link DefaultVertexFormats#BLOCK} */
+    /** Assumes the buffer uses {@link DefaultVertexFormat#BLOCK} */
     public static void renderLaserDynamic(LaserData_BC8 data, BufferBuilder buffer) {
-        Profiler profiler = Minecraft.getMinecraft().mcProfiler;
-        profiler.startSection("compute");
+        ProfilerFiller profiler = Minecraft.getInstance().mcProfiler;
+        profiler.push("compute");
         LaserCompiledBuffer compiled = COMPILED_DYNAMIC_LASERS.getUnchecked(data);
-        profiler.endStartSection("render");
+        profiler.popPush("render");
         compiled.render(buffer);
-        profiler.endSection();
+        profiler.pop();
     }
 }

@@ -1,6 +1,6 @@
 package buildcraft.lib.gui.json;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.lib.expression.FunctionContext;
 import buildcraft.lib.gui.IGuiElement;
@@ -34,8 +34,8 @@ public class ElementTypeLedger extends ElementType {
         addChildren(gui, ledger.positionLedgerIconStart, info, json, "closed", ledger.getClosedElements()::add);
 
         ledger.calculateMaxSize();
-        ResourceLocation def = gui.jsonGuiDefinition;
-        def = new ResourceLocation(def.getResourceDomain(), def.getResourcePath().replace(".json", ""));
+        Identifier def = gui.jsonGuiDefinition;
+        def = Identifier.fromNamespaceAndPath(def.getNamespace(), def.getPath().replace(".json", ""));
         ledger.setOpenProperty(GuiConfigManager.getOrAddBoolean(def, json.name + ".is_open", false));
         return ledger;
     }

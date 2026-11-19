@@ -6,7 +6,7 @@
 
 package buildcraft.lib.client.guide.parts;
 
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.resources.language.I18n;
 
 import buildcraft.lib.client.guide.GuiGuide;
 

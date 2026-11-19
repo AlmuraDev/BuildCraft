@@ -13,10 +13,10 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fml.common.Loader;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.fml.ModList;
 import net.minecraftforge.fml.common.LoaderState;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
@@ -36,7 +36,7 @@ public class BuildCraftObjectCaches {
     static final List<NetworkedObjectCache<?>> CACHES = new ArrayList<>();
 
     public static void registerCache(NetworkedObjectCache<?> cache) {
-        if (Loader.instance().hasReachedState(LoaderState.POSTINITIALIZATION)) {
+        if (ModList.get().hasReachedState(LoaderState.POSTINITIALIZATION)) {
             throw new IllegalStateException("May only construct a cache BEFORE post-init!");
         }
         BuildCraftObjectCaches.CACHES.add(cache);

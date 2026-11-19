@@ -3,22 +3,22 @@ package buildcraft.lib.client.render.font;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.resources.IResourceManager;
-import net.minecraft.item.EnumDyeColor;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.resources.Identifier;
+import net.minecraft.ChatFormatting;
 
 import buildcraft.api.core.BCLog;
 
 import buildcraft.lib.misc.ColourUtil;
 
-public class SpecialColourFontRenderer extends FontRenderer {
+public class SpecialColourFontRenderer extends Font {
     public static final SpecialColourFontRenderer INSTANCE = new SpecialColourFontRenderer();
 
     private SpecialColourFontRenderer() {
-        super(Minecraft.getMinecraft().gameSettings, new ResourceLocation("textures/font/ascii.png"),
-            Minecraft.getMinecraft().renderEngine, false);
+        super(Minecraft.getInstance().options, Identifier.parse("textures/font/ascii.png"),
+            Minecraft.getInstance().renderEngine, false);
     }
 
     @Override
@@ -35,7 +35,7 @@ public class SpecialColourFontRenderer extends FontRenderer {
 
         while (next != -1) {
 
-            int end = text.indexOf(TextFormatting.RESET.toString());
+            int end = text.indexOf(ChatFormatting.RESET.toString());
             String sub;
             if (end > 0) {
                 sub = text.substring(next, end);
@@ -49,7 +49,7 @@ public class SpecialColourFontRenderer extends FontRenderer {
             int thisColour = color;
             try {
                 int ord = Integer.parseInt(Character.toString(c), 16);
-                thisColour = ColourUtil.getLightHex(EnumDyeColor.byMetadata(ord));
+                thisColour = ColourUtil.getLightHex(DyeColor.byMetadata(ord));
             } catch (NumberFormatException nfe) {
                 BCLog.logger
                     .warn("[lib.font] Invalid colour string for SpecialColourFontRenderer! " + nfe.getMessage());
@@ -67,8 +67,8 @@ public class SpecialColourFontRenderer extends FontRenderer {
         return (int) x;
     }
 
-    private static FontRenderer getRealRenderer() {
-        return Minecraft.getMinecraft().fontRenderer;
+    private static Font getRealRenderer() {
+        return Minecraft.getInstance().font;
     }
 
     // Delegate methods (To ensure we have the exact same behaviour as the normal font renderer)

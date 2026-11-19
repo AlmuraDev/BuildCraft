@@ -12,8 +12,8 @@ import java.util.stream.IntStream;
 
 import io.netty.buffer.ByteBuf;
 
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import buildcraft.lib.net.IMessage;
+import buildcraft.lib.net.IMessageHandler;
 
 import buildcraft.lib.debug.ClientDebuggables;
 
@@ -41,10 +41,10 @@ public class MessageDebugResponse implements IMessage {
     public void fromBytes(ByteBuf buffer) {
         PacketBufferBC buf = PacketBufferBC.asPacketBufferBc(buffer);
         IntStream.range(0, buf.readInt())
-            .mapToObj(i -> new PacketBufferBC(buf).readString())
+            .mapToObj(i -> new PacketBufferBC(buf).readUtf())
             .forEach(left::add);
         IntStream.range(0, buf.readInt())
-            .mapToObj(i -> new PacketBufferBC(buf).readString())
+            .mapToObj(i -> new PacketBufferBC(buf).readUtf())
             .forEach(right::add);
     }
 

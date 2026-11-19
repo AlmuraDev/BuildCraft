@@ -1,6 +1,6 @@
 package buildcraft.lib.gui.json;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.BCLog;
 import buildcraft.api.core.render.ISprite;
@@ -119,7 +119,7 @@ public class ElementTypeButton extends ElementType {
         if (sprite != null) {
             sprite = GuiUtil.subRelative(sprite, uvs[0], uvs[1], uvs[2], uvs[3], texture.texSize);
         } else {
-            ResourceLocation loc = SpriteUtil.transformLocation(new ResourceLocation(texture.origin));
+            Identifier loc = SpriteUtil.transformLocation(Identifier.parse(texture.origin));
             sprite = new SpriteRaw(loc, uvs[0], uvs[1], uvs[2], uvs[3], texture.texSize);
         }
         return new GuiSpriteScaled(sprite, sizeX, sizeY);

@@ -13,10 +13,10 @@ import javax.annotation.Nonnull;
 
 import gnu.trove.map.hash.TCharObjectHashMap;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.Identifier;
 
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.oredict.ShapedOreRecipe;
@@ -130,7 +130,7 @@ public class RecipeBuilderShaped {
 
     public void register() {
         ensureValid();
-        ResourceLocation name = result.getItem().getRegistryName();
+        Identifier name = result.getItem().getRegistryName();
         ShapedOreRecipe recipe = new ShapedOreRecipe(name, result, createRecipeObjectArray());
         ForgeRegistries.RECIPES.register(recipe.setRegistryName(name));
     }

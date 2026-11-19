@@ -14,8 +14,8 @@ import javax.annotation.Nullable;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 
-import net.minecraft.profiler.Profiler;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.registry.IScriptableRegistry.OptionallyDisabled;
 
@@ -27,7 +27,7 @@ import buildcraft.lib.gui.ISimpleDrawable;
 
 public abstract class PageValueType<T> {
 
-    public abstract OptionallyDisabled<PageEntry<T>> deserialize(ResourceLocation name, JsonObject json,
+    public abstract OptionallyDisabled<PageEntry<T>> deserialize(Identifier name, JsonObject json,
         JsonDeserializationContext ctx);
 
     public abstract Class<T> getEntryClass();
@@ -49,11 +49,11 @@ public abstract class PageValueType<T> {
 
     public abstract List<String> getTooltip(T value);
 
-    public abstract void iterateAllDefault(IEntryLinkConsumer consumer, Profiler prof);
+    public abstract void iterateAllDefault(IEntryLinkConsumer consumer, ProfilerFiller prof);
 
     /** @param to Something that identifies what this should link to.
      * @return Either the {@link PageLink}, or the error for why the given "to" doesn't result in a valid link. */
-    public OptionallyDisabled<PageLink> createLink(String to, Profiler prof) {
+    public OptionallyDisabled<PageLink> createLink(String to, ProfilerFiller prof) {
         return new OptionallyDisabled<>(getClass().getSimpleName() + " doesn't support links");
     }
 

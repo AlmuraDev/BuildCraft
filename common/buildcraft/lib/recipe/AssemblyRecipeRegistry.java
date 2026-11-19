@@ -13,14 +13,14 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.NonNullList;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.recipes.AssemblyRecipe;
 
 public class AssemblyRecipeRegistry  {
-    public static final Map<ResourceLocation, AssemblyRecipe> REGISTRY = new HashMap<>();
+    public static final Map<Identifier, AssemblyRecipe> REGISTRY = new HashMap<>();
 
     public static void register(AssemblyRecipe recipe) {
         REGISTRY.put(recipe.getRegistryName(), recipe);

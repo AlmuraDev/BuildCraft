@@ -2,9 +2,11 @@ package buildcraft.core.tile;
 
 import java.util.List;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.ITickable;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
+import buildcraft.lib.tile.ITickable;
 
 import buildcraft.api.mj.IMjConnector;
 import buildcraft.api.mj.IMjReceiver;
@@ -23,26 +25,27 @@ public class TilePowerConsumerTester extends TileBC_Neptune implements IMjReceiv
     private long lastTickReceived;
     private long totalReceived;
 
-    public TilePowerConsumerTester() {
+    public TilePowerConsumerTester(BlockPos pos, BlockState state) {
+        super(pos, state);
         caps.addProvider(mjCaps);
     }
 
     @Override
-    public void readFromNBT(NBTTagCompound nbt) {
+    public void readFromNBT(CompoundTag nbt) {
         super.readFromNBT(nbt);
-        lastReceived = nbt.getLong("last");
-        nextTickReceived = nbt.getLong("nt");
-        lastTickReceived = nbt.getLong("lt");
-        totalReceived = nbt.getLong("total");
+        lastReceived = nbt.getLongOr("last", 0L);
+        nextTickReceived = nbt.getLongOr("nt", 0L);
+        lastTickReceived = nbt.getLongOr("lt", 0L);
+        totalReceived = nbt.getLongOr("total", 0L);
     }
 
     @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public CompoundTag writeToNBT(CompoundTag nbt) {
         nbt = super.writeToNBT(nbt);
-        nbt.setLong("last", lastReceived);
-        nbt.setLong("nt", nextTickReceived);
-        nbt.setLong("lt", lastTickReceived);
-        nbt.setLong("total", totalReceived);
+        nbt.putLong("last", lastReceived);
+        nbt.putLong("nt", nextTickReceived);
+        nbt.putLong("lt", lastTickReceived);
+        nbt.putLong("total", totalReceived);
         return nbt;
     }
 
@@ -79,7 +82,7 @@ public class TilePowerConsumerTester extends TileBC_Neptune implements IMjReceiv
     // IDebuggable
 
     @Override
-    public void getDebugInfo(List<String> left, List<String> right, EnumFacing side) {
+    public void getDebugInfo(List<String> left, List<String> right, Direction side) {
         left.add("");
         left.add("Last received = " + LocaleUtil.localizeMj(lastReceived));
         left.add("Tick received = " + LocaleUtil.localizeMj(lastTickReceived));

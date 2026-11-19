@@ -17,8 +17,8 @@ import io.netty.buffer.Unpooled;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
+import buildcraft.lib.net.IMessage;
+import buildcraft.lib.net.IMessageHandler;
 
 import buildcraft.lib.BCLibProxy;
 import buildcraft.lib.net.PacketBufferBC;

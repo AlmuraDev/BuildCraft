@@ -28,11 +28,11 @@ import com.google.gson.JsonSyntaxException;
 
 import org.apache.commons.io.IOUtils;
 
-import net.minecraft.util.JsonUtils;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ModContainer;
+import net.neoforged.fml.ModList;
+import net.neoforged.fml.ModContainer;
 
 import buildcraft.api.core.BCLog;
 import buildcraft.api.registry.IReloadableRegistryManager;
@@ -112,7 +112,7 @@ public class ScriptableRegistry<E> extends SimpleReloadableRegistry<E> implement
         List<FileSystem> openFileSystems = new ArrayList<>();
         Map<File, Path> loadedFiles = new HashMap<>();
         List<Path> jarRoots = new ArrayList<>();
-        for (ModContainer container : Loader.instance().getActiveModList()) {
+        for (ModContainer container : ModList.get().getActiveModList()) {
             File source = container.getSource();
             if (!source.exists()) {
                 continue;
@@ -133,7 +133,7 @@ public class ScriptableRegistry<E> extends SimpleReloadableRegistry<E> implement
             }
         }
 
-        File baseFile = new File(Loader.instance().getConfigDir(), "buildcraft/scripts");
+        File baseFile = new File(ModList.get().getConfigDir(), "buildcraft/scripts");
         if (!baseFile.isDirectory()) {
             baseFile.mkdirs();
         }
@@ -241,8 +241,8 @@ public class ScriptableRegistry<E> extends SimpleReloadableRegistry<E> implement
     }
 
     private void executeScripts(Gson gson, List<ScriptAction> actions) {
-        Multimap<ResourceLocation, ScriptAction> added = HashMultimap.create();
-        Multimap<ResourceLocation, ScriptAction> removed = HashMultimap.create();
+        Multimap<Identifier, ScriptAction> added = HashMultimap.create();
+        Multimap<Identifier, ScriptAction> removed = HashMultimap.create();
 
         for (ScriptAction action : actions) {
             if (action instanceof ScriptActionRemove) {
@@ -267,7 +267,7 @@ public class ScriptableRegistry<E> extends SimpleReloadableRegistry<E> implement
 
         // Multiple things remove however
 
-        for (ResourceLocation name : added.keySet()) {
+        for (Identifier name : added.keySet()) {
             Collection<ScriptAction> adders = added.get(name);
             if (adders.size() > 1) {
                 SimpleScript.logForAll("Multiple scripts attempting to add " + name
@@ -288,7 +288,7 @@ public class ScriptableRegistry<E> extends SimpleReloadableRegistry<E> implement
                     ScriptActionReplace replace = (ScriptActionReplace) adder;
                     if (replace.inheritTags) {
                         // Long and complicated
-                        ResourceLocation location = replace.toReplace;
+                        Identifier location = replace.toReplace;
                         adders = added.get(location);
                         if (adders.size() > 1) {
                             // This will be logged by the above code
@@ -333,10 +333,10 @@ public class ScriptableRegistry<E> extends SimpleReloadableRegistry<E> implement
         }
     }
 
-    private void loadReloadable(ResourceLocation name, Gson gson, JsonObject json) throws JsonSyntaxException {
+    private void loadReloadable(Identifier name, Gson gson, JsonObject json) throws JsonSyntaxException {
         String type = "";
         if (json.has("type")) {
-            type = JsonUtils.getString(json, "type");
+            type = GsonHelper.getString(json, "type");
         }
         IEntryDeserializer<? extends E> deserializer = getCustomDeserializers().get(type);
         if (deserializer != null) {

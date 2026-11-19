@@ -8,26 +8,26 @@ package buildcraft.lib.client.model;
 
 import java.util.Set;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 /** Defines an object that will hold a model, and is automatically refreshed from the filesystem when the client reloads
  * all of its resources. */
 public abstract class ModelHolder {
-    public final ResourceLocation modelLocation;
+    public final Identifier modelLocation;
     protected String failReason = "";
 
-    public ModelHolder(ResourceLocation modelLocation) {
+    public ModelHolder(Identifier modelLocation) {
         this.modelLocation = modelLocation;
         ModelHolderRegistry.HOLDERS.add(this);
     }
 
     public ModelHolder(String modelLocation) {
-        this(new ResourceLocation(modelLocation));
+        this(Identifier.parse(modelLocation));
     }
 
     protected abstract void onModelBake();
 
-    protected abstract void onTextureStitchPre(Set<ResourceLocation> toRegisterSprites);
+    protected abstract void onTextureStitchPre(Set<Identifier> toRegisterSprites);
 
     public abstract boolean hasBakedQuads();
 }

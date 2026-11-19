@@ -9,9 +9,9 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
-import net.minecraft.profiler.Profiler;
-import net.minecraft.util.JsonUtils;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.registry.IScriptableRegistry.OptionallyDisabled;
 import buildcraft.api.statements.IAction;
@@ -38,7 +38,7 @@ public class PageEntryStatement extends PageValueType<IStatement> {
     }
 
     @Override
-    public void iterateAllDefault(IEntryLinkConsumer consumer, Profiler prof) {
+    public void iterateAllDefault(IEntryLinkConsumer consumer, ProfilerFiller prof) {
         for (IStatement statement : new TreeMap<>(StatementManager.statements).values()) {
             if (!GuideManager.INSTANCE.objectsAdded.add(statement)) {
                 continue;
@@ -59,9 +59,9 @@ public class PageEntryStatement extends PageValueType<IStatement> {
     }
 
     @Override
-    public OptionallyDisabled<PageEntry<IStatement>> deserialize(ResourceLocation name, JsonObject json,
+    public OptionallyDisabled<PageEntry<IStatement>> deserialize(Identifier name, JsonObject json,
         JsonDeserializationContext ctx) {
-        String stmntName = JsonUtils.getString(json, "statement");
+        String stmntName = GsonHelper.getString(json, "statement");
         IStatement stmnt = StatementManager.statements.get(stmntName);
         if (stmnt == null) {
             throw new JsonSyntaxException("Unknown statement '" + stmntName + "'");

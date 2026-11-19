@@ -6,9 +6,9 @@
 
 package buildcraft.lib.misc;
 
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.world.WorldEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.LevelEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
@@ -20,13 +20,13 @@ public class DebuggingTools {
 
     public static void fmlInit() {
         if (ENABLE) {
-            MinecraftForge.EVENT_BUS.register(new EventHook());
+            NeoForge.EVENT_BUS.register(new EventHook());
         }
     }
 
     private static class EventHook {
         @SubscribeEvent
-        public void worldLoadEvent(WorldEvent.Load load) {
+        public void worldLoadEvent(LevelEvent.Load load) {
             load.getWorld().addEventListener(new WorldListener());
         }
     }

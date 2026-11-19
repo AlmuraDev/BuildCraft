@@ -8,11 +8,12 @@ package buildcraft.core.statements;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 import buildcraft.api.statements.IStatement;
@@ -38,16 +39,16 @@ public enum StatementParamGateSideOnly implements IStatementParameter {
         this.isSpecific = isSpecific;
     }
 
-    public static StatementParamGateSideOnly readFromNbt(NBTTagCompound nbt) {
-        if (nbt.getBoolean("isOn")) {
+    public static StatementParamGateSideOnly readFromNbt(CompoundTag nbt) {
+        if (nbt.getBooleanOr("isOn", false)) {
             return SPECIFIC;
         }
         return ANY;
     }
 
     @Override
-    public void writeToNbt(NBTTagCompound compound) {
-        compound.setBoolean("isOn", isSpecific);
+    public void writeToNbt(CompoundTag compound) {
+        compound.putBoolean("isOn", isSpecific);
     }
 
     @Nonnull
@@ -57,7 +58,7 @@ public enum StatementParamGateSideOnly implements IStatementParameter {
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public ISprite getSprite() {
         if (isSpecific) {
             return BCCoreSprites.PARAM_GATE_SIDE_ONLY;

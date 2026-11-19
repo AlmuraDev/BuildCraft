@@ -8,13 +8,14 @@ package buildcraft.core.statements;
 
 import java.util.Locale;
 
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.core.Direction;
 
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidTankProperties;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.transfer.fluid.FluidUtil;
+import buildcraft.lib.misc.FluidUtilBC;
+import buildcraft.api.transfer.IFluidHandler;
+import buildcraft.api.transfer.IFluidTankProperties;
 
 import buildcraft.api.statements.IStatement;
 import buildcraft.api.statements.IStatementContainer;
@@ -57,7 +58,7 @@ public class TriggerFluidContainerLevel extends BCStatement implements ITriggerE
     }
 
     @Override
-    public boolean isTriggerActive(TileEntity tile, EnumFacing side, IStatementContainer statementContainer, IStatementParameter[] parameters) {
+    public boolean isTriggerActive(BlockEntity tile, Direction side, IStatementContainer statementContainer, IStatementParameter[] parameters) {
         IFluidHandler handler = tile.getCapability(CapUtil.CAP_FLUIDS, side.getOpposite());
         if (handler == null) {
             return false;
@@ -67,7 +68,7 @@ public class TriggerFluidContainerLevel extends BCStatement implements ITriggerE
         if (parameters != null && parameters.length >= 1 && parameters[0] != null && !parameters[0].getItemStack() .isEmpty()) {
             searchedFluid = FluidUtil.getFluidContained(parameters[0].getItemStack());
             if (searchedFluid != null) {
-                searchedFluid.amount = 1;
+                searchedFluid.setAmount(1);
             }
         }
 
@@ -85,8 +86,8 @@ public class TriggerFluidContainerLevel extends BCStatement implements ITriggerE
                 return searchedFluid == null || handler.fill(searchedFluid, false) > 0;
             }
 
-            if (searchedFluid == null || searchedFluid.isFluidEqual(fluid)) {
-                float percentage = fluid.amount / (float) tankProperties.getCapacity();
+            if (searchedFluid == null || FluidUtilBC.isFluidEqual(searchedFluid, fluid)) {
+                float percentage = fluid.getAmount() / (float) tankProperties.getCapacity();
                 return percentage < type.level;
             }
         }

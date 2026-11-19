@@ -10,12 +10,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.function.Function;
 
-import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiButton;
-import net.minecraft.client.gui.inventory.GuiContainer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 
 import buildcraft.api.core.render.ISprite;
 
@@ -28,7 +28,7 @@ import buildcraft.lib.gui.pos.IGuiArea;
 import buildcraft.lib.misc.GuiUtil;
 
 /** Future rename: "GuiContainerBuildCraft" */
-public abstract class GuiBC8<C extends ContainerBC_Neptune> extends GuiContainer {
+public abstract class GuiBC8<C extends ContainerBC_Neptune> extends AbstractContainerScreen {
     public final BuildCraftGui mainGui;
     public final C container;
 
@@ -43,11 +43,11 @@ public abstract class GuiBC8<C extends ContainerBC_Neptune> extends GuiContainer
         standardLedgerInit();
     }
 
-    public GuiBC8(C container, ResourceLocation jsonGuiDef) {
+    public GuiBC8(C container, Identifier jsonGuiDef) {
         super(container);
         this.container = container;
         BuildCraftJsonGui jsonGui = new BuildCraftJsonGui(this, BuildCraftGui.createWindowedArea(this), jsonGuiDef);
-        jsonGui.properties.put("player.inventory", new InventorySlotHolder(container, container.player.inventory));
+        jsonGui.properties.put("player.inventory", new InventorySlotHolder(container, container.player.getInventory()));
         this.mainGui = jsonGui;
         standardLedgerInit();
         // Force subclasses to set this themselves after calling jsonGui.load
@@ -95,7 +95,7 @@ public abstract class GuiBC8<C extends ContainerBC_Neptune> extends GuiContainer
         return buttonList;
     }
 
-    public FontRenderer getFontRenderer() {
+    public Font getFontRenderer() {
         return fontRenderer;
     }
 
@@ -103,20 +103,20 @@ public abstract class GuiBC8<C extends ContainerBC_Neptune> extends GuiContainer
 
     public void drawTexturedModalRect(double posX, double posY, double textureX, double textureY, double width,
         double height) {
-        int x = MathHelper.floor(posX);
-        int y = MathHelper.floor(posY);
-        int u = MathHelper.floor(textureX);
-        int v = MathHelper.floor(textureY);
-        int w = MathHelper.floor(width);
-        int h = MathHelper.floor(height);
+        int x = Mth.floor(posX);
+        int y = Mth.floor(posY);
+        int u = Mth.floor(textureX);
+        int v = Mth.floor(textureY);
+        int w = Mth.floor(width);
+        int h = Mth.floor(height);
         drawTexturedModalRect(x, y, u, v, w, h);
     }
 
-    public void drawString(FontRenderer fontRenderer, String text, double x, double y, int colour) {
+    public void drawString(Font fontRenderer, String text, double x, double y, int colour) {
         drawString(fontRenderer, text, x, y, colour, true);
     }
 
-    public void drawString(FontRenderer fontRenderer, String text, double x, double y, int colour, boolean shadow) {
+    public void drawString(Font fontRenderer, String text, double x, double y, int colour, boolean shadow) {
         fontRenderer.drawString(text, (float) x, (float) y, colour, shadow);
     }
 

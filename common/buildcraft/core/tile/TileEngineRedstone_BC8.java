@@ -6,7 +6,9 @@ package buildcraft.core.tile;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.resources.Identifier;
 
 import buildcraft.api.mj.IMjConnector;
 import buildcraft.api.mj.MjAPI;
@@ -16,10 +18,12 @@ import buildcraft.lib.engine.TileEngineBase_BC8;
 import buildcraft.lib.misc.AdvancementUtil;
 
 public class TileEngineRedstone_BC8 extends TileEngineBase_BC8 {
-    private static final ResourceLocation ADVANCEMENT = new ResourceLocation("buildcraftcore:free_power");
+    private static final Identifier ADVANCEMENT = Identifier.parse("buildcraftcore:free_power");
     private boolean givenAdvancement = false;
 
-    public TileEngineRedstone_BC8() {}
+    public TileEngineRedstone_BC8(BlockPos pos, BlockState state) {
+        super(pos, state);
+    }
 
     @Nonnull
     @Override
@@ -42,7 +46,7 @@ public class TileEngineRedstone_BC8 extends TileEngineBase_BC8 {
         super.engineUpdate();
         if (isRedstonePowered) {
             power = getMaxPower();
-            if (world.getTotalWorldTime() % 16 == 0) {
+            if (world.getGameTime() % 16 == 0) {
                 if (getHeatLevel() < 0.8) {
                     heat += 4;
                 }

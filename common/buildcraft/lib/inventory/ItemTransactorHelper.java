@@ -8,20 +8,20 @@ package buildcraft.lib.inventory;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.item.EntityItem;
-import net.minecraft.entity.player.InventoryPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.ISidedInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.World;
+import net.minecraft.world.Container;
+import net.minecraft.world.WorldlyContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.Level;
 
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.items.IItemHandler;
+import buildcraft.api.core.ICapabilityProvider;
+import buildcraft.api.transfer.IItemHandler;
 
 import buildcraft.api.core.IStackFilter;
 import buildcraft.api.inventory.IItemTransactor;
@@ -35,7 +35,7 @@ import buildcraft.lib.misc.StackUtil;
 
 public class ItemTransactorHelper {
     @Nonnull
-    public static IItemTransactor getTransactor(ICapabilityProvider provider, EnumFacing face) {
+    public static IItemTransactor getTransactor(ICapabilityProvider provider, Direction face) {
         if (provider == null) {
             return NoSpaceTransactor.INSTANCE;
         }
@@ -47,11 +47,11 @@ public class ItemTransactorHelper {
 
         IItemHandler handler = provider.getCapability(CapUtil.CAP_ITEMS, face);
         if (handler == null) {
-            if (provider instanceof ISidedInventory) {
-                return new SidedInventoryWrapper((ISidedInventory) provider, face);
+            if (provider instanceof WorldlyContainer) {
+                return new SidedInventoryWrapper((WorldlyContainer) provider, face);
             }
-            if (provider instanceof IInventory) {
-                return new InventoryWrapper((IInventory) provider);
+            if (provider instanceof Container) {
+                return new InventoryWrapper((Container) provider);
             }
             return NoSpaceTransactor.INSTANCE;
         }
@@ -62,7 +62,7 @@ public class ItemTransactorHelper {
     }
 
     @Nonnull
-    public static IItemTransactor getTransactor(InventoryPlayer inventory) {
+    public static IItemTransactor getTransactor(Inventory inventory) {
         if (inventory == null) {
             return NoSpaceTransactor.INSTANCE;
         }
@@ -70,12 +70,12 @@ public class ItemTransactorHelper {
     }
 
     @Nonnull
-    public static IItemTransactor getTransactorForEntity(Entity entity, EnumFacing face) {
+    public static IItemTransactor getTransactorForEntity(Entity entity, Direction face) {
         IItemTransactor transactor = getTransactor(entity, face);
         if (transactor != NoSpaceTransactor.INSTANCE) {
             return transactor;
-        } else if (entity instanceof EntityItem) {
-            return new TransactorEntityItem((EntityItem) entity);
+        } else if (entity instanceof ItemEntity) {
+            return new TransactorEntityItem((ItemEntity) entity);
         } else if (entity instanceof EntityArrow) {
             return new TransactorEntityArrow((EntityArrow) entity);
         } else {
@@ -84,7 +84,7 @@ public class ItemTransactorHelper {
     }
 
     @Nonnull
-    public static IInjectable getInjectable(ICapabilityProvider provider, EnumFacing face) {
+    public static IInjectable getInjectable(ICapabilityProvider provider, Direction face) {
         if (provider == null) {
             return NoSpaceInjectable.INSTANCE;
         }
@@ -95,7 +95,7 @@ public class ItemTransactorHelper {
         return injectable;
     }
 
-    public static IItemTransactor wrapInjectable(IInjectable injectable, EnumFacing facing) {
+    public static IItemTransactor wrapInjectable(IInjectable injectable, Direction facing) {
         return new InjectableWrapper(injectable, facing);
     }
 
@@ -189,7 +189,7 @@ public class ItemTransactorHelper {
         return toTake;
     }
 
-    public static IItemInsertable createDroppingTransactor(World world, Vec3d vec) {
+    public static IItemInsertable createDroppingTransactor(Level world, Vec3 vec) {
         return (stack, allorNone, simulate) -> {
             if (!simulate) {
                 InventoryUtil.drop(world, vec, stack);

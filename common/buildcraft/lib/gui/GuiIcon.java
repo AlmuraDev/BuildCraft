@@ -8,14 +8,15 @@ package buildcraft.lib.gui;
 
 import org.lwjgl.opengl.GL11;
 
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.ResourceLocation;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 
@@ -24,7 +25,7 @@ import buildcraft.lib.gui.pos.GuiRectangle;
 import buildcraft.lib.gui.pos.IGuiArea;
 import buildcraft.lib.gui.pos.IGuiPosition;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class GuiIcon implements ISimpleDrawable {
     public final ISprite sprite;
     public final int textureSize;
@@ -37,11 +38,11 @@ public class GuiIcon implements ISimpleDrawable {
         this.height = (int) (Math.abs(sprite.getInterpV(1) - sprite.getInterpV(0)) * textureSize);
     }
 
-    public GuiIcon(ResourceLocation texture, double u, double v, double width, double height, int texSize) {
+    public GuiIcon(Identifier texture, double u, double v, double width, double height, int texSize) {
         this(new SpriteRaw(texture, u, v, width, height, texSize), texSize);
     }
 
-    public GuiIcon(ResourceLocation texture, double u, double v, double width, double height) {
+    public GuiIcon(Identifier texture, double u, double v, double width, double height) {
         this(texture, u, v, width, height, 256);
     }
 
@@ -159,7 +160,7 @@ public class GuiIcon implements ISimpleDrawable {
 
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder vb = tess.getBuffer();
-        vb.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        vb.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_TEX);
 
         vertex(vb, xMin, yMax, uMin, vMax);
         vertex(vb, xMax, yMax, uMax, vMax);
@@ -208,7 +209,7 @@ public class GuiIcon implements ISimpleDrawable {
 
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder vb = tess.getBuffer();
-        vb.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        vb.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_TEX);
 
         vertex(vb, xMin, yMax, uMin, vMax);
         vertex(vb, xMax, yMax, uMax, vMax);
@@ -237,7 +238,7 @@ public class GuiIcon implements ISimpleDrawable {
 
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder vb = tess.getBuffer();
-        vb.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        vb.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_TEX);
 
         vertex(vb, xMin, yMax, uMin, vMax);
         vertex(vb, xMax, yMax, uMax, vMax);

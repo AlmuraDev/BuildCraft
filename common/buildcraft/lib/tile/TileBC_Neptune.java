@@ -18,38 +18,46 @@ import com.mojang.authlib.GameProfile;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.inventory.Container;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.nbt.NBTUtil;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.play.server.SPacketUpdateTileEntity;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.EnumParticleTypes;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.world.Explosion;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Vec3i;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
 
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
-import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
-import net.minecraftforge.items.IItemHandlerModifiable;
+import net.neoforged.neoforge.capabilities.BlockCapability;
+import buildcraft.lib.net.IMessage;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import buildcraft.api.transfer.IItemHandlerModifiable;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
+import buildcraft.api.core.ICapabilityProvider;
 import buildcraft.api.core.IPlayerOwned;
 
 import buildcraft.lib.cache.CachedChunk;
@@ -57,6 +65,7 @@ import buildcraft.lib.cache.IChunkCache;
 import buildcraft.lib.cache.ITileCache;
 import buildcraft.lib.cache.TileCacheRet;
 import buildcraft.lib.cache.TileCacheType;
+import buildcraft.lib.block.BlockBCTile_Neptune;
 import buildcraft.lib.cap.CapabilityHelper;
 import buildcraft.lib.client.render.DetachedRenderer.IDetachedRenderer;
 import buildcraft.lib.debug.BCAdvDebugging;
@@ -70,6 +79,7 @@ import buildcraft.lib.misc.ChunkUtil;
 import buildcraft.lib.misc.FakePlayerProvider;
 import buildcraft.lib.misc.InventoryUtil;
 import buildcraft.lib.misc.MessageUtil;
+import buildcraft.lib.misc.NBTUtilBC;
 import buildcraft.lib.misc.PermissionUtil;
 import buildcraft.lib.misc.PermissionUtil.PermissionBlock;
 import buildcraft.lib.misc.StringUtilBC;
@@ -79,9 +89,11 @@ import buildcraft.lib.net.IPayloadWriter;
 import buildcraft.lib.net.MessageManager;
 import buildcraft.lib.net.MessageUpdateTile;
 import buildcraft.lib.net.PacketBufferBC;
+import buildcraft.lib.registry.TileTypes;
 import buildcraft.lib.tile.item.ItemHandlerManager;
 
-public abstract class TileBC_Neptune extends TileEntity implements IPayloadReceiver, IAdvDebugTarget, IPlayerOwned {
+public abstract class TileBC_Neptune extends BlockEntity
+    implements IPayloadReceiver, IAdvDebugTarget, IPlayerOwned, ICapabilityProvider {
     public static final boolean DEBUG = BCDebugging.shouldDebugLog("lib.tile");
 
     protected static final IdAllocator IDS = new IdAllocator("tile");
@@ -92,7 +104,7 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     /** Used for sending all data in the GUI. Basically what has been omitted from {@link #NET_RENDER_DATA} that is
      * shown in the GUI. */
     public static final int NET_GUI_DATA = IDS.allocId("GUI_DATA");
-    /** Used for sending the data that would normally be sent with {@link Container#detectAndSendChanges()}. Note that
+    /** Used for sending the data that would normally be sent with {@link AbstractContainerMenu#detectAndSendChanges()}. Note that
      * if no bytes are written then the update message won't be sent. You should detect if any changes have been made to
      * the gui since the last tick, so you don't resend duplicate information if nothing has changed by the next
      * tick. */
@@ -116,7 +128,7 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     protected final TankManager tankManager = new TankManager();
 
     /** Handles all of the players that are currently using this tile (have a GUI open) */
-    private final Set<EntityPlayer> usingPlayers = Sets.newIdentityHashSet();
+    private final Set<Player> usingPlayers = Sets.newIdentityHashSet();
     private GameProfile owner;
 
     private final IChunkCache chunkCache = new CachedChunk(this);
@@ -138,8 +150,35 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
         }
     });
 
-    public TileBC_Neptune() {
+    /** The world this tile is in (an alias of {@link BlockEntity}'s level, kept so 1.12.2 code reads the same). */
+    protected Level world;
+
+    /** This tile's position (an alias of {@link BlockEntity}'s position). */
+    protected final BlockPos pos;
+
+    /** Every BuildCraft tile is created for a {@link BlockBCTile_Neptune}, which knows its {@link BlockEntityType}. */
+    public TileBC_Neptune(BlockPos pos, BlockState state) {
+        super(TileTypes.forState(state), pos, state);
+        this.pos = pos;
         caps.addProvider(itemManager);
+    }
+
+    @Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        this.world = level;
+    }
+
+    public final Level getWorld() {
+        return level;
+    }
+
+    public final BlockPos getPos() {
+        return worldPosition;
+    }
+
+    public final boolean hasWorld() {
+        return level != null;
     }
 
     // ##################################################
@@ -152,33 +191,33 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     //
     // ##################################################
 
-    public final IBlockState getCurrentState() {
+    public final BlockState getCurrentState() {
         return BlockUtil.getBlockState(world, pos);
     }
 
     @Nullable
-    public final IBlockState getCurrentStateForBlock(Block expectedBlock) {
-        IBlockState state = getCurrentState();
+    public final BlockState getCurrentStateForBlock(Block expectedBlock) {
+        BlockState state = getCurrentState();
         if (state.getBlock() == expectedBlock) {
             return state;
         }
         return null;
     }
 
-    public final IBlockState getNeighbourState(EnumFacing offset) {
+    public final BlockState getNeighbourState(Direction offset) {
         // In the future it is plausible that we might cache block states here.
         // However, until that is implemented, just call the world directly.
-        return getOffsetState(offset.getDirectionVec());
+        return getOffsetState(offset.getUnitVec3i());
     }
 
-    /** @param offset The position of the {@link IBlockState}, <i>relative</i> to this {@link TileEntity#getPos()}. */
-    public final IBlockState getOffsetState(Vec3i offset) {
-        return getLocalState(pos.add(offset));
+    /** @param offset The position of the {@link BlockState}, <i>relative</i> to this {@link BlockEntity#getPos()}. */
+    public final BlockState getOffsetState(Vec3i offset) {
+        return getLocalState(pos.offset(offset));
     }
 
-    /** @param pos The <i>absolute</i> position of the {@link IBlockState} . */
-    public final IBlockState getLocalState(BlockPos pos) {
-        if (DEBUG && !world.isBlockLoaded(pos)) {
+    /** @param pos The <i>absolute</i> position of the {@link BlockState} . */
+    public final BlockState getLocalState(BlockPos pos) {
+        if (DEBUG && !world.isLoaded(pos)) {
             BCLog.logger.warn(
                 "[lib.tile] Ghost-loading block at " + StringUtilBC.blockPosToString(pos) + " (from " + StringUtilBC
                     .blockPosToString(getPos()) + ")"
@@ -187,47 +226,47 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
         return BlockUtil.getBlockState(world, pos, true);
     }
 
-    public final TileEntity getNeighbourTile(EnumFacing offset) {
+    public final BlockEntity getNeighbourTile(Direction offset) {
         TileCacheRet cached = tileCache.getTile(offset);
         if (cached != null) {
             return cached.tile;
         }
-        if (DEBUG && !world.isBlockLoaded(pos)) {
+        if (DEBUG && !world.isLoaded(pos)) {
             BCLog.logger.warn(
                 "[lib.tile] Ghost-loading tile at " + StringUtilBC.blockPosToString(pos) + " (from " + StringUtilBC
                     .blockPosToString(getPos()) + ")"
             );
         }
-        return BlockUtil.getTileEntity(getWorld(), getPos().offset(offset), true);
+        return BlockUtil.getBlockEntity(getWorld(), getPos().relative(offset), true);
     }
 
-    /** @param offset The position of the {@link TileEntity} to retrieve, <i>relative</i> to this
-     *            {@link TileEntity#getPos()} . */
-    public final TileEntity getOffsetTile(Vec3i offset) {
-        return getLocalTile(pos.add(offset));
+    /** @param offset The position of the {@link BlockEntity} to retrieve, <i>relative</i> to this
+     *            {@link BlockEntity#getPos()} . */
+    public final BlockEntity getOffsetTile(Vec3i offset) {
+        return getLocalTile(pos.offset(offset));
     }
 
-    /** @param pos The <i>absolute</i> position of the {@link TileEntity} . */
-    public final TileEntity getLocalTile(BlockPos pos) {
+    /** @param pos The <i>absolute</i> position of the {@link BlockEntity} . */
+    public final BlockEntity getLocalTile(BlockPos pos) {
         TileCacheRet cached = tileCache.getTile(pos);
         if (cached != null) {
             return cached.tile;
         }
-        if (DEBUG && !world.isBlockLoaded(pos)) {
+        if (DEBUG && !world.isLoaded(pos)) {
             BCLog.logger.warn(
                 "[lib.tile] Ghost-loading tile at " + StringUtilBC.blockPosToString(pos) + " (from " + StringUtilBC
                     .blockPosToString(getPos()) + ")"
             );
         }
-        return BlockUtil.getTileEntity(world, pos, true);
+        return BlockUtil.getBlockEntity(world, pos, true);
     }
 
-    public final Chunk getContainingChunk() {
+    public final LevelChunk getContainingChunk() {
         return chunkCache.getChunk(getPos());
     }
 
-    public final Chunk getChunk(BlockPos pos) {
-        Chunk chunk = chunkCache.getChunk(pos);
+    public final LevelChunk getChunk(BlockPos pos) {
+        LevelChunk chunk = chunkCache.getChunk(pos);
         if (chunk == null) {
             return ChunkUtil.getChunk(getWorld(), pos, true);
         }
@@ -252,35 +291,37 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
         return !hasWorld();
     }
 
-    @Override
-    public boolean shouldRefresh(World world, BlockPos pos, IBlockState oldState, IBlockState newState) {
-        return oldState.getBlock() != newState.getBlock();
-    }
-
     /** Called whenever the block holding this tile is exploded. Called by
-     * {@link Block#onBlockExploded(World, BlockPos, Explosion)} */
+     * {@link Block#onBlockExploded(Level, BlockPos, Explosion)} */
     public void onExplode(Explosion explosion) {
 
     }
 
     /** Called whenever the block is removed. Called by {@link #onExplode(Explosion)}, and
-     * {@link Block#breakBlock(World, BlockPos, IBlockState)} */
+     * {@link Block#breakBlock(Level, BlockPos, BlockState)} */
     public void onRemove() {
         NonNullList<ItemStack> toDrop = NonNullList.create();
         addDrops(toDrop, 0);
         InventoryUtil.dropAll(world, pos, toDrop);
     }
 
+    /** Called by 26.3 when the block holding this tile is removed (1.12.2's breakBlock): calls {@link #onRemove()}. */
     @Override
-    public void invalidate() {
-        super.invalidate();
+    public void preRemoveSideEffects(BlockPos pos, BlockState state) {
+        super.preRemoveSideEffects(pos, state);
+        onRemove();
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
         chunkCache.invalidate();
         tileCache.invalidate();
     }
 
     @Override
-    public void validate() {
-        super.validate();
+    public void clearRemoved() {
+        super.clearRemoved();
         chunkCache.invalidate();
         tileCache.invalidate();
     }
@@ -293,8 +334,8 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     }
 
     @Override
-    public void onChunkUnload() {
-        super.onChunkUnload();
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
         chunkCache.invalidate();
         tileCache.invalidate();
     }
@@ -305,25 +346,25 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
         tankManager.addDrops(toDrop);
     }
 
-    public void onPlacedBy(EntityLivingBase placer, ItemStack stack) {
-        if (!placer.world.isRemote) {
-            if (placer instanceof EntityPlayer) {
-                EntityPlayer player = (EntityPlayer) placer;
+    public void onPlacedBy(LivingEntity placer, ItemStack stack) {
+        if (!placer.level().isClientSide()) {
+            if (placer instanceof Player) {
+                Player player = (Player) placer;
                 owner = player.getGameProfile();
-                if (owner.getId() == null) {
+                if (owner.id() == null) {
                     // Basically everything relies on the UUID
                     throw new IllegalArgumentException("No UUID for owner! ( " + placer.getClass() + " " + placer + " -> " + owner + " )");
                 }
             } else {
-                throw new IllegalArgumentException("Not an EntityPlayer! (placer = " + placer + ")");
+                throw new IllegalArgumentException("Not an Player! (placer = " + placer + ")");
             }
         }
     }
 
-    public void onPlayerOpen(EntityPlayer player) {
+    public void onPlayerOpen(Player player) {
         if (owner == null || owner == FakePlayerProvider.NULL_PROFILE) {
             owner = player.getGameProfile();
-            if (owner.getId() == null) {
+            if (owner.id() == null) {
                 // Basically everything relies on the UUID
                 throw new IllegalArgumentException("No UUID for owner! ( " + player.getClass() + " " + player + " -> " + owner + " )");
             }
@@ -332,11 +373,11 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
         usingPlayers.add(player);
     }
 
-    public void onPlayerClose(EntityPlayer player) {
+    public void onPlayerClose(Player player) {
         usingPlayers.remove(player);
     }
 
-    public boolean onActivated(EntityPlayer player, EnumHand hand, EnumFacing facing, float hitX, float hitY,
+    public boolean onActivated(Player player, InteractionHand hand, Direction facing, float hitX, float hitY,
         float hitZ) {
         return tankManager.onActivated(player, getPos(), hand);
     }
@@ -346,25 +387,24 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     }
 
     @Override
-    public final boolean hasCapability(@Nonnull Capability<?> capability, EnumFacing facing) {
+    public final boolean hasCapability(@Nonnull BlockCapability<?, Direction> capability, @Nullable Direction facing) {
         return getCapability(capability, facing) != null;
     }
 
+    /** Answers both BuildCraft's own lookups and (through {@link TileTypes}) NeoForge's capability system. Tiles add
+     * their capabilities to {@link #caps}; if what a tile offers changes, it must call {@link #invalidateCapabilities()}. */
     @Override
-    public <T> T getCapability(@Nonnull Capability<T> capability, EnumFacing facing) {
-        T obj = caps.getCapability(capability, facing);
-        if (obj == null) {
-            obj = super.getCapability(capability, facing);
-        }
-        return obj;
+    @Nullable
+    public <T> T getCapability(@Nonnull BlockCapability<T, Direction> capability, @Nullable Direction facing) {
+        return caps.getCapability(capability, facing);
     }
 
     // Item caps
     protected void onSlotChange(IItemHandlerModifiable handler, int slot, @Nonnull ItemStack before,
         @Nonnull ItemStack after) {
-        if (world.isBlockLoaded(pos)) {
-            if (getCurrentState().hasComparatorInputOverride()) {
-                markDirty();
+        if (world.isLoaded(pos)) {
+            if (getCurrentState().hasAnalogOutputSignal()) {
+                setChanged();
             } else {
                 markChunkDirty();
             }
@@ -375,7 +415,7 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
      * the current chunk is saved after the last tick. */
     public void markChunkDirty() {
         if (world != null) {
-            world.markChunkDirty(this.pos, this);
+            world.blockEntityChanged(this.pos);
         }
     }
 
@@ -409,15 +449,15 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
         );
     }
 
-    public boolean canPlayerEdit(EntityPlayer player) {
+    public boolean canPlayerEdit(Player player) {
         return PermissionUtil.hasPermission(PermissionUtil.PERM_EDIT, player, getPermBlock());
     }
 
-    public boolean canInteractWith(EntityPlayer player) {
-        if (world.getTileEntity(pos) != this) {
+    public boolean canInteractWith(Player player) {
+        if (world.getBlockEntity(pos) != this) {
             return false;
         }
-        if (player.getDistanceSq(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) > 64.0D) {
+        if (player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) > 64.0D) {
             return false;
         }
         // edit rather than view because you can normally change the contents from gui interaction
@@ -433,15 +473,16 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     /** Tells MC to redraw this block. Note that this sends the NET_REDRAW message. */
     public final void redrawBlock() {
         if (hasWorld()) {
-            if (world.isRemote) {
-                IBlockState state = world.getBlockState(pos);
-                world.notifyBlockUpdate(pos, state, state, 0);
+            if (world.isClientSide()) {
+                BlockState state = world.getBlockState(pos);
+                requestModelDataUpdate();
+                world.sendBlockUpdated(pos, state, state, Block.UPDATE_IMMEDIATE);
 
                 if (DEBUG) {
                     double x = pos.getX() + 0.5;
                     double y = pos.getY() + 0.5;
                     double z = pos.getZ() + 0.5;
-                    world.spawnParticle(EnumParticleTypes.HEART, x, y, z, 0, 0, 0);
+                    world.addParticle(ParticleTypes.HEART, x, y, z, 0, 0, 0);
                 }
             } else {
                 sendNetworkUpdate(NET_REDRAW);
@@ -453,7 +494,7 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     public final void sendNetworkUpdate(int id) {
         if (hasWorld()) {
             MessageUpdateTile message = createNetworkUpdate(id);
-            if (world.isRemote) {
+            if (world.isClientSide()) {
                 MessageManager.sendToServer(message);
             } else {
                 MessageUtil.sendToAllWatching(world, pos, message);
@@ -461,34 +502,34 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
         }
     }
 
-    public final void sendNetworkGuiTick(EntityPlayer player) {
-        if (hasWorld() && !world.isRemote) {
+    public final void sendNetworkGuiTick(Player player) {
+        if (hasWorld() && !world.isClientSide()) {
             MessageUpdateTile message = createNetworkUpdate(NET_GUI_TICK);
             if (message.getPayloadSize() <= Short.BYTES) {
                 return;
             }
-            MessageManager.sendTo(message, (EntityPlayerMP) player);
+            MessageManager.sendTo(message, (ServerPlayer) player);
         }
     }
 
     public final void sendNetworkGuiUpdate(int id) {
         if (hasWorld()) {
-            for (EntityPlayer player : usingPlayers) {
+            for (Player player : usingPlayers) {
                 sendNetworkUpdate(id, player);
             }
         }
     }
 
-    public final void sendNetworkUpdate(int id, EntityPlayer target) {
-        if (hasWorld() && target instanceof EntityPlayerMP) {
+    public final void sendNetworkUpdate(int id, Player target) {
+        if (hasWorld() && target instanceof ServerPlayer) {
             MessageUpdateTile message = createNetworkUpdate(id);
-            MessageManager.sendTo(message, (EntityPlayerMP) target);
+            MessageManager.sendTo(message, (ServerPlayer) target);
         }
     }
 
     public final MessageUpdateTile createNetworkUpdate(final int id) {
         if (hasWorld()) {
-            final Side side = world.isRemote ? Side.CLIENT : Side.SERVER;
+            final LogicalSide side = world.isClientSide() ? LogicalSide.CLIENT : LogicalSide.SERVER;
             return createMessage(id, (buffer) -> writePayload(id, buffer, side));
         } else {
             BCLog.logger.warn("Did not have a world at " + pos + "!");
@@ -499,7 +540,7 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     public final void createAndSendMessage(int id, IPayloadWriter writer) {
         if (hasWorld()) {
             IMessage message = createMessage(id, writer);
-            if (world.isRemote) {
+            if (world.isClientSide()) {
                 MessageManager.sendToServer(message);
             } else {
                 MessageUtil.sendToAllWatching(world, pos, message);
@@ -510,7 +551,7 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     public final void createAndSendGuiMessage(int id, IPayloadWriter writer) {
         if (hasWorld()) {
             IMessage message = createMessage(id, writer);
-            if (world.isRemote) {
+            if (world.isClientSide()) {
                 MessageManager.sendToServer(message);
             } else {
                 MessageUtil.sendToPlayers(usingPlayers, message);
@@ -518,14 +559,14 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
         }
     }
 
-    public final void createAndSendMessage(int id, EntityPlayerMP player, IPayloadWriter writer) {
+    public final void createAndSendMessage(int id, ServerPlayer player, IPayloadWriter writer) {
         if (hasWorld()) {
             IMessage message = createMessage(id, writer);
             MessageManager.sendTo(message, player);
         }
     }
 
-    public final void createAndSendGuiMessage(int id, EntityPlayerMP player, IPayloadWriter writer) {
+    public final void createAndSendGuiMessage(int id, ServerPlayer player, IPayloadWriter writer) {
         if (usingPlayers.contains(player)) {
             createAndSendMessage(id, player, writer);
         }
@@ -539,37 +580,42 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     }
 
     @Override
-    public void onDataPacket(NetworkManager net, SPacketUpdateTileEntity pkt) {
-        handleUpdateTag(pkt.getNbtCompound());
+    public void onDataPacket(Connection net, ValueInput input) {
+        handleUpdateTag(input);
     }
 
     @Override
-    public SPacketUpdateTileEntity getUpdatePacket() {
-        return new SPacketUpdateTileEntity(pos, 0, getUpdateTag());
+    @Nullable
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    /** The chunk/update packet data: just this tile's render payload, as bytes under "d" (not its saved NBT). */
     @Override
-    public NBTTagCompound getUpdateTag() {
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         ByteBuf buf = Unpooled.buffer();
         buf.writeShort(NET_RENDER_DATA);
-        writePayload(NET_RENDER_DATA, new PacketBufferBC(buf), world.isRemote ? Side.CLIENT : Side.SERVER);
+        writePayload(NET_RENDER_DATA, new PacketBufferBC(buf), world.isClientSide() ? LogicalSide.CLIENT : LogicalSide.SERVER);
         byte[] bytes = new byte[buf.readableBytes()];
         buf.readBytes(bytes);
 
-        NBTTagCompound nbt = super.getUpdateTag();
-        nbt.setByteArray("d", bytes);
+        CompoundTag nbt = new CompoundTag();
+        nbt.putByteArray("d", bytes);
         return nbt;
     }
 
     @Override
-    public void handleUpdateTag(NBTTagCompound tag) {
+    public void handleUpdateTag(ValueInput input) {
+        handleUpdateTag(input.read(NBTUtilBC.WHOLE_COMPOUND).orElseGet(CompoundTag::new));
+    }
+
+    public void handleUpdateTag(CompoundTag tag) {
         // Explicitly don't read the (server) data from NBT
-        super.readFromNBT(tag);
-        if (!tag.hasKey("d", Constants.NBT.TAG_BYTE_ARRAY)) {
+        if (!tag.contains("d")) {
             // A bit odd, but ok - this was probably sent by something else
             return;
         }
-        byte[] bytes = tag.getByteArray("d");
+        byte[] bytes = tag.getByteArray("d").orElse(new byte[0]);
         if (bytes.length < 2) {
             // less than 2 bytes won't even be enough to read the ID, so we'll treat it as no data.
             BCLog.logger.warn("[lib.tile] Received an update tag that didn't have any data!\n\t(" + tag + ")");
@@ -580,9 +626,9 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
         try {
             int id = buf.readUnsignedShort();
             PacketBufferBC buffer = new PacketBufferBC(buf);
-            readPayload(id, buffer, world.isRemote ? Side.CLIENT : Side.SERVER, null);
+            readPayload(id, buffer, world.isClientSide() ? LogicalSide.CLIENT : LogicalSide.SERVER, null);
             // Make sure that we actually read the entire message rather than just discarding it
-            MessageUtil.ensureEmpty(buffer, world.isRemote, getClass() + ", id = " + getIdAllocator().getNameFor(id));
+            MessageUtil.ensureEmpty(buffer, world.isClientSide(), getClass() + ", id = " + getIdAllocator().getNameFor(id));
             spawnReceiveParticles(id);
         } catch (IOException e) {
             throw new RuntimeException("Received an update tag that failed to read correctly!", e);
@@ -600,20 +646,22 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
                 double r = 0.01 + (id & 3) / 4.0;
                 double g = 0.01 + ((id / 4) & 3) / 4.0;
                 double b = 0.01 + ((id / 16) & 3) / 4.0;
-                world.spawnParticle(EnumParticleTypes.REDSTONE, x, y, z, r, g, b);
+                int rgb = ((int) (r * 255) << 16) | ((int) (g * 255) << 8) | (int) (b * 255);
+                world.addParticle(new DustParticleOptions(rgb, 1), x, y, z, 0, 0, 0);
             }
         }
     }
 
     @Override
-    public final IMessage receivePayload(MessageContext ctx, PacketBufferBC buffer) throws IOException {
+    public final IMessage receivePayload(IPayloadContext ctx, PacketBufferBC buffer) throws IOException {
         int id = buffer.readUnsignedShort();
-        readPayload(id, buffer, ctx.side, ctx);
+        LogicalSide side = MessageUtil.getSide(ctx);
+        readPayload(id, buffer, side, ctx);
 
         // Make sure that we actually read the entire message rather than just discarding it
-        MessageUtil.ensureEmpty(buffer, world.isRemote, getClass() + ", id = " + getIdAllocator().getNameFor(id));
+        MessageUtil.ensureEmpty(buffer, world.isClientSide(), getClass() + ", id = " + getIdAllocator().getNameFor(id));
 
-        if (ctx.side == Side.CLIENT) {
+        if (side == LogicalSide.CLIENT) {
             spawnReceiveParticles(id);
         }
         return null;
@@ -625,17 +673,17 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     //
     // ######################
 
-    public void writePayload(int id, PacketBufferBC buffer, Side side) {
+    public void writePayload(int id, PacketBufferBC buffer, LogicalSide side) {
         // write render data with gui data
         if (id == NET_GUI_DATA) {
 
             writePayload(NET_RENDER_DATA, buffer, side);
 
-            if (side == Side.SERVER) {
+            if (side == LogicalSide.SERVER) {
                 MessageUtil.writeGameProfile(buffer, owner);
             }
         }
-        if (side == Side.SERVER) {
+        if (side == LogicalSide.SERVER) {
             if (id == NET_RENDER_DATA) {
                 deltaManager.writeDeltaState(false, buffer);
             } else if (id == NET_GUI_DATA) {
@@ -646,16 +694,16 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
 
     /** @param ctx The context. Will be null if this is a generic update payload
      * @throws IOException if something went wrong */
-    public void readPayload(int id, PacketBufferBC buffer, Side side, MessageContext ctx) throws IOException {
+    public void readPayload(int id, PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         // read render data with gui data
         if (id == NET_GUI_DATA) {
             readPayload(NET_RENDER_DATA, buffer, side, ctx);
 
-            if (side == Side.CLIENT) {
+            if (side == LogicalSide.CLIENT) {
                 owner = MessageUtil.readGameProfile(buffer);
             }
         }
-        if (side == Side.CLIENT) {
+        if (side == LogicalSide.CLIENT) {
             if (id == NET_RENDER_DATA) deltaManager.receiveDeltaData(false, EnumDeltaMessage.CURRENT_STATE, buffer);
             else if (id == NET_GUI_DATA) deltaManager.receiveDeltaData(true, EnumDeltaMessage.CURRENT_STATE, buffer);
             else if (id == NET_REN_DELTA_SINGLE) deltaManager.receiveDeltaData(
@@ -681,56 +729,59 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     //
     // ######################
 
+    /** Loads from the NBT this tile saved: 26.3's value input is read as one compound, laid out as on 1.12.2. */
     @Override
-    public void readFromNBT(NBTTagCompound nbt) {
-        super.readFromNBT(nbt);
-        migrateOldNBT(nbt.getInteger("data-version"), nbt);
-        deltaManager.readFromNBT(nbt.getCompoundTag("deltas"));
-        if (nbt.hasKey("owner")) {
-            owner = NBTUtil.readGameProfileFromNBT(nbt.getCompoundTag("owner"));
+    protected final void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
+        readFromNBT(input.read(NBTUtilBC.WHOLE_COMPOUND).orElseGet(CompoundTag::new));
+    }
+
+    @Override
+    protected final void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        output.store(NBTUtilBC.WHOLE_COMPOUND, writeToNBT(new CompoundTag()));
+    }
+
+    public void readFromNBT(CompoundTag nbt) {
+        migrateOldNBT(nbt.getIntOr("data-version", 0), nbt);
+        deltaManager.readFromNBT(nbt.getCompoundOrEmpty("deltas"));
+        if (nbt.contains("owner")) {
+            owner = NBTUtilBC.readGameProfile(nbt.getCompoundOrEmpty("owner"));
         }
-        if (nbt.hasKey("items", Constants.NBT.TAG_COMPOUND)) {
-            itemManager.deserializeNBT(nbt.getCompoundTag("items"));
+        if (nbt.contains("items")) {
+            itemManager.deserializeNBT(nbt.getCompoundOrEmpty("items"));
         }
-        if (nbt.hasKey("tanks", Constants.NBT.TAG_COMPOUND)) {
-            tankManager.deserializeNBT(nbt.getCompoundTag("tanks"));
+        if (nbt.contains("tanks")) {
+            tankManager.deserializeNBT(nbt.getCompoundOrEmpty("tanks"));
         }
     }
 
-    protected void migrateOldNBT(int version, NBTTagCompound nbt) {
+    protected void migrateOldNBT(int version, CompoundTag nbt) {
         // 7.99.0 -> 7.99.4
         // Most tiles with a single tank saved it under "tank"
-        NBTTagCompound tankComp = nbt.getCompoundTag("tank");
-        if (!tankComp.hasNoTags()) {
-            NBTTagCompound tanks = new NBTTagCompound();
-            tanks.setTag("tank", tankComp);
-            nbt.setTag("tanks", tanks);
+        CompoundTag tankComp = nbt.getCompoundOrEmpty("tank");
+        if (!tankComp.isEmpty()) {
+            CompoundTag tanks = new CompoundTag();
+            tanks.put("tank", tankComp);
+            nbt.put("tanks", tanks);
         }
     }
 
-    @Override
-    public NBTTagCompound writeToNBT(NBTTagCompound nbt) {
-        super.writeToNBT(nbt);
-        nbt.setInteger("data-version", BCVersion.CURRENT.dataVersion);
-        nbt.setTag("deltas", deltaManager.writeToNBT());
-        if (owner != null && owner.isComplete() && owner != FakePlayerProvider.NULL_PROFILE) {
-            nbt.setTag("owner", NBTUtil.writeGameProfile(new NBTTagCompound(), owner));
+    public CompoundTag writeToNBT(CompoundTag nbt) {
+        nbt.putInt("data-version", BCVersion.CURRENT.dataVersion);
+        nbt.put("deltas", deltaManager.writeToNBT());
+        if (owner != null && owner.id() != null && !owner.name().isEmpty() && owner != FakePlayerProvider.NULL_PROFILE) {
+            nbt.put("owner", NBTUtilBC.writeGameProfile(owner));
         }
-        NBTTagCompound items = itemManager.serializeNBT();
-        if (!items.hasNoTags()) {
-            nbt.setTag("items", items);
+        CompoundTag items = itemManager.serializeNBT();
+        if (!items.isEmpty()) {
+            nbt.put("items", items);
         }
-        NBTTagCompound tanks = tankManager.serializeNBT();
-        if (!tanks.hasNoTags()) {
-            nbt.setTag("tanks", tanks);
+        CompoundTag tanks = tankManager.serializeNBT();
+        if (!tanks.isEmpty()) {
+            nbt.put("tanks", tanks);
         }
         return nbt;
-    }
-
-    @Override
-    protected void setWorldCreate(World world) {
-        // The default impl doesn't actually set the world for some reason :/
-        setWorld(world);
     }
 
     // ##################
@@ -744,7 +795,7 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     }
 
     public void enableDebugging() {
-        if (world.isRemote) {
+        if (world.isClientSide()) {
             return;
         }
         BCAdvDebugging.setCurrentDebugTarget(this);
@@ -757,7 +808,7 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
 
     @Override
     public boolean doesExistInWorld() {
-        return hasWorld() && world.getTileEntity(pos) == this;
+        return hasWorld() && world.getBlockEntity(pos) == this;
     }
 
     @Override
@@ -766,7 +817,7 @@ public abstract class TileBC_Neptune extends TileEntity implements IPayloadRecei
     }
 
     @Override
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public IDetachedRenderer getDebugRenderer() {
         return null;
     }

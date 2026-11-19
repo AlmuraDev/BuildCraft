@@ -6,15 +6,15 @@
 
 package buildcraft.lib.gui.slot;
 
-import net.minecraft.inventory.IInventory;
-import net.minecraft.inventory.Slot;
+import net.minecraft.world.Container;
+import net.minecraft.world.inventory.Slot;
 
 public class SlotHidden extends Slot {
 
     private int saveX;
     private int saveY;
 
-    public SlotHidden(IInventory inv, int index, int x, int y) {
+    public SlotHidden(Container inv, int index, int x, int y) {
         super(inv, index, x, y);
 
         saveX = x;

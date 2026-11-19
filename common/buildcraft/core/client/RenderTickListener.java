@@ -17,19 +17,19 @@ import javax.vecmath.Point3f;
 import org.lwjgl.opengl.GL11;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.WorldClient;
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.profiler.Profiler;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.ChatFormatting;
 
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 
 import buildcraft.api.core.IBox;
 import buildcraft.api.items.IMapLocation.MapLocationType;
@@ -53,7 +53,7 @@ import buildcraft.core.item.ItemMapLocation;
 import buildcraft.core.item.ItemMarkerConnector;
 
 public class RenderTickListener {
-    private static final Vec3d[][][] MAP_LOCATION_POINT = new Vec3d[6][][];
+    private static final Vec3[][][] MAP_LOCATION_POINT = new Vec3[6][][];
     private static final String DIFF_START, DIFF_HEADER_FORMATTING;
 
     private static final Box LAST_RENDERED_MAP_LOC = new Box();
@@ -67,38 +67,38 @@ public class RenderTickListener {
             { { 0.5, 0.9, 0.5 }, { 0.5, 1.2, 0.2 } }, // Forth arrow part (-Z)
         };
 
-        for (EnumFacing face : EnumFacing.VALUES) {
-            Matrix4f matrix = MatrixUtil.rotateTowardsFace(EnumFacing.UP, face);
-            Vec3d[][] arr = new Vec3d[5][2];
+        for (Direction face : Direction.values()) {
+            Matrix4f matrix = MatrixUtil.rotateTowardsFace(Direction.UP, face);
+            Vec3[][] arr = new Vec3[5][2];
             for (int i = 0; i < 5; i++) {
                 for (int j = 0; j < 2; j++) {
                     double[] from = upFace[i][j];
                     Point3f point = new Point3f(new Point3d(from));
                     matrix.transform(point);
-                    Vec3d to = new Vec3d(point.x, point.y, point.z);
+                    Vec3 to = new Vec3(point.x, point.y, point.z);
                     arr[i][j] = to;
                 }
             }
 
             MAP_LOCATION_POINT[face.ordinal()] = arr;
         }
-        DIFF_START = TextFormatting.RED + "" + TextFormatting.BOLD + "!" + TextFormatting.RESET;
-        DIFF_HEADER_FORMATTING = TextFormatting.AQUA + "" + TextFormatting.BOLD;
+        DIFF_START = ChatFormatting.RED + "" + ChatFormatting.BOLD + "!" + ChatFormatting.RESET;
+        DIFF_HEADER_FORMATTING = ChatFormatting.AQUA + "" + ChatFormatting.BOLD;
     }
 
     @SubscribeEvent
     public static void renderOverlay(RenderGameOverlayEvent.Text event) {
-        Minecraft mc = Minecraft.getMinecraft();
-        IDebuggable debuggable = ClientDebuggables.getDebuggableObject(mc.objectMouseOver);
+        Minecraft mc = Minecraft.getInstance();
+        IDebuggable debuggable = ClientDebuggables.getDebuggableObject(mc.hitResult);
         if (debuggable != null) {
             List<String> clientLeft = new ArrayList<>();
             List<String> clientRight = new ArrayList<>();
-            debuggable.getDebugInfo(clientLeft, clientRight, mc.objectMouseOver.sideHit);
+            debuggable.getDebugInfo(clientLeft, clientRight, mc.hitResult.sideHit);
             String headerFirst = DIFF_HEADER_FORMATTING + "SERVER:";
             String headerSecond = DIFF_HEADER_FORMATTING + "CLIENT:";
             appendDiff(event.getLeft(), ClientDebuggables.SERVER_LEFT, clientLeft, headerFirst, headerSecond);
             appendDiff(event.getRight(), ClientDebuggables.SERVER_RIGHT, clientRight, headerFirst, headerSecond);
-            debuggable.getClientDebugInfo(event.getLeft(), event.getRight(), mc.objectMouseOver.sideHit);
+            debuggable.getClientDebugInfo(event.getLeft(), event.getRight(), mc.hitResult.sideHit);
         }
     }
 
@@ -136,14 +136,14 @@ public class RenderTickListener {
     }
 
     private static void renderHeldItemInWorld(float partialTicks) {
-        Minecraft mc = Minecraft.getMinecraft();
-        EntityPlayer player = Minecraft.getMinecraft().player;
+        Minecraft mc = Minecraft.getInstance();
+        Player player = Minecraft.getInstance().player;
         if (player == null) {
             return;
         }
-        ItemStack mainHand = StackUtil.asNonNull(player.getHeldItemMainhand());
-        ItemStack offHand = StackUtil.asNonNull(player.getHeldItemOffhand());
-        WorldClient world = mc.world;
+        ItemStack mainHand = StackUtil.asNonNull(player.getMainHandItem());
+        ItemStack offHand = StackUtil.asNonNull(player.getOffhandItem());
+        ClientLevel world = mc.level;
 
         mc.mcProfiler.startSection("bc");
         mc.mcProfiler.startSection("renderWorld");
@@ -168,12 +168,12 @@ public class RenderTickListener {
     private static void renderMapLocation(@Nonnull ItemStack stack) {
         MapLocationType type = MapLocationType.getFromStack(stack);
         if (type == MapLocationType.SPOT) {
-            EnumFacing face = ItemMapLocation.getPointFace(stack);
+            Direction face = ItemMapLocation.getPointFace(stack);
             IBox box = ItemMapLocation.getPointBox(stack);
             if (box != null) {
-                Vec3d[][] vectors = MAP_LOCATION_POINT[face.ordinal()];
+                Vec3[][] vectors = MAP_LOCATION_POINT[face.ordinal()];
                 GL11.glTranslated(box.min().getX(), box.min().getY(), box.min().getZ());
-                for (Vec3d[] vec : vectors) {
+                for (Vec3[] vec : vectors) {
                     LaserData_BC8 laser =
                         new LaserData_BC8(BuildCraftLaserManager.STRIPES_WRITE, vec[0], vec[1], 1 / 16.0);
                     LaserRenderer_BC8.renderLaserStatic(laser);
@@ -204,20 +204,20 @@ public class RenderTickListener {
         }
     }
 
-    private static void renderMarkerConnector(WorldClient world, EntityPlayer player) {
-        Profiler profiler = Minecraft.getMinecraft().mcProfiler;
-        profiler.startSection("marker");
+    private static void renderMarkerConnector(ClientLevel world, Player player) {
+        ProfilerFiller profiler = Minecraft.getInstance().mcProfiler;
+        profiler.push("marker");
         for (MarkerCache<?> cache : MarkerCache.CACHES) {
-            profiler.startSection(cache.name);
+            profiler.push(cache.name);
             renderMarkerCache(player, cache.getSubCache(world));
-            profiler.endSection();
+            profiler.pop();
         }
-        profiler.endSection();
+        profiler.pop();
     }
 
-    private static void renderMarkerCache(EntityPlayer player, MarkerSubCache<?> cache) {
-        Profiler profiler = Minecraft.getMinecraft().mcProfiler;
-        profiler.startSection("compute");
+    private static void renderMarkerCache(Player player, MarkerSubCache<?> cache) {
+        ProfilerFiller profiler = Minecraft.getInstance().mcProfiler;
+        profiler.push("compute");
         Set<LaserData_BC8> toRender = new HashSet<>();
         for (final BlockPos a : cache.getAllMarkers()) {
             for (final BlockPos b : cache.getValidConnections(a)) {
@@ -226,11 +226,11 @@ public class RenderTickListener {
                     continue;
                 }
 
-                Vec3d start = VecUtil.convertCenter(a);
-                Vec3d end = VecUtil.convertCenter(b);
+                Vec3 start = VecUtil.convertCenter(a);
+                Vec3 end = VecUtil.convertCenter(b);
 
-                Vec3d startToEnd = end.subtract(start).normalize();
-                Vec3d endToStart = start.subtract(end).normalize();
+                Vec3 startToEnd = end.subtract(start).normalize();
+                Vec3 endToStart = start.subtract(end).normalize();
                 start = start.add(VecUtil.scale(startToEnd, 0.125));
                 end = end.add(VecUtil.scale(endToStart, 0.125));
 
@@ -243,14 +243,14 @@ public class RenderTickListener {
                 toRender.add(data);
             }
         }
-        profiler.endStartSection("render");
+        profiler.popPush("render");
         for (LaserData_BC8 laser : toRender) {
             LaserRenderer_BC8.renderLaserStatic(laser);
         }
-        profiler.endSection();
+        profiler.pop();
     }
 
-    private static boolean isLookingAt(BlockPos from, BlockPos to, EntityPlayer player) {
+    private static boolean isLookingAt(BlockPos from, BlockPos to, Player player) {
         return ItemMarkerConnector.doesInteract(from, to, player);
     }
 }

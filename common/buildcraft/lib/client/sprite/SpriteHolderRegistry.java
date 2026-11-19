@@ -28,12 +28,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.fml.common.Loader;
+import net.neoforged.fml.ModList;
 import net.minecraftforge.fml.common.LoaderState;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
@@ -43,13 +44,13 @@ import buildcraft.lib.client.resource.DataMetadataSection;
 import buildcraft.lib.client.resource.MetadataLoader;
 import buildcraft.lib.misc.SpriteUtil;
 
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class SpriteHolderRegistry {
     public static final boolean DEBUG = BCDebugging.shouldDebugLog("lib.sprite.holder");
 
-    private static final Map<ResourceLocation, SpriteHolder> HOLDER_MAP = new HashMap<>();
+    private static final Map<Identifier, SpriteHolder> HOLDER_MAP = new HashMap<>();
 
-    public static SpriteHolder getHolder(ResourceLocation location) {
+    public static SpriteHolder getHolder(Identifier location) {
         if (!HOLDER_MAP.containsKey(location)) {
             HOLDER_MAP.put(location, new SpriteHolder(location));
             if (DEBUG) {
@@ -62,7 +63,7 @@ public class SpriteHolderRegistry {
     }
 
     public static SpriteHolder getHolder(String location) {
-        return getHolder(new ResourceLocation(location));
+        return getHolder(Identifier.parse(location));
     }
 
     public static void onTextureStitchPre(TextureMap map) {
@@ -75,7 +76,7 @@ public class SpriteHolderRegistry {
         if (!DEBUG) {
             return;
         }
-        TextureMap map = Minecraft.getMinecraft().getTextureMapBlocks();
+        TextureMap map = Minecraft.getInstance().getTextureMapBlocks();
         GlStateManager.bindTexture(map.getGlTextureId());
 
         for (int l = 0; l < 4; l++) {
@@ -102,15 +103,15 @@ public class SpriteHolderRegistry {
     }
 
     public static void onTextureStitchPost() {
-        if (DEBUG && Loader.instance().isInState(LoaderState.AVAILABLE)) {
+        if (DEBUG && ModList.get().isInState(LoaderState.AVAILABLE)) {
             BCLog.logger.info("[lib.sprite.holder] List of registered sprites:");
-            List<ResourceLocation> locations = new ArrayList<>();
+            List<Identifier> locations = new ArrayList<>();
             locations.addAll(HOLDER_MAP.keySet());
-            locations.sort(Comparator.comparing(ResourceLocation::toString));
+            locations.sort(Comparator.comparing(Identifier::toString));
 
-            TextureAtlasSprite missing = Minecraft.getMinecraft().getTextureMapBlocks().getMissingSprite();
+            TextureAtlasSprite missing = Minecraft.getInstance().getTextureMapBlocks().getMissingSprite();
 
-            for (ResourceLocation r : locations) {
+            for (Identifier r : locations) {
                 SpriteHolder sprite = HOLDER_MAP.get(r);
                 TextureAtlasSprite stitched = sprite.sprite;
                 String status = "  ";
@@ -129,14 +130,14 @@ public class SpriteHolderRegistry {
     /** Holds a reference to a {@link TextureAtlasSprite} that is automatically refreshed when the resource packs are
      * reloaded. As such you should store this in a static final field in a client-side class, and make sure that the
      * class is initialised before init. */
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public static class SpriteHolder implements ISprite {
-        public final ResourceLocation spriteLocation;
+        public final Identifier spriteLocation;
         private TextureAtlasSprite sprite;
         private DataMetadataSection extraData = null;
         private boolean hasCalled = false;
 
-        private SpriteHolder(ResourceLocation spriteLocation) {
+        private SpriteHolder(Identifier spriteLocation) {
             this.spriteLocation = spriteLocation;
         }
 
@@ -186,7 +187,7 @@ public class SpriteHolderRegistry {
 
         public DataMetadataSection getExtraData(boolean samePack) {
             if (extraData == null) {
-                ResourceLocation actualLocation = SpriteUtil.transformLocation(spriteLocation);
+                Identifier actualLocation = SpriteUtil.transformLocation(spriteLocation);
                 extraData = MetadataLoader.getData(actualLocation, samePack);
             }
             if (extraData == null) {

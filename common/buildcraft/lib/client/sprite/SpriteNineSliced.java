@@ -8,19 +8,20 @@ package buildcraft.lib.client.sprite;
 
 import org.lwjgl.opengl.GL11;
 
-import net.minecraft.client.renderer.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 
 import buildcraft.lib.gui.pos.IGuiArea;
 
 /** Defines and draws a 9-sliced sprite. */
-@SideOnly(Side.CLIENT)
+@OnlyIn(Dist.CLIENT)
 public class SpriteNineSliced {
     public final ISprite sprite;
     public final double xMin, yMin, xMax, yMax;
@@ -63,7 +64,7 @@ public class SpriteNineSliced {
         sprite.bindTexture();
         Tessellator tess = Tessellator.getInstance();
         BufferBuilder vb = tess.getBuffer();
-        vb.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX);
+        vb.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_TEX);
         vb.setTranslation(x, y, 0);
 
         double sx = xScale;

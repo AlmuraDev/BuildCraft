@@ -8,13 +8,13 @@ package buildcraft.lib.fluid;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import net.minecraftforge.common.util.Constants;
-import net.minecraftforge.fluids.Fluid;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.FluidStack;
 
 public class SingleUseTank extends Tank {
 
@@ -22,7 +22,7 @@ public class SingleUseTank extends Tank {
 
     private FluidStack acceptedFluid;
 
-    public SingleUseTank(@Nonnull String name, int capacity, TileEntity tile) {
+    public SingleUseTank(@Nonnull String name, int capacity, BlockEntity tile) {
         super(name, capacity, tile);
     }
 
@@ -34,10 +34,10 @@ public class SingleUseTank extends Tank {
 
         if (doFill && acceptedFluid == null) {
             acceptedFluid = resource.copy();
-            acceptedFluid.amount = 1;
+            acceptedFluid.setAmount(1);
         }
 
-        if (acceptedFluid == null || acceptedFluid.isFluidEqual(resource)) {
+        if (acceptedFluid == null || FluidUtilBC.isFluidEqual(acceptedFluid, resource)) {
             return super.fill(resource, doFill);
         }
 
@@ -60,7 +60,7 @@ public class SingleUseTank extends Tank {
         if (fluid == null) {
             this.acceptedFluid = null;
         } else {
-            this.acceptedFluid = new FluidStack(fluid, 1);
+            this.acceptedFluid = (fluid).copyWithAmount(1);
         }
     }
 
@@ -69,20 +69,20 @@ public class SingleUseTank extends Tank {
     }
 
     @Override
-    public void writeTankToNBT(NBTTagCompound nbt) {
+    public void writeTankToNBT(CompoundTag nbt) {
         super.writeTankToNBT(nbt);
         if (acceptedFluid != null) {
-            nbt.setTag(NBT_ACCEPTED_FLUID, acceptedFluid.writeToNBT(new NBTTagCompound()));
+            nbt.put(NBT_ACCEPTED_FLUID, acceptedFluid.writeToNBT(new CompoundTag()));
         }
     }
 
     @Override
-    public void readTankFromNBT(NBTTagCompound nbt) {
+    public void readTankFromNBT(CompoundTag nbt) {
         super.readTankFromNBT(nbt);
-        if (nbt.hasKey(NBT_ACCEPTED_FLUID, Constants.NBT.TAG_STRING)) {
-            setAcceptedFluid(FluidRegistry.getFluid(nbt.getString(NBT_ACCEPTED_FLUID)));
+        if (nbt.contains(NBT_ACCEPTED_FLUID)) {
+            setAcceptedFluid(FluidRegistry.getFluid(nbt.getStringOr(NBT_ACCEPTED_FLUID, "")));
         } else {
-            acceptedFluid = FluidStack.loadFluidStackFromNBT(nbt.getCompoundTag(NBT_ACCEPTED_FLUID));
+            acceptedFluid = FluidStack.loadFluidStackFromNBT(nbt.getCompoundOrEmpty(NBT_ACCEPTED_FLUID));
         }
     }
 }

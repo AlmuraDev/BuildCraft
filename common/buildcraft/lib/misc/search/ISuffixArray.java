@@ -2,12 +2,12 @@ package buildcraft.lib.misc.search;
 
 import java.util.List;
 
-import net.minecraft.profiler.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
 
 public interface ISuffixArray<T> {
     void add(T obj, String name);
 
-    void generate(Profiler prof);
+    void generate(ProfilerFiller prof);
 
     SearchResult<T> search(String substring, int maxResults);
 

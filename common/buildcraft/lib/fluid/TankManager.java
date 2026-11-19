@@ -13,18 +13,19 @@ import java.util.List;
 
 import com.google.common.collect.ForwardingList;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.BlockPos;
 
-import net.minecraftforge.common.util.INBTSerializable;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidTankProperties;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import buildcraft.api.core.INBTSerializable;
+import net.neoforged.neoforge.fluids.FluidStack;
+import buildcraft.api.transfer.IFluidTankProperties;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.IFluidFilter;
 import buildcraft.api.core.IFluidHandlerAdv;
@@ -35,7 +36,7 @@ import buildcraft.lib.net.PacketBufferBC;
 
 /** Provides a simple way to save+load and send+receive data for any number of tanks. This also attempts to fill all of
  * the tanks one by one via the {@link #fill(FluidStack, boolean)} and {@link #drain(FluidStack, boolean)} methods. */
-public class TankManager extends ForwardingList<Tank> implements IFluidHandlerAdv, INBTSerializable<NBTTagCompound> {
+public class TankManager extends ForwardingList<Tank> implements IFluidHandlerAdv, INBTSerializable<CompoundTag> {
 
     private final List<Tank> tanks = new ArrayList<>();
 
@@ -58,7 +59,7 @@ public class TankManager extends ForwardingList<Tank> implements IFluidHandlerAd
         FluidItemDrops.addFluidDrops(toDrop, toArray(new Tank[0]));
     }
 
-    public boolean onActivated(EntityPlayer player, BlockPos pos, EnumHand hand) {
+    public boolean onActivated(Player player, BlockPos pos, InteractionHand hand) {
         return FluidUtilBC.onTankActivated(player, pos, hand, this);
     }
 
@@ -99,9 +100,9 @@ public class TankManager extends ForwardingList<Tank> implements IFluidHandlerAd
             int used = tank.fill(resource, doFill);
             if (used > 0) {
                 resource = resource.copy();
-                resource.amount -= used;
+                resource.shrink(used);
                 filled += used;
-                if (resource.amount <= 0) {
+                if (resource.getAmount() <= 0) {
                     return filled;
                 }
             }
@@ -114,19 +115,19 @@ public class TankManager extends ForwardingList<Tank> implements IFluidHandlerAd
         if (resource == null) {
             return null;
         }
-        FluidStack draining = new FluidStack(resource, 0);
-        int left = resource.amount;
+        FluidStack draining = (resource).copyWithAmount(0);
+        int left = resource.getAmount();
         for (Tank tank : getDrainOrderTanks()) {
-            if (!draining.isFluidEqual(tank.getFluid())) {
+            if (!FluidUtilBC.isFluidEqual(draining, tank.getFluid())) {
                 continue;
             }
             FluidStack drained = tank.drain(left, doDrain);
-            if (drained != null && drained.amount > 0) {
-                draining.amount += drained.amount;
-                left -= drained.amount;
+            if (drained != null && drained.getAmount() > 0) {
+                draining.grow(drained.getAmount());
+                left -= drained.getAmount();
             }
         }
-        return draining.amount <= 0 ? null : draining;
+        return draining.getAmount() <= 0 ? null : draining;
     }
 
     @Override
@@ -135,15 +136,15 @@ public class TankManager extends ForwardingList<Tank> implements IFluidHandlerAd
         for (Tank tank : getDrainOrderTanks()) {
             if (draining == null) {
                 FluidStack drained = tank.drain(maxDrain, doDrain);
-                if (drained != null && drained.amount > 0) {
+                if (drained != null && drained.getAmount() > 0) {
                     draining = drained;
-                    maxDrain -= drained.amount;
+                    maxDrain -= drained.getAmount();
                 }
-            } else if (draining.isFluidEqual(tank.getFluid())) {
+            } else if (FluidUtilBC.isFluidEqual(draining, tank.getFluid())) {
                 FluidStack drained = tank.drain(maxDrain, doDrain);
-                if (drained != null && drained.amount > 0) {
-                    draining.amount += drained.amount;
-                    maxDrain -= drained.amount;
+                if (drained != null && drained.getAmount() > 0) {
+                    draining.grow(drained.getAmount());
+                    maxDrain -= drained.getAmount();
                 }
             }
         }
@@ -162,15 +163,15 @@ public class TankManager extends ForwardingList<Tank> implements IFluidHandlerAd
             }
             if (draining == null) {
                 FluidStack drained = tank.drain(maxDrain, doDrain);
-                if (drained != null && drained.amount > 0) {
+                if (drained != null && drained.getAmount() > 0) {
                     draining = drained;
-                    maxDrain -= drained.amount;
+                    maxDrain -= drained.getAmount();
                 }
-            } else if (draining.isFluidEqual(tank.getFluid())) {
+            } else if (FluidUtilBC.isFluidEqual(draining, tank.getFluid())) {
                 FluidStack drained = tank.drain(maxDrain, doDrain);
-                if (drained != null && drained.amount > 0) {
-                    draining.amount += drained.amount;
-                    maxDrain -= drained.amount;
+                if (drained != null && drained.getAmount() > 0) {
+                    draining.grow(drained.getAmount());
+                    maxDrain -= drained.getAmount();
                 }
             }
         }
@@ -187,18 +188,18 @@ public class TankManager extends ForwardingList<Tank> implements IFluidHandlerAd
     }
 
     @Override
-    public NBTTagCompound serializeNBT() {
-        NBTTagCompound nbt = new NBTTagCompound();
+    public CompoundTag serializeNBT() {
+        CompoundTag nbt = new CompoundTag();
         for (Tank t : tanks) {
-            nbt.setTag(t.getTankName(), t.serializeNBT());
+            nbt.put(t.getTankName(), t.serializeNBT());
         }
         return nbt;
     }
 
     @Override
-    public void deserializeNBT(NBTTagCompound nbt) {
+    public void deserializeNBT(CompoundTag nbt) {
         for (Tank t : tanks) {
-            t.readFromNBT(nbt.getCompoundTag(t.getTankName()));
+            t.readFromNBT(nbt.getCompoundOrEmpty(t.getTankName()));
         }
     }
 
@@ -208,7 +209,7 @@ public class TankManager extends ForwardingList<Tank> implements IFluidHandlerAd
         }
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void readData(PacketBufferBC buffer) {
         for (Tank tank : tanks) {
             tank.readFromBuffer(buffer);

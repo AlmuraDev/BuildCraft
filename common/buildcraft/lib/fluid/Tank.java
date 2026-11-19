@@ -13,20 +13,21 @@ import java.util.function.Predicate;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.ChatFormatting;
 
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
+import net.minecraft.world.level.material.Fluid;
+import net.neoforged.neoforge.fluids.FluidStack;
+
+import buildcraft.api.transfer.NeoTransfer;
+import buildcraft.api.transfer.IFluidHandlerItem;
+import net.neoforged.fml.LogicalSide;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.IFluidFilter;
 import buildcraft.api.core.IFluidHandlerAdv;
@@ -72,14 +73,14 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
 
     /** Creates a tank with the given name and capacity (in milli buckets) with no filter set (so any fluid can go into
      * the tank) */
-    public Tank(@Nonnull String name, int capacity, TileEntity tile) {
+    public Tank(@Nonnull String name, int capacity, BlockEntity tile) {
         this(name, capacity, tile, null);
     }
 
     /** Creates a tank with the given name and capacity (in milli buckets) with the specified filter set. If the filter
      * returns true for a given fluidstack then it will be allowed in the tank. The given fluidstack will NEVER be
      * null. */
-    public Tank(@Nonnull String name, int capacity, TileEntity tile, @Nullable Predicate<FluidStack> filter) {
+    public Tank(@Nonnull String name, int capacity, BlockEntity tile, @Nullable Predicate<FluidStack> filter) {
         super(capacity);
         this.name = name;
         this.tile = tile;
@@ -102,12 +103,12 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
 
     public boolean isEmpty() {
         FluidStack fluidStack = getFluid();
-        return fluidStack == null || fluidStack.amount <= 0;
+        return fluidStack == null || fluidStack.getAmount() <= 0;
     }
 
     public boolean isFull() {
         FluidStack fluidStack = getFluid();
-        return fluidStack != null && fluidStack.amount >= getCapacity();
+        return fluidStack != null && fluidStack.getAmount() >= getCapacity();
     }
 
     public Fluid getFluidType() {
@@ -115,22 +116,22 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
         return fluidStack != null ? fluidStack.getFluid() : null;
     }
 
-    public NBTTagCompound serializeNBT() {
-        return writeToNBT(new NBTTagCompound());
+    public CompoundTag serializeNBT() {
+        return writeToNBT(new CompoundTag());
     }
 
     @Override
-    public final NBTTagCompound writeToNBT(NBTTagCompound nbt) {
+    public final CompoundTag writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
         writeTankToNBT(nbt);
         return nbt;
     }
 
     @Override
-    public final FluidTank readFromNBT(NBTTagCompound nbt) {
-        if (nbt.hasKey(name)) {
+    public final FluidTank readFromNBT(CompoundTag nbt) {
+        if (nbt.contains(name)) {
             // Old style of saving + loading
-            NBTTagCompound tankData = nbt.getCompoundTag(name);
+            CompoundTag tankData = nbt.getCompoundOrEmpty(name);
             super.readFromNBT(tankData);
             readTankFromNBT(tankData);
         } else {
@@ -142,11 +143,11 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
 
     /** Writes some additional information to the nbt, for example {@link SingleUseTank} will write out the filtering
      * fluid. */
-    protected void writeTankToNBT(NBTTagCompound nbt) {}
+    protected void writeTankToNBT(CompoundTag nbt) {}
 
     /** Reads some additional information to the nbt, for example {@link SingleUseTank} will read in the filtering
      * fluid. */
-    protected void readTankFromNBT(NBTTagCompound nbt) {}
+    protected void readTankFromNBT(CompoundTag nbt) {}
 
     public ToolTip getToolTip() {
         return toolTip;
@@ -157,14 +158,14 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
         int amount = clientAmount;
         FluidStack fluidStack = clientFluid == null ? null : clientFluid.get().copy();
         if (fluidStack != null && amount > 0) {
-            toolTip.add(fluidStack.getLocalizedName());
+            toolTip.add(fluidStack.getHoverName().getString());
         }
-        toolTip.add(TextFormatting.GRAY + LocaleUtil.localizeFluidStaticAmount(amount, getCapacity()));
+        toolTip.add(ChatFormatting.GRAY + LocaleUtil.localizeFluidStaticAmount(amount, getCapacity()));
         FluidStack serverFluid = getFluid();
-        if (serverFluid != null && serverFluid.amount > 0) {
-            toolTip.add(TextFormatting.RED + "BUG: Server-side fluid on client!");
-            toolTip.add(serverFluid.getLocalizedName());
-            toolTip.add(LocaleUtil.localizeFluidStaticAmount(serverFluid.amount, getCapacity()));
+        if (serverFluid != null && serverFluid.getAmount() > 0) {
+            toolTip.add(ChatFormatting.RED + "BUG: Server-side fluid on client!");
+            toolTip.add(serverFluid.getHoverName().getString());
+            toolTip.add(LocaleUtil.localizeFluidStaticAmount(serverFluid.getAmount(), getCapacity()));
         }
     }
 
@@ -208,7 +209,7 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
 
     public String getContentsString() {
         if (fluid != null) {
-            return fluid.getLocalizedName() + LocaleUtil.localizeFluidStaticAmount(this);
+            return fluid.getHoverName().getString() + LocaleUtil.localizeFluidStaticAmount(this);
         }
         return LocaleUtil.localizeFluidStaticAmount(0, getCapacity());
     }
@@ -223,7 +224,7 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
         buffer.writeInt(getFluidAmount());
     }
 
-    @SideOnly(Side.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public void readFromBuffer(PacketBufferBC buffer) {
         if (buffer.readBoolean()) {
             clientFluid = BuildCraftObjectCaches.CACHE_FLUIDS.client().retrieve(buffer.readInt());
@@ -238,7 +239,7 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
             return null;
         } else {
             FluidStack stackBase = clientFluid.get();
-            return new FluidStack(stackBase, clientAmount);
+            return (stackBase).copyWithAmount(clientAmount);
         }
     }
 
@@ -249,21 +250,20 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
     public String getDebugString() {
         FluidStack f = getFluidForRender();
         if (f == null) f = getFluid();
-        return (f == null ? 0 : f.amount) + " / " + capacity + " mB of " + (f != null ? f.getFluid().getName() : "n/a");
+        return (f == null ? 0 : f.getAmount()) + " / " + capacity + " mB of " + (f != null ? net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(f.getFluid()).toString() : "n/a");
     }
 
     public void onGuiClicked(ContainerBC_Neptune container) {
-        EntityPlayer player = container.player;
-        ItemStack held = player.inventory.getItemStack();
+        Player player = container.player;
+        ItemStack held = container.getCarried();
         if (held.isEmpty()) {
             return;
         }
         ItemStack stack = transferStackToTank(container, held);
-        player.inventory.setItemStack(stack);
-        ((EntityPlayerMP) player).updateHeldItem();
-        player.inventoryContainer.detectAndSendChanges();
-        if (player.openContainer != null) {
-            player.openContainer.detectAndSendChanges();
+        container.setCarried(stack);
+        player.inventoryMenu.broadcastChanges();
+        if (player.containerMenu != null) {
+            player.containerMenu.broadcastChanges();
         }
     }
 
@@ -271,10 +271,10 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
      *
      * @return The left over item after attempting to add the stack to this tank. */
     public ItemStack transferStackToTank(ContainerBC_Neptune container, ItemStack stack) {
-        EntityPlayer player = container.player;
+        Player player = container.player;
         // first try to fill this tank from the item
 
-        if (player.world.isRemote) {
+        if (player.level().isClientSide()) {
             return stack;
         }
 
@@ -283,16 +283,16 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
         copy.setCount(1);
         int space = capacity - getFluidAmount();
 
-        boolean isCreative = player.capabilities.isCreativeMode;
+        boolean isCreative = player.isCreative();
         boolean isSurvival = !isCreative;
 
         FluidGetResult result = map(copy, space);
-        if (result != null && result.fluidStack != null && result.fluidStack.amount > 0) {
+        if (result != null && result.fluidStack != null && result.fluidStack.getAmount() > 0) {
             if (isCreative) {
                 stack = copy;// so we don't change the stack held by the player.
             }
             int accepted = fill(result.fluidStack, false);
-            if (isCreative ? (accepted > 0) : (accepted == result.fluidStack.amount)) {
+            if (isCreative ? (accepted > 0) : (accepted == result.fluidStack.getAmount())) {
                 int reallyAccepted = fill(result.fluidStack, true);
                 if (reallyAccepted != accepted) {
                     throw new IllegalStateException(
@@ -301,7 +301,7 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
                 stack.shrink(1);
                 FluidStack fl = getFluid();
                 if (fl != null) {
-                    SoundUtil.playBucketEmpty(player.world, player.getPosition(), fl);
+                    SoundUtil.playBucketEmpty(player.level(), player.blockPosition(), fl);
                 }
                 if (isSurvival) {
                     if (stack.isEmpty()) {
@@ -315,18 +315,18 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
             }
         }
         // Now try to drain the fluid into the item
-        IFluidHandlerItem fluidHandler = FluidUtil.getFluidHandler(copy);
+        IFluidHandlerItem fluidHandler = NeoTransfer.fluidHandlerOf(copy);
         if (fluidHandler == null) return stack;
         FluidStack drained = drainInternal(capacity, false);
-        if (drained == null || drained.amount <= 0) return stack;
+        if (drained == null || drained.getAmount() <= 0) return stack;
         int filled = fluidHandler.fill(drained, true);
         if (filled > 0) {
             FluidStack reallyDrained = drainInternal(filled, true);
-            if ((reallyDrained == null || reallyDrained.amount != filled)) {
+            if ((reallyDrained == null || reallyDrained.getAmount() != filled)) {
                 throw new IllegalStateException("Somehow drained differently than expected! ( drained = "//
                     + drained + ", filled = " + filled + ", reallyDrained = " + reallyDrained + " )");
             }
-            SoundUtil.playBucketFill(player.world, player.getPosition(), reallyDrained);
+            SoundUtil.playBucketFill(player.level(), player.blockPosition(), reallyDrained);
             if (isSurvival) {
                 if (original.getCount() == 1) {
                     return fluidHandler.getContainer();
@@ -348,10 +348,10 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
      * @param stack The stack to map. This will ALWAYS have an {@link ItemStack#getCount()} of 1.
      * @param space The maximum amount of fluid that can be accepted by this tank. */
     protected FluidGetResult map(ItemStack stack, int space) {
-        IFluidHandlerItem fluidHandler = FluidUtil.getFluidHandler(stack.copy());
+        IFluidHandlerItem fluidHandler = NeoTransfer.fluidHandlerOf(stack);
         if (fluidHandler == null) return null;
         FluidStack drained = fluidHandler.drain(space, true);
-        if (drained == null || drained.amount <= 0) return null;
+        if (drained == null || drained.getAmount() <= 0) return null;
         ItemStack leftOverStack = fluidHandler.getContainer();
         if (leftOverStack.isEmpty()) leftOverStack = StackUtil.EMPTY;
         return new FluidGetResult(leftOverStack, drained);

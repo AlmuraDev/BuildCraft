@@ -19,12 +19,12 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.NonNullList;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.NonNullList;
 
 import net.minecraftforge.oredict.OreDictionary;
 
@@ -57,17 +57,17 @@ public class StackUtil {
      * (at all) then this will only return true if both are null. */
     public static boolean canMerge(@Nonnull ItemStack a, @Nonnull ItemStack b) {
         // Checks item, damage
-        if (!ItemStack.areItemsEqual(a, b)) {
+        if (!ItemStack.isSameItem(a, b)) {
             return false;
         }
         // checks tags and caps
-        return ItemStack.areItemStackTagsEqual(a, b);
+        return ItemStack.isSameItemSameComponents(a, b);
     }
 
     /** Attempts to get an item stack that might place down the given blockstate. Obviously this isn't perfect, and so
      * cannot be relied on for anything more than simple blocks. */
     @Nonnull
-    public static ItemStack getItemStackForState(IBlockState state) {
+    public static ItemStack getItemStackForState(BlockState state) {
         Block b = state.getBlock();
         ItemStack stack = new ItemStack(b);
         if (stack.isEmpty()) {
@@ -137,19 +137,19 @@ public class StackUtil {
         return true;
     }
 
-    public static NBTTagCompound stripNonFunctionNbt(@Nonnull ItemStack from) {
-        NBTTagCompound nbt = NBTUtilBC.getItemData(from).copy();
-        if (nbt.getSize() == 0) {
+    public static CompoundTag stripNonFunctionNbt(@Nonnull ItemStack from) {
+        CompoundTag nbt = NBTUtilBC.getItemData(from).copy();
+        if (nbt.size() == 0) {
             return nbt;
         }
-        nbt.removeTag("_data");
+        nbt.remove("_data");
         // TODO: Remove all of the non functional stuff (name, desc, etc)
         return nbt;
     }
 
     public static boolean doesStackNbtMatch(@Nonnull ItemStack target, @Nonnull ItemStack with) {
-        NBTTagCompound nbtTarget = stripNonFunctionNbt(target);
-        NBTTagCompound nbtWith = stripNonFunctionNbt(with);
+        CompoundTag nbtTarget = stripNonFunctionNbt(target);
+        CompoundTag nbtWith = stripNonFunctionNbt(with);
         return nbtTarget.equals(nbtWith);
     }
 
@@ -170,7 +170,7 @@ public class StackUtil {
             return list.matches(stack2, stack1);
         }
 
-        return stack1.isItemEqual(stack2) && ItemStack.areItemStackTagsEqual(stack1, stack2);
+        return ItemStack.isSameItem(stack1, stack2) && ItemStack.isSameItemSameComponents(stack1, stack2);
     }
 
     /** This doesn't take into account stack sizes.
@@ -228,8 +228,8 @@ public class StackUtil {
                 for (int id : idBase) {
                     for (ItemStack itemstack : OreDictionary.getOres(OreDictionary.getOreName(id))) {
                         if (comparison.getItem() == itemstack.getItem()
-                            && (itemstack.getItemDamage() == OreDictionary.WILDCARD_VALUE
-                                || comparison.getItemDamage() == itemstack.getItemDamage())) {
+                            && (itemstack.getDamageValue() == OreDictionary.WILDCARD_VALUE
+                                || comparison.getDamageValue() == itemstack.getDamageValue())) {
                             return true;
                         }
                     }
@@ -245,8 +245,8 @@ public class StackUtil {
             for (int id : oreIDs) {
                 for (ItemStack itemstack : OreDictionary.getOres(OreDictionary.getOreName(id))) {
                     if (comparison.getItem() == itemstack.getItem()
-                        && (itemstack.getItemDamage() == OreDictionary.WILDCARD_VALUE
-                            || comparison.getItemDamage() == itemstack.getItemDamage())) {
+                        && (itemstack.getDamageValue() == OreDictionary.WILDCARD_VALUE
+                            || comparison.getDamageValue() == itemstack.getDamageValue())) {
                         return true;
                     }
                 }
@@ -285,7 +285,7 @@ public class StackUtil {
     /** This variant also checks damage for damaged items. */
     public static boolean isEqualItem(final @Nonnull ItemStack base, final @Nonnull ItemStack comparison) {
         if (isMatchingItem(base, comparison, false, true)) {
-            return isWildcard(base) || isWildcard(comparison) || base.getItemDamage() == comparison.getItemDamage();
+            return isWildcard(base) || isWildcard(comparison) || base.getDamageValue() == comparison.getDamageValue();
         } else {
             return false;
         }
@@ -310,13 +310,13 @@ public class StackUtil {
         }
         if (matchDamage && base.getHasSubtypes()) {
             if (!isWildcard(base) && !isWildcard(comparison)) {
-                if (base.getItemDamage() != comparison.getItemDamage()) {
+                if (base.getDamageValue() != comparison.getDamageValue()) {
                     return false;
                 }
             }
         }
         if (matchNBT) {
-            NBTTagCompound baseTag = base.getTagCompound();
+            CompoundTag baseTag = base.getTagCompound();
             if (baseTag != null && !baseTag.equals(comparison.getTagCompound())) {
                 return false;
             }
@@ -349,7 +349,7 @@ public class StackUtil {
      * @param stack The stack to check
      * @return True if the stack is a wildcard, false if not. */
     public static boolean isWildcard(@Nonnull ItemStack stack) {
-        return isWildcard(stack.getItemDamage());
+        return isWildcard(stack.getDamageValue());
     }
 
     /** Checks to see if the given {@link ItemStack} is considered to be a wildcard stack - that is any damage value on
@@ -428,7 +428,7 @@ public class StackUtil {
             return 0;
         }
         if (!stack.hasTagCompound()) {
-            return Objects.hash(stack.getItem(), stack.getMetadata());
+            return Objects.hash(stack.getItem(), stack.getDamageValue());
         }
         return stack.serializeNBT().hashCode();
     }
