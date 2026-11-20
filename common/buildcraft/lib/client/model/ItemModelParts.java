@@ -124,7 +124,13 @@ public final class ItemModelParts<K> implements ItemModel {
 
     /** @return The item model type codec for a source. Register it once on RegisterItemModelsEvent. */
     public static <K> MapCodec<ItemModel.Unbaked> codec(Source<K> source, ItemTransforms transforms) {
-        Unbaked<K> unbaked = new Unbaked<>(source, transforms);
+        return codec(source, transforms, false);
+    }
+
+    /** @param blockLight true to light the item like a block (1.12.2's isGui3d), false for flat item lighting. */
+    public static <K> MapCodec<ItemModel.Unbaked> codec(Source<K> source, ItemTransforms transforms,
+        boolean blockLight) {
+        Unbaked<K> unbaked = new Unbaked<>(source, transforms, blockLight);
         unbaked.codec = MapCodec.unit((ItemModel.Unbaked) unbaked);
         return unbaked.codec;
     }
@@ -133,12 +139,14 @@ public final class ItemModelParts<K> implements ItemModel {
 
     private final Source<K> source;
     private final ItemTransforms transforms;
+    private final boolean blockLight;
     private final Matrix4fc transformation;
     private final Map<K, Geometry> cache = new ConcurrentHashMap<>();
 
-    private ItemModelParts(Source<K> source, ItemTransforms transforms, Matrix4fc transformation) {
+    private ItemModelParts(Source<K> source, ItemTransforms transforms, boolean blockLight, Matrix4fc transformation) {
         this.source = source;
         this.transforms = transforms;
+        this.blockLight = blockLight;
         this.transformation = transformation;
     }
 
@@ -158,7 +166,7 @@ public final class ItemModelParts<K> implements ItemModel {
         }
         layer.setExtents(geometry.extents);
         layer.setLocalTransform(transformation);
-        new ModelRenderProperties(false, geometry.particle, transforms).applyToLayer(layer, displayContext);
+        new ModelRenderProperties(blockLight, geometry.particle, transforms).applyToLayer(layer, displayContext);
         layer.setQuads(geometry.quads);
     }
 
@@ -184,11 +192,13 @@ public final class ItemModelParts<K> implements ItemModel {
     private static final class Unbaked<K> implements ItemModel.Unbaked {
         private final Source<K> source;
         private final ItemTransforms transforms;
+        private final boolean blockLight;
         MapCodec<ItemModel.Unbaked> codec;
 
-        Unbaked(Source<K> source, ItemTransforms transforms) {
+        Unbaked(Source<K> source, ItemTransforms transforms, boolean blockLight) {
             this.source = source;
             this.transforms = transforms;
+            this.blockLight = blockLight;
         }
 
         @Override
@@ -201,7 +211,7 @@ public final class ItemModelParts<K> implements ItemModel {
 
         @Override
         public ItemModel bake(ItemModel.BakingContext context, Matrix4fc transformation) {
-            return new ItemModelParts<>(source, transforms, transformation);
+            return new ItemModelParts<>(source, transforms, blockLight, transformation);
         }
     }
 }

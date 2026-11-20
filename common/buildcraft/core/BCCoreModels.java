@@ -49,10 +49,47 @@ public class BCCoreModels {
     }
 
     /** Touches the class so the model holders exist before the first resource reload. */
-    public static void fmlPreInit() {}
+    /** The quads each engine type's item shows (1.12.2 baked these into the engine item models). Core adds wood and
+     * creative; energy adds its own engines. Called on the render thread. */
+    public static final java.util.Map<EnumEngineType, java.util.function.Supplier<MutableQuad[]>> ENGINE_ITEM_QUADS =
+        new java.util.concurrent.ConcurrentHashMap<>();
 
-    // TODO(26.3): engine items. 1.12.2 baked the variable model into the item model; 26.3 needs a special item model
-    // renderer for that. Until then the item definitions point at the vanilla-loadable fallback models.
+    public static void fmlPreInit() {
+        ENGINE_ITEM_QUADS.put(EnumEngineType.WOOD, () -> getItemEngineQuads(ENGINE_REDSTONE, EnumPowerStage.BLUE));
+        ENGINE_ITEM_QUADS.put(EnumEngineType.CREATIVE, () -> getItemEngineQuads(ENGINE_CREATIVE, EnumPowerStage.BLACK));
+        BCCore.MOD_BUS.addListener(BCCoreModels::registerItemModels);
+    }
+
+    /** Engine items: the engine's own model, pointing up, part way through its stroke (as 1.12.2 baked them). */
+    private static void registerItemModels(net.neoforged.neoforge.client.event.RegisterItemModelsEvent event) {
+        event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath(BCCore.MODID, "engine"),
+            buildcraft.lib.client.model.ItemModelParts.codec(
+                new buildcraft.lib.client.model.ItemModelParts.Source<EnumEngineType>() {
+                    @Override
+                    public EnumEngineType key(net.minecraft.world.item.ItemStack stack) {
+                        return BCCoreBlocks.engine == null ? EnumEngineType.WOOD : BCCoreBlocks.engine.getType(stack);
+                    }
+
+                    @Override
+                    public void addQuads(EnumEngineType type, buildcraft.lib.client.model.ItemModelParts.QuadSink sink) {
+                        java.util.function.Supplier<MutableQuad[]> quads = ENGINE_ITEM_QUADS.get(type);
+                        if (quads != null) {
+                            sink.add(quads.get(), false);
+                        }
+                    }
+                }, buildcraft.lib.client.model.ItemModelParts.TRANSFORM_BLOCK, true));
+    }
+
+    private static MutableQuad[] getItemEngineQuads(ModelHolderVariable model, EnumPowerStage stage) {
+        ENGINE_PROGRESS.value = 0.2;
+        ENGINE_STAGE.value = stage;
+        ENGINE_FACING.value = net.minecraft.core.Direction.UP;
+        buildcraft.lib.misc.data.ModelVariableData varData = new buildcraft.lib.misc.data.ModelVariableData();
+        varData.setNodes(model.createTickableNodes());
+        varData.tick();
+        varData.refresh();
+        return model.getCutoutQuads();
+    }
 
     @SuppressWarnings("unchecked")
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {

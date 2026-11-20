@@ -94,11 +94,8 @@ ITEMS = {
                                         [(t, 'buildcraftcore:item/decorated/' + t)
                                          for t in ['destroy', 'blueprint', 'template', 'paper', 'leather', 'laser_back']],
                                         'buildcraftcore:item/decorated/destroy'),
-        # TODO(26.3): the engine item models are BuildCraft variable models (a special item renderer is needed); until
-        # then the items show the plain block models.
-        'engine': select_block_state('type', [(t, 'buildcraftcore:block/engine/' + t)
-                                              for t in ['wood', 'stone', 'iron', 'creative', 'rf']],
-                                     'buildcraftcore:block/engine/wood'),
+        # Engine items are their engine models, drawn in code (BCCoreModels/BCEnergyModels.ENGINE_ITEM_QUADS)
+        'engine': {'type': 'buildcraftcore:engine'},
     },
 }
 
@@ -167,8 +164,8 @@ ENERGY_FLUIDS = ['oil', 'oil_residue', 'oil_heavy', 'oil_dense', 'oil_distilled'
 def _add_energy():
     ITEMS['buildcraftenergy'] = {
         'glob_of_oil': model('buildcraftenergy:item/glob_oil'),
-        # TODO(26.3): the dynamo item is a BuildCraft variable model like the engines; a plain fallback until then
-        'mj_dynamo': model('buildcraftenergy:block/mj_dynamo_fallback'),
+        # The dynamo item is its engine-style model, drawn in code (BCEnergyModels.registerItemModels)
+        'mj_dynamo': {'type': 'buildcraftenergy:mj_dynamo'},
     }
     MODELS['buildcraftenergy'] = {
         'block/mj_dynamo_fallback': {'parent': 'block/cube_all',

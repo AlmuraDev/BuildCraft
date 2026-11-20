@@ -1,48 +1,5 @@
 {
   "model": {
-    "type": "minecraft:select",
-    "property": "minecraft:block_state",
-    "block_state_property": "type",
-    "cases": [
-      {
-        "when": "wood",
-        "model": {
-          "type": "minecraft:model",
-          "model": "buildcraftcore:block/engine/wood"
-        }
-      },
-      {
-        "when": "stone",
-        "model": {
-          "type": "minecraft:model",
-          "model": "buildcraftcore:block/engine/stone"
-        }
-      },
-      {
-        "when": "iron",
-        "model": {
-          "type": "minecraft:model",
-          "model": "buildcraftcore:block/engine/iron"
-        }
-      },
-      {
-        "when": "creative",
-        "model": {
-          "type": "minecraft:model",
-          "model": "buildcraftcore:block/engine/creative"
-        }
-      },
-      {
-        "when": "rf",
-        "model": {
-          "type": "minecraft:model",
-          "model": "buildcraftcore:block/engine/rf"
-        }
-      }
-    ],
-    "fallback": {
-      "type": "minecraft:model",
-      "model": "buildcraftcore:block/engine/wood"
-    }
+    "type": "buildcraftcore:engine"
   }
 }

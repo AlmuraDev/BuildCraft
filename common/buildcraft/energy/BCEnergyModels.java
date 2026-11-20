@@ -63,6 +63,39 @@ public class BCEnergyModels {
 
     public static void fmlPreInit() {
         BCEnergy.MOD_BUS.addListener(BCEnergyModels::registerRenderers);
+        buildcraft.core.BCCoreModels.ENGINE_ITEM_QUADS.put(EnumEngineType.STONE, () -> getItemQuads(ENGINE_STONE));
+        buildcraft.core.BCCoreModels.ENGINE_ITEM_QUADS.put(EnumEngineType.IRON, () -> getItemQuads(ENGINE_IRON));
+        buildcraft.core.BCCoreModels.ENGINE_ITEM_QUADS.put(EnumEngineType.RF, () -> getItemQuads(ENGINE_RF));
+        BCEnergy.MOD_BUS.addListener(BCEnergyModels::registerItemModels);
+    }
+
+    /** The MJ dynamo item: its model pointing up, part way through its stroke (like the engine items). */
+    private static void registerItemModels(net.neoforged.neoforge.client.event.RegisterItemModelsEvent event) {
+        event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("buildcraftenergy", "mj_dynamo"),
+            buildcraft.lib.client.model.ItemModelParts.codec(
+                new buildcraft.lib.client.model.ItemModelParts.Source<Boolean>() {
+                    @Override
+                    public Boolean key(net.minecraft.world.item.ItemStack stack) {
+                        return Boolean.TRUE;
+                    }
+
+                    @Override
+                    public void addQuads(Boolean key, buildcraft.lib.client.model.ItemModelParts.QuadSink sink) {
+                        sink.add(getItemQuads(MJ_DYNAMO), false);
+                    }
+                }, buildcraft.lib.client.model.ItemModelParts.TRANSFORM_BLOCK, true));
+    }
+
+    /** An engine model as 1.12.2 baked it for the item: facing up, blue, 20% through its stroke. */
+    private static MutableQuad[] getItemQuads(ModelHolderVariable model) {
+        ENGINE_PROGRESS.value = 0.2;
+        ENGINE_STAGE.value = EnumPowerStage.BLUE;
+        ENGINE_FACING.value = Direction.UP;
+        buildcraft.lib.misc.data.ModelVariableData varData = new buildcraft.lib.misc.data.ModelVariableData();
+        varData.setNodes(model.createTickableNodes());
+        varData.tick();
+        varData.refresh();
+        return model.getCutoutQuads();
     }
 
     @SuppressWarnings("unchecked")
