@@ -27,6 +27,14 @@ public class BCFactory {
     public static IEventBus MOD_BUS;
 
     public BCFactory(IEventBus modBus, ModContainer container) {
+        // Construct one module at a time (see BCModConstruction)
+        synchronized (buildcraft.lib.BCModConstruction.LOCK) {
+            registerTags();
+            construct(modBus, container);
+        }
+    }
+
+    private void construct(IEventBus modBus, ModContainer container) {
         INSTANCE = this;
         MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
@@ -47,7 +55,7 @@ public class BCFactory {
         evt.enqueueWork(() -> BCFactoryProxy.getProxy().fmlPostInit());
     }
 
-    static {
+    private static void registerTags() {
         startBatch();// factory
         // BC Factory Items
         registerTag("item.plastic.sheet").reg("plastic_sheet").locale("plasticSheet").oldReg("plasticSheet").model("plastic_sheet");

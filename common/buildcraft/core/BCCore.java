@@ -45,6 +45,14 @@ public class BCCore {
     }
 
     public BCCore(IEventBus modBus, ModContainer container) {
+        // Construct one module at a time (see BCModConstruction)
+        synchronized (buildcraft.lib.BCModConstruction.LOCK) {
+            registerTags();
+            construct(modBus, container);
+        }
+    }
+
+    private void construct(IEventBus modBus, ModContainer container) {
         INSTANCE = this;
         MOD_BUS = modBus;
 
@@ -99,7 +107,7 @@ public class BCCore {
         });
     }
 
-    static {
+    private static void registerTags() {
         startBatch();
         // Items
         registerTag("item.wrench").reg("wrench").locale("wrenchItem").oldReg("wrenchItem").model("wrench");

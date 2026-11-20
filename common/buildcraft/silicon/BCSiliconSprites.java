@@ -46,7 +46,7 @@ public class BCSiliconSprites {
     }
 
     public static void fmlPreInit() {
-        NeoForge.EVENT_BUS.register(BCSiliconSprites.class);
+        // (1.12.2 listened for config changes / texture stitching here; nothing to listen for on 26.3)
     }
 
 }

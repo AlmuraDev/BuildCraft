@@ -44,8 +44,9 @@ public abstract class NetworkedObjectCache<T> {
      * clear objects out of the cache we can guarantee that the index of an object is unique, just by incrementing a
      * single variable. */
 
-    /** The default object -- used at the client in case the object hasn't been sent to the client yet. */
-    protected final T defaultObject;
+    /** The default object -- used at the client in case the object hasn't been sent to the client yet. Created on first
+     * use: 26.3 stacks can't be made while mods are constructed (before registries are bound). */
+    private final com.google.common.base.Supplier<T> defaultObject;
 
     private final Int2ObjectMap<T> serverIdToObject = new Int2ObjectOpenHashMap<>();
     /** Server side map of the object to its integer ID. Inverse of {@link #serverIdToObject} */
@@ -63,8 +64,8 @@ public abstract class NetworkedObjectCache<T> {
     private final ServerView serverView = new ServerView();
     private final ClientView clientView = new ClientView();
 
-    public NetworkedObjectCache(T defaultObject) {
-        this.defaultObject = defaultObject;
+    public NetworkedObjectCache(java.util.function.Supplier<T> defaultObject) {
+        this.defaultObject = com.google.common.base.Suppliers.memoize(defaultObject::get);
         serverObjectToId.defaultReturnValue(-1);
     }
 
@@ -145,7 +146,7 @@ public abstract class NetworkedObjectCache<T> {
 
         @Override
         public T get() {
-            return actual == null ? defaultObject : actual;
+            return actual == null ? defaultObject.get() : actual;
         }
 
         public boolean hasBeenReceived() {

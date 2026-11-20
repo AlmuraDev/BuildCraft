@@ -91,7 +91,7 @@ public class BCTransportConfig {
         ConfigUtil.setEnumProperty(propLossMode, PowerLossMode.VALUES);
         EnumRestartRequirement.WORLD.setTo(propLossMode);
 
-        NeoForge.EVENT_BUS.register(BCTransportConfig.class);
+        // (1.12.2 listened for config changes / texture stitching here; nothing to listen for on 26.3)
     }
 
     public static void reloadConfig(EnumRestartRequirement restarted) {

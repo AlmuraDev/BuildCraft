@@ -114,7 +114,23 @@ public enum GuideManager implements ResourceManagerReloadListener {
 
     @Override
     public void onResourceManagerReload(ResourceManager resourceManager) {
-        reload(resourceManager);
+        // 26.3 can't make item stacks until a world's data is loaded, so the guide loads when it's first opened
+        needsReload = true;
+    }
+
+    private boolean needsReload = true;
+
+    /** Loads the guide if resources changed since it was last loaded (call before showing it). */
+    public void reloadIfNeeded() {
+        if (!needsReload) {
+            return;
+        }
+        needsReload = false;
+        try {
+            reload();
+        } catch (RuntimeException e) {
+            BCLog.logger.error("[lib.guide] Failed to load the guide book", e);
+        }
     }
 
     public void reload() {

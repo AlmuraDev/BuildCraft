@@ -22,8 +22,19 @@ import buildcraft.lib.fluid.BCFluid;
 import buildcraft.lib.misc.MathUtil;
 
 /** Engine fuels and coolants, and the refinery's distillation and heat exchange recipes. They live in BuildCraft's own
- * registries (not vanilla recipes), so they are added in common setup once the fluids exist. */
+ * registries (not vanilla recipes), so they are added once, when the first world's data has loaded (26.3 can't make
+ * stacks before that). */
 public class BCEnergyRecipes {
+    private static boolean registered;
+
+    /** Registers everything the first time tags (and so item/fluid components) are loaded. */
+    public static synchronized void initOnce() {
+        if (!registered) {
+            registered = true;
+            init();
+        }
+    }
+
     public static void init() {
 
         BuildcraftFuelRegistry.coolant.addCoolant(Fluids.WATER, 0.0023f);

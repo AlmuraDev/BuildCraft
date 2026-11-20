@@ -26,7 +26,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenCustomHashMap;
 public class NetworkedItemStackCache extends NetworkedObjectCache<ItemStack> {
 
     public NetworkedItemStackCache() {
-        super(StackUtil.EMPTY);
+        super(() -> StackUtil.EMPTY);
     }
 
     @Override

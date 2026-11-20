@@ -53,6 +53,14 @@ public class BCLib {
     public static IEventBus MOD_BUS;
 
     public BCLib(IEventBus modBus, ModContainer container) {
+        // Construct one module at a time (see BCModConstruction)
+        synchronized (buildcraft.lib.BCModConstruction.LOCK) {
+            registerTags();
+            construct(modBus, container);
+        }
+    }
+
+    private void construct(IEventBus modBus, ModContainer container) {
         INSTANCE = this;
         MOD_CONTAINER = container;
         MOD_BUS = modBus;
@@ -131,7 +139,7 @@ public class BCLib {
         CommandBuildCraft.register(event.getDispatcher());
     }
 
-    static {
+    private static void registerTags() {
         startBatch();
         registerTag("item.guide").reg("guide").locale("buildcraft.guide").model("guide").tab("vanilla.misc");
         registerTag("item.guide.note").reg("guide_note").locale("buildcraft.guide_note").model("guide_note")

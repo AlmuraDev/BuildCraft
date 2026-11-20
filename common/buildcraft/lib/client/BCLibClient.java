@@ -55,6 +55,13 @@ import buildcraft.lib.net.cache.MessageObjectCacheResponse;
 public class BCLibClient {
 
     public BCLibClient(IEventBus modBus) {
+        // Construct one module at a time (see BCModConstruction)
+        synchronized (buildcraft.lib.BCModConstruction.LOCK) {
+            construct(modBus);
+        }
+    }
+
+    private static void construct(IEventBus modBus) {
         DetachedRenderer.INSTANCE.addRenderer(RenderMatrixType.FROM_WORLD_ORIGIN, MarkerRenderer.INSTANCE);
         DetachedRenderer.INSTANCE.addRenderer(RenderMatrixType.FROM_WORLD_ORIGIN, DebugRenderHelper.INSTANCE);
         // The guide's page entries come from resource packs (assets/*/compat/buildcraft/guide)

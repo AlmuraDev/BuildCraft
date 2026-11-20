@@ -90,6 +90,7 @@ public class BCLibClientProxy extends BCLibProxy {
 
     @Override
     public void openGuide(@Nullable String bookName) {
+        buildcraft.lib.client.guide.GuideManager.INSTANCE.reloadIfNeeded();
         Minecraft.getInstance().gui.setScreen(bookName == null ? new buildcraft.lib.client.guide.GuiGuide()
             : new buildcraft.lib.client.guide.GuiGuide(bookName));
     }

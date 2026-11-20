@@ -39,6 +39,14 @@ public class BCTransport {
     public static IEventBus MOD_BUS;
 
     public BCTransport(IEventBus modBus, ModContainer container) {
+        // Construct one module at a time (see BCModConstruction)
+        synchronized (buildcraft.lib.BCModConstruction.LOCK) {
+            registerTags();
+            construct(modBus, container);
+        }
+    }
+
+    private void construct(IEventBus modBus, ModContainer container) {
         INSTANCE = this;
         MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
@@ -86,7 +94,7 @@ public class BCTransport {
         evt.enqueueWork(() -> BCTransportProxy.getProxy().fmlPostInit());
     }
 
-    static {
+    private static void registerTags() {
         startBatch();
         // Items
         registerTag("item.waterproof").reg("waterproof").locale("pipeWaterproof").oldReg("pipeWaterproof")

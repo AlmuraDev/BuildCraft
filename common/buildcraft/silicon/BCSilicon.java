@@ -39,6 +39,14 @@ public class BCSilicon {
     public static IEventBus MOD_BUS;
 
     public BCSilicon(IEventBus modBus, ModContainer container) {
+        // Construct one module at a time (see BCModConstruction)
+        synchronized (buildcraft.lib.BCModConstruction.LOCK) {
+            registerTags();
+            construct(modBus, container);
+        }
+    }
+
+    private void construct(IEventBus modBus, ModContainer container) {
         INSTANCE = this;
         MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
@@ -72,7 +80,11 @@ public class BCSilicon {
         BCSiliconGuis.fmlPreInit(modBus);
         BCSiliconProxy.getProxy().fmlPreInit();
 
-        NeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event) -> BCSiliconRecipes.registerAssemblyRecipes());
+        NeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event) -> {
+            // The facade scan makes stacks, which 26.3 can only do once a world's data (components) has loaded
+            FacadeStateManager.initOnce();
+            BCSiliconRecipes.registerAssemblyRecipes();
+        });
 
         modBus.addListener(BCSilicon::init);
         modBus.addListener(BCSilicon::postInit);
@@ -82,7 +94,6 @@ public class BCSilicon {
     private static void init(FMLCommonSetupEvent evt) {
         evt.enqueueWork(() -> {
             BCSiliconProxy.getProxy().fmlInit();
-            FacadeStateManager.init();
         });
     }
 
@@ -94,7 +105,7 @@ public class BCSilicon {
         evt.getIMCStream().forEach(FacadeStateManager::receiveInterModComms);
     }
 
-    static {
+    private static void registerTags() {
         startBatch();
         // Items
         for (String chipset : new String[] { "red", "iron", "gold", "quartz", "diamond" }) {

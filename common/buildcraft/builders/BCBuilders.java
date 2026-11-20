@@ -32,6 +32,14 @@ public class BCBuilders {
     public static IEventBus MOD_BUS;
 
     public BCBuilders(IEventBus modBus, ModContainer container) {
+        // Construct one module at a time (see BCModConstruction)
+        synchronized (buildcraft.lib.BCModConstruction.LOCK) {
+            registerTags();
+            construct(modBus, container);
+        }
+    }
+
+    private void construct(IEventBus modBus, ModContainer container) {
         INSTANCE = this;
         MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
@@ -67,7 +75,7 @@ public class BCBuilders {
         });
     }
 
-    static {
+    private static void registerTags() {
         startBatch();
         // Items
         registerTag("item.schematic.single").reg("schematic_single").locale("schematicSingle").model("schematic_single/");

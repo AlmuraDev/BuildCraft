@@ -34,6 +34,14 @@ public class BCEnergy {
     public static IEventBus MOD_BUS;
 
     public BCEnergy(IEventBus modBus, ModContainer container) {
+        // Construct one module at a time (see BCModConstruction)
+        synchronized (buildcraft.lib.BCModConstruction.LOCK) {
+            registerTags();
+            construct(modBus, container);
+        }
+    }
+
+    private void construct(IEventBus modBus, ModContainer container) {
         INSTANCE = this;
         MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
@@ -52,13 +60,14 @@ public class BCEnergy {
         NeoForge.EVENT_BUS.addListener((ServerStartedEvent event) -> BCEnergyConfig.validateBiomeNames(event.getServer()));
 
         modBus.addListener(BCEnergy::init);
+        // Fuels and coolants hold stacks, which 26.3 can only make once a world's data (components) has loaded
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.TagsUpdatedEvent event) -> BCEnergyRecipes.initOnce());
         modBus.addListener(BCEnergy::postInit);
     }
 
     private static void init(FMLCommonSetupEvent evt) {
         evt.enqueueWork(() -> {
             BCEnergyBlocks.init();
-            BCEnergyRecipes.init();
             BCEnergyProxy.getProxy().fmlInit();
         });
     }
@@ -67,7 +76,7 @@ public class BCEnergy {
         evt.enqueueWork(() -> BCEnergyProxy.getProxy().fmlPostInit());
     }
 
-    static {
+    private static void registerTags() {
         startBatch();
         // Items
         registerTag("item.glob.oil").reg("glob_of_oil").oldReg("glob_oil").locale("globOil").model("glob_oil");

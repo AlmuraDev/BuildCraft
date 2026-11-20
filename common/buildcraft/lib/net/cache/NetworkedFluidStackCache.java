@@ -24,7 +24,7 @@ public class NetworkedFluidStackCache extends NetworkedObjectCache<FluidStack> {
 
     public NetworkedFluidStackCache() {
         // Use water for our base stack as it might not be too bad of an assumption
-        super(new FluidStack(net.minecraft.world.level.material.Fluids.WATER, FLUID_AMOUNT));
+        super(() -> new FluidStack(net.minecraft.world.level.material.Fluids.WATER, FLUID_AMOUNT));
     }
 
     @Override

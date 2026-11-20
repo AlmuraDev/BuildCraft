@@ -202,6 +202,16 @@ public enum FacadeStateManager implements IFacadeRegistry {
         return item == Items.AIR ? ItemStack.EMPTY : new ItemStack(item);
     }
 
+    private static boolean initialized;
+
+    /** Scans the block states the first time tags are loaded (see BCSilicon). */
+    public static synchronized void initOnce() {
+        if (!initialized) {
+            initialized = true;
+            init();
+        }
+    }
+
     public static void init() {
         defaultState = new FacadeBlockStateInfo(Blocks.AIR.defaultBlockState(), StackUtil.EMPTY, ImmutableSet.of());
         if (FacadeAPI.facadeItem == null) {
