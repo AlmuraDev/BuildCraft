@@ -49,8 +49,17 @@ public final class BuildCraftAPI {
         return worldProperties.get("soft").get(world, pos);
     }
 
+    /** 1.12.2 recipe names were free-form ("gate-and-IRON-NO_MODIFIER"); 26.3 ids are lowercase [a-z0-9/._-] only. */
+    private static String sanitisePath(String path) {
+        return path.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9/._-]", "_");
+    }
+
     public static Identifier nameToResourceLocation(String name) {
-        if (name.indexOf(':') > 0) return Identifier.parse(name);
+        int colon = name.indexOf(':');
+        if (colon > 0) {
+            return Identifier.fromNamespaceAndPath(name.substring(0, colon), sanitisePath(name.substring(colon + 1)));
+        }
+        name = sanitisePath(name);
         ModContainer modContainer = ModLoadingContext.get().getActiveContainer();
         if (modContainer == null) {
             throw new IllegalStateException("Illegal recipe name " + name + ". Provide domain id to register it correctly.");

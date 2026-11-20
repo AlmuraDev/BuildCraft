@@ -25,8 +25,6 @@ import net.minecraft.world.level.Level;
 
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.SafeTimeTracker;
 import buildcraft.api.mj.ILaserTarget;
@@ -306,7 +304,6 @@ public class TileLaser extends TileBC_Neptune implements ITickable, IDebuggable,
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public IDetachedRenderer getDebugRenderer() {
         return new AdvDebuggerLaser(this);
     }

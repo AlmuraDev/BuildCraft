@@ -13,14 +13,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.SubmitNodeCollector;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.ItemRenderUtil;
 import buildcraft.lib.client.render.tile.RecordedRenderState;
 
 /** The recorded lasers of a builder or filler plus the items it is flying to the blocks being placed. */
-@OnlyIn(Dist.CLIENT)
 public class BuilderRenderState extends RecordedRenderState {
     public List<ItemRenderUtil.PlacedItem> items = new ArrayList<>();
     public int itemLight;

@@ -26,8 +26,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
@@ -291,7 +289,6 @@ public abstract class MarkerSubCache<C extends MarkerConnection<C>> {
 
     public abstract ImmutableList<BlockPos> getValidConnections(BlockPos from);
 
-    @OnlyIn(Dist.CLIENT)
     public final void handleMessageMain(MessageMarker message) {
         if (handleMessage(message)) {
             return;
@@ -312,6 +309,5 @@ public abstract class MarkerSubCache<C extends MarkerConnection<C>> {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     protected abstract boolean handleMessage(MessageMarker message);
 }

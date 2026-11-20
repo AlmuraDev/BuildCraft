@@ -16,8 +16,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcrafttransport:pipe_stone_item"
+      "type": "neoforge:registered",
+      "value": "buildcrafttransport:pipe_stone_item"
     }
   ]
 }

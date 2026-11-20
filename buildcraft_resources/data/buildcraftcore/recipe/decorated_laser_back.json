@@ -21,8 +21,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftcore:decorated"
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:decorated"
     }
   ]
 }

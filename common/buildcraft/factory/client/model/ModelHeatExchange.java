@@ -25,8 +25,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.model.DynamicBlockStateModel;
 import net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel;
 
@@ -49,7 +47,6 @@ import buildcraft.factory.tile.TileHeatExchange;
  * part, facing and left/right connection. The part comes from the tile's model data, the connections from the
  * neighbours' states. The variants are worked out on the first use after each reload, as the variable model is only
  * loaded once models are baked. */
-@OnlyIn(Dist.CLIENT)
 public final class ModelHeatExchange implements DynamicBlockStateModel {
     public static final ModelHeatExchange INSTANCE = new ModelHeatExchange();
     public static final Identifier TYPE = Identifier.fromNamespaceAndPath("buildcraftfactory", "heat_exchange");

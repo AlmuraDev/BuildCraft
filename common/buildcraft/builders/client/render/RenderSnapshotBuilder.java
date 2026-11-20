@@ -19,8 +19,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.ModelUtil;
 import buildcraft.lib.client.render.ItemRenderUtil;
@@ -35,7 +33,6 @@ import buildcraft.builders.snapshot.SnapshotBuilder;
 import buildcraft.core.client.BuildCraftLaserManager;
 
 /** The builder robot, its break lasers and the items flying to placed blocks, for the builder and the filler. */
-@OnlyIn(Dist.CLIENT)
 public class RenderSnapshotBuilder {
     public static <T extends ITileForSnapshotBuilder> void extract(SnapshotBuilder<T> snapshotBuilder, Level world,
         BlockPos tilePos, float partialTicks, BuilderRenderState state) {

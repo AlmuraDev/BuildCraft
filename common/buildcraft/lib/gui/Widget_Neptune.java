@@ -11,8 +11,6 @@ import java.io.IOException;
 import buildcraft.lib.net.IMessage;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.net.IPayloadReceiver;
 import buildcraft.lib.net.IPayloadWriter;
@@ -40,7 +38,6 @@ public abstract class Widget_Neptune<C extends ContainerBC_Neptune> implements I
         return null;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public IMessage handleWidgetDataClient(IPayloadContext ctx, PacketBufferBC buffer) throws IOException {
         return null;
     }

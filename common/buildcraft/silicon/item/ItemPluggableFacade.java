@@ -28,8 +28,6 @@ import net.minecraft.world.level.Level;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.facades.FacadeType;
 import buildcraft.api.facades.IFacade;

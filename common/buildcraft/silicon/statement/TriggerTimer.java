@@ -11,8 +11,6 @@ import java.util.Locale;
 import net.minecraft.world.level.Level;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.statements.IStatement;
 import buildcraft.api.statements.IStatementContainer;
@@ -64,7 +62,6 @@ public class TriggerTimer extends BCStatement implements ITriggerInternal {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public SpriteHolder getSprite() {
         switch (duration) {
             case SHORT: {

@@ -13,12 +13,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 /** The tint of a facade's block, as the block itself would be tinted (grass, leaves...). Kept out of PluggableFacade so
  * the server never sees the client colour classes. */
-@OnlyIn(Dist.CLIENT)
 public final class FacadeTints {
     private FacadeTints() {}
 

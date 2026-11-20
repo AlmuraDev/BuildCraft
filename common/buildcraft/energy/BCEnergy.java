@@ -60,8 +60,8 @@ public class BCEnergy {
         NeoForge.EVENT_BUS.addListener((ServerStartedEvent event) -> BCEnergyConfig.validateBiomeNames(event.getServer()));
 
         modBus.addListener(BCEnergy::init);
-        // Fuels and coolants hold stacks, which 26.3 can only make once a world's data (components) has loaded
-        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.TagsUpdatedEvent event) -> BCEnergyRecipes.initOnce());
+        // Fuels and coolants hold stacks, which 26.3 can only make once item components are bound (world data loaded)
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.DefaultDataComponentsBoundEvent event) -> BCEnergyRecipes.initOnce());
         modBus.addListener(BCEnergy::postInit);
     }
 

@@ -5,7 +5,7 @@ Converts the 1.12.2 recipe JSON of the given mods (buildcraft_resources/assets/<
   * forge:ore_shaped / forge:ore_shapeless / minecraft:crafting_* -> minecraft:crafting_shaped / crafting_shapeless
   * ore dictionary names -> common item tags (the same mapping as buildcraft.lib.misc.OreDictTags: keep them in step)
   * 1.12.2 damage values on vanilla items -> their 26.3 items; on BuildCraft blocks -> the block_state component
-  * minecraft:item_exists conditions -> neoforge:item_exists, so recipes of disabled items are skipped
+  * minecraft:item_exists conditions -> neoforge:registered (26.3's item_exists), so recipes of disabled items are skipped
 
 It also writes recipes that 1.12.2 built in code (CODE_RECIPES), block loot tables (LOOT) and the item tags BuildCraft's items had as ore
 dictionary entries (TAGS).
@@ -144,7 +144,7 @@ def result(value, warnings, where):
 # Conditions 26.3 needs that 1.12.2 handled at runtime (disabled objects): "mod/file.json" -> conditions
 EXTRA_CONDITIONS = {
     'buildcraftenergy/rf_engine.json': [{'type': 'buildcraftcore:engine_enabled', 'engine': 'rf'}],
-    'buildcraftenergy/mj_dynamo.json': [{'type': 'neoforge:item_exists', 'item': 'buildcraftenergy:mj_dynamo'}],
+    'buildcraftenergy/mj_dynamo.json': [{'type': 'neoforge:registered', 'value': 'buildcraftenergy:mj_dynamo'}],
 }
 
 
@@ -152,7 +152,7 @@ def conditions(data, where=None):
     out = list(EXTRA_CONDITIONS.get(where, []))
     for c in data.get('conditions', []):
         if c.get('type') == 'minecraft:item_exists':
-            out.append({'type': 'neoforge:item_exists', 'item': c['item']})
+            out.append({'type': 'neoforge:registered', 'value': c['item']})
     return out
 
 
@@ -185,7 +185,7 @@ def convert(data, warnings, where):
 
 
 def exists(item):
-    return [{'type': 'neoforge:item_exists', 'item': item}]
+    return [{'type': 'neoforge:registered', 'value': item}]
 
 
 def paint_colouring(colour):
@@ -330,7 +330,9 @@ LOOT = {
         'power_tester': self_drop('buildcraftcore:power_tester'),
     },
     'buildcraftenergy': {
-        'mj_dynamo': self_drop('buildcraftenergy:mj_dynamo'),
+        # Disabled by default (enableMjDynamo): skipped when the block isn't registered, as missing items fail loading
+        'mj_dynamo': dict(self_drop('buildcraftenergy:mj_dynamo'),
+                          **{'neoforge:conditions': [{'type': 'neoforge:registered', 'value': 'buildcraftenergy:mj_dynamo'}]}),
     },
     'buildcraftfactory': dict(
         [(b, self_drop('buildcraftfactory:' + b)) for b in
@@ -409,7 +411,7 @@ PIPES = {
     'pipe_wood_item': ('#minecraft:planks', '#minecraft:planks'),
     'pipe_cobble_item': ('#c:cobblestones', '#c:cobblestones'),
     'pipe_stone_item': ('#c:stones', '#c:stones'),
-    'pipe_quartz_item': ('#c:storage_blocks/quartz', '#c:storage_blocks/quartz'),
+    'pipe_quartz_item': ('minecraft:quartz_block', 'minecraft:quartz_block'),  # no c:storage_blocks/quartz on 26.3
     'pipe_iron_item': ('#c:ingots/iron', '#c:ingots/iron'),
     'pipe_gold_item': ('#c:ingots/gold', '#c:ingots/gold'),
     'pipe_clay_item': ('minecraft:clay', 'minecraft:clay'),
@@ -453,7 +455,7 @@ def transport_recipes():
         f_item, t_item = _pipe_id(frm), _pipe_id(to)
         for colour in [None] + DYE_BY_DAMAGE:
             suffix = colour or 'colorless'
-            conds = [{'type': 'neoforge:item_exists', 'item': f_item}, {'type': 'neoforge:item_exists', 'item': t_item}]
+            conds = [{'type': 'neoforge:registered', 'value': f_item}, {'type': 'neoforge:registered', 'value': t_item}]
             out['%s_%s' % (to, suffix)] = {
                 'type': 'minecraft:crafting_shapeless',
                 'category': 'misc',

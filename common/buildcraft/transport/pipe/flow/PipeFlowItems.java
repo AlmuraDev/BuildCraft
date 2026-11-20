@@ -31,8 +31,6 @@ import net.minecraft.world.level.Level;
 
 import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.IStackFilter;
 import buildcraft.api.inventory.IItemTransactor;
@@ -685,7 +683,6 @@ public final class PipeFlowItems extends PipeFlow implements IFlowItems {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     public List<TravellingItem> getAllItemsForRender() {
         List<TravellingItem> all = new ArrayList<>();
         for (List<TravellingItem> innerList : items.getAllElements()) {

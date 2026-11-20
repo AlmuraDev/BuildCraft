@@ -15,8 +15,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftfactory:distiller"
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:distiller"
     }
   ]
 }

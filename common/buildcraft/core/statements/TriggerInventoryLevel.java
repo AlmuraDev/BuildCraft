@@ -13,8 +13,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import buildcraft.api.transfer.IItemHandler;
 
 import buildcraft.api.inventory.IItemHandlerFiltered;
@@ -51,7 +49,6 @@ public class TriggerInventoryLevel extends BCStatement implements ITriggerExtern
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public SpriteHolder getSprite() {
         return BCCoreSprites.TRIGGER_INVENTORY_LEVEL.get(type);
     }

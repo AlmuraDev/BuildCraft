@@ -4,8 +4,6 @@ import java.util.List;
 
 import net.minecraft.core.Direction;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 public interface IDebuggable {
     /** Get the debug information from a tile entity as a list of strings, used for the F3 debug menu. The left and
@@ -17,7 +15,6 @@ public interface IDebuggable {
     /** Same as {@link #getDebugInfo(List, List, Direction)}, but only for client
      *
      * @param side same as for {@link #getDebugInfo(List, List, Direction)} */
-    @OnlyIn(Dist.CLIENT)
     default void getClientDebugInfo(List<String> left, List<String> right, Direction side) {
     }
 }

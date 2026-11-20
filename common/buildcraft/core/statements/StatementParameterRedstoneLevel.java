@@ -14,8 +14,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 import buildcraft.api.statements.IStatement;
@@ -67,7 +65,6 @@ public class StatementParameterRedstoneLevel implements IStatementParameter {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public ISprite getSprite() {
         return BCCoreSprites.PARAM_REDSTONE_LEVEL[level & 15];
     }

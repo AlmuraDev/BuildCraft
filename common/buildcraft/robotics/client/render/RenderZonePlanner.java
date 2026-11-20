@@ -36,8 +36,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.properties.BuildCraftProperties;
 
@@ -51,7 +49,6 @@ import buildcraft.robotics.zone.ZonePlannerMapDataClient;
 
 /** The small map on the zone planner's screen: a 10x8 texture of the map colours around the block, one pixel every 4
  * blocks, at the height band the viewing player is in. */
-@OnlyIn(Dist.CLIENT)
 public class RenderZonePlanner implements BlockEntityRenderer<TileZonePlanner, RenderZonePlanner.State> {
     private static final Cache<WorldPos, MapTexture> TEXTURES = CacheBuilder.newBuilder()
         .expireAfterWrite(5, TimeUnit.MINUTES).removalListener(RenderZonePlanner::onRemove).build();

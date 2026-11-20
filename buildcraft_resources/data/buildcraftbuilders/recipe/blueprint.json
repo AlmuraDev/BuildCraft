@@ -18,8 +18,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftbuilders:snapshot"
+      "type": "neoforge:registered",
+      "value": "buildcraftbuilders:snapshot"
     }
   ]
 }

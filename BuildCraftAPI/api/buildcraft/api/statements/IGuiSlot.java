@@ -6,8 +6,6 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableList;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.IConvertable;
 import buildcraft.api.core.render.ISprite;
@@ -20,11 +18,9 @@ public interface IGuiSlot extends IConvertable {
 
     /** Return the description in the UI. Note that this should NEVER be called directly, instead this acts as a bridge
      * for {@link #getTooltip()}. (As such this might return null or throw an exception) */
-    @OnlyIn(Dist.CLIENT)
     String getDescription();
 
     /** @return The full tooltip for the UI. */
-    @OnlyIn(Dist.CLIENT)
     default List<String> getTooltip() {
         String desc = getDescription();
         if (desc == null) {
@@ -34,7 +30,6 @@ public interface IGuiSlot extends IConvertable {
     }
 
     /** @return A sprite to show in a GUI, or null if this should not render a sprite. */
-    @OnlyIn(Dist.CLIENT)
     @Nullable
     ISprite getSprite();
 }

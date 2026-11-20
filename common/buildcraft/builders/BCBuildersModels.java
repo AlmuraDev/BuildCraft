@@ -10,8 +10,6 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 import buildcraft.lib.client.render.DetachedRenderer;
@@ -24,7 +22,6 @@ import buildcraft.builders.client.render.RenderFiller;
 import buildcraft.builders.client.render.RenderQuarry;
 
 /** Builders' tile renderers and the architect table scan overlay. */
-@OnlyIn(Dist.CLIENT)
 public class BCBuildersModels {
     public static void fmlPreInit() {
         BCBuilders.MOD_BUS.addListener(BCBuildersModels::registerRenderers);

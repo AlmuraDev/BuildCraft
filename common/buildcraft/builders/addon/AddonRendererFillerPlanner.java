@@ -19,8 +19,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 
@@ -29,7 +27,6 @@ import buildcraft.core.marker.volume.AddonDefaultRenderer;
 import buildcraft.core.marker.volume.IFastAddonRenderer;
 
 /** Shows the blocks a filler planner's pattern would fill as small see-through cubes. */
-@OnlyIn(Dist.CLIENT)
 public class AddonRendererFillerPlanner implements IFastAddonRenderer<AddonFillerPlanner> {
     @Override
     public void renderAddonFast(AddonFillerPlanner addon, Player player, float partialTicks, VertexConsumer vb,

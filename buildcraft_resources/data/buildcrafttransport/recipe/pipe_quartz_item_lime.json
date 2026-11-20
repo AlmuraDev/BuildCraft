@@ -3,9 +3,9 @@
   "category": "misc",
   "group": "buildcrafttransport:pipe_quartz_item",
   "key": {
-    "l": "#c:storage_blocks/quartz",
+    "l": "minecraft:quartz_block",
     "g": "minecraft:lime_stained_glass",
-    "r": "#c:storage_blocks/quartz"
+    "r": "minecraft:quartz_block"
   },
   "pattern": [
     "lgr"
@@ -19,8 +19,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcrafttransport:pipe_quartz_item"
+      "type": "neoforge:registered",
+      "value": "buildcrafttransport:pipe_quartz_item"
     }
   ]
 }

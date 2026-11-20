@@ -16,8 +16,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftfactory:heat_exchange"
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:heat_exchange"
     }
   ]
 }

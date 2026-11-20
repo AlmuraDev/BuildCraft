@@ -27,8 +27,6 @@ import net.minecraft.world.level.Level;
 
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import buildcraft.api.transfer.IItemHandlerModifiable;
 
 import buildcraft.api.core.EnumPipePart;

@@ -23,8 +23,6 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.MutableQuad;
 import buildcraft.lib.client.render.tile.RenderEngine_BC8.EngineRenderState;
@@ -33,7 +31,6 @@ import buildcraft.energy.BCEnergyModels;
 import buildcraft.energy.tile.TileDynamoMJ;
 
 /** Draws the MJ dynamo from its variable model (1.12.2's FastTESR), the same way engines are drawn. */
-@OnlyIn(Dist.CLIENT)
 public class RenderDynamoMJ implements BlockEntityRenderer<TileDynamoMJ, EngineRenderState> {
 
     @Override

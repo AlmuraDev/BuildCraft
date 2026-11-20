@@ -17,13 +17,10 @@ import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 
 /** Draws an addon as a full-bright textured cube (white when no sprite is given). */
-@OnlyIn(Dist.CLIENT)
 public class AddonDefaultRenderer<T extends Addon> implements IFastAddonRenderer<T> {
     private static final int FULL_BRIGHT = LightCoordsUtil.pack(15, 0);
 

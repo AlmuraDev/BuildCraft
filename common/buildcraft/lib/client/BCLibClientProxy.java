@@ -24,8 +24,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -34,7 +32,6 @@ import buildcraft.lib.BCLibProxy;
 import buildcraft.lib.misc.MessageUtil;
 
 /** Lib's client proxy: created by name from {@link BCLibProxy} on the client only. */
-@OnlyIn(Dist.CLIENT)
 public class BCLibClientProxy extends BCLibProxy {
 
     @Override

@@ -16,8 +16,6 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.tile.RecordedRenderState;
 
@@ -41,7 +39,6 @@ import buildcraft.factory.BCFactoryModels;
 import buildcraft.factory.tile.TileDistiller_BC8;
 
 /** The distiller's moving parts (its variable model) and the fluid in its three tanks. */
-@OnlyIn(Dist.CLIENT)
 public class RenderDistiller implements BlockEntityRenderer<TileDistiller_BC8, RecordedRenderState> {
     private static final Map<Direction, TankRenderSizes> TANK_SIZES = new EnumMap<>(Direction.class);
 

@@ -18,8 +18,6 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.resources.Identifier;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
@@ -54,7 +52,6 @@ public class SpriteHolderRegistry {
     /** @return The sprite with the given name: BuildCraft's item textures went to the item atlas, everything else to the
      *         block atlas (1.12.2's getTextureMapBlocks().getAtlasSprite). The block atlas's missing sprite if neither
      *         has it. */
-    @OnlyIn(Dist.CLIENT)
     public static TextureAtlasSprite lookupSprite(Identifier location) {
         Minecraft mc = Minecraft.getInstance();
         net.minecraft.client.renderer.texture.TextureAtlas blocks = mc.getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
@@ -69,19 +66,16 @@ public class SpriteHolderRegistry {
         return found;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static TextureAtlasSprite missingSprite() {
         return Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS).missingSprite();
     }
 
     /** NeoForge's plain white sprite (1.12.2 Forge's ModelLoader.White). */
-    @OnlyIn(Dist.CLIENT)
     public static TextureAtlasSprite whiteSprite() {
         return lookupSprite(Identifier.fromNamespaceAndPath("neoforge", "white"));
     }
 
     /** Called by the client after resources (and so the atlases) reload. */
-    @OnlyIn(Dist.CLIENT)
     public static void onResourcesReloaded() {
         generation++;
     }
@@ -97,7 +91,6 @@ public class SpriteHolderRegistry {
         }
 
         @Nullable
-        @OnlyIn(Dist.CLIENT)
         public TextureAtlasSprite getSprite() {
             if (spriteGeneration != generation || sprite == null) {
                 Minecraft mc = Minecraft.getInstance();

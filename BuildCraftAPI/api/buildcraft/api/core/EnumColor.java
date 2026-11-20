@@ -12,8 +12,6 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.resources.Identifier;
 import net.minecraft.locale.Language;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 /** Use minecraft's EnumDyeColor in as many places as possible. */
 @Deprecated
@@ -46,10 +44,8 @@ public enum EnumColor implements StringRepresentable {
     public static final int[] LIGHT_HEX = { 0x181414, 0xBE2B27, 0x007F0E, 0x89502D, 0x253193, 0x7e34bf, 0x299799, 0xa0a7a7, 0x7A7A7A, 0xD97199,
         0x39D52E, 0xFFD91C, 0x66AAFF, 0xD943C6, 0xEA7835, 0xe4e4e4 };
 
-    @OnlyIn(Dist.CLIENT)
     private static Identifier iconSheet;
 
-    @OnlyIn(Dist.CLIENT)
     private static TextureAtlasSprite[] brushSprites;
 
     public int getDarkHex() {
@@ -139,12 +135,10 @@ public enum EnumColor implements StringRepresentable {
         return b.toString().trim();
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static void registerSprites(TextureAtlasSprite[] sprites) {
         brushSprites = sprites;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public TextureAtlasSprite getSprite() {
         return brushSprites[ordinal()];
     }

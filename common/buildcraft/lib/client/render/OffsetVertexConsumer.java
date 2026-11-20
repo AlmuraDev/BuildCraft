@@ -8,11 +8,8 @@ package buildcraft.lib.client.render;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 /** Moves every vertex by an offset before passing it on (1.12.2's BufferBuilder.setTranslation). */
-@OnlyIn(Dist.CLIENT)
 public final class OffsetVertexConsumer implements VertexConsumer {
     private final VertexConsumer delegate;
     private final float dx, dy, dz;

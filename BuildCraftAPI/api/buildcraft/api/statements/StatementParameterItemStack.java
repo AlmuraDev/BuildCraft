@@ -16,8 +16,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.ChatFormatting;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.NbtStacks;
 import buildcraft.api.core.render.ISprite;
@@ -105,13 +103,11 @@ public class StatementParameterItemStack implements IStatementParameter {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public String getDescription() {
         throw new UnsupportedOperationException("Don't call getDescription directly!");
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public List<String> getTooltip() {
         if (stack.isEmpty()) {
             return ImmutableList.of();

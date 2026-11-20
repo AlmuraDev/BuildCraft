@@ -8,15 +8,12 @@ package buildcraft.lib.misc;
 
 import net.minecraft.client.Minecraft;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.ModelUtil;
 import buildcraft.lib.gui.GuiDraw;
 
 /** The parts of 1.12.2's RenderUtil the GUIs still use. The tessellator pool and Forge's batch buffer are gone: 26.3
  * draws GUIs through {@link GuiDraw} and the world through render states. */
-@OnlyIn(Dist.CLIENT)
 public class RenderUtil {
     /** Takes _RGB (alpha is set to 1): the colour following GUI quads are tinted with. */
     public static void setGLColorFromInt(int color) {

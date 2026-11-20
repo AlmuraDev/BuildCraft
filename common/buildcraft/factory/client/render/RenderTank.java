@@ -16,8 +16,6 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.tile.RecordedRenderState;
 
@@ -36,7 +34,6 @@ import buildcraft.lib.misc.FluidUtilBC;
 import buildcraft.factory.tile.TileTank;
 
 /** The fluid in a tank, joined to the tanks above and below when they are full of the same fluid. */
-@OnlyIn(Dist.CLIENT)
 public class RenderTank implements BlockEntityRenderer<TileTank, RecordedRenderState> {
     private static final Vec3 MIN = new Vec3(0.13, 0.01, 0.13);
     private static final Vec3 MAX = new Vec3(0.86, 0.99, 0.86);

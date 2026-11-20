@@ -16,16 +16,16 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftcore:marker_connector"
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:marker_connector"
     },
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftcore:gear_wood"
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:gear_wood"
     },
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftcore:wrench"
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:wrench"
     }
   ]
 }

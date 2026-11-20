@@ -99,6 +99,13 @@ public class OilGenerator {
         }
     }
 
+    private static Holder<Biome> biomeAt(WorldGenLevel world, int x, int y, int z) {
+        net.minecraft.server.level.ServerChunkCache chunks = world.getLevel().getChunkSource();
+        return chunks.getGenerator().getBiomeSource().createUncachedResolver(chunks.randomState()).getNoiseBiome(
+            net.minecraft.core.QuartPos.fromBlock(x), net.minecraft.core.QuartPos.fromBlock(y),
+            net.minecraft.core.QuartPos.fromBlock(z));
+    }
+
     public static List<OilGenStructure> getStructures(WorldGenLevel world, int cx, int cz) {
         return getStructures(world, cx, cz, false);
     }
@@ -110,7 +117,9 @@ public class OilGenerator {
         int x = cx * 16 + 8 + rand.nextInt(16);
         int z = cz * 16 + 8 + rand.nextInt(16);
 
-        Holder<Biome> biome = world.getBiome(new BlockPos(x, world.getSeaLevel(), z));
+        // The well's centre is up to MAX_CHUNK_RADIUS chunks away, outside what a 26.3 feature may read, so the biome
+        // comes from the biome source (which needs no chunk) rather than the world-gen region
+        Holder<Biome> biome = biomeAt(world, x, world.getSeaLevel(), z);
         Identifier biomeName = biome.unwrapKey().map(ResourceKey::identifier).orElse(null);
 
         // Do not generate oil in excluded biomes

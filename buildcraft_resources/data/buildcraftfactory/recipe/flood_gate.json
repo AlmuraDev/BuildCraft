@@ -17,12 +17,12 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftfactory:flood_gate"
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:flood_gate"
     },
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftfactory:tank"
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:tank"
     }
   ]
 }

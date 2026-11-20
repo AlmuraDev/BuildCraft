@@ -4,13 +4,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.profiling.ProfilerFiller;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 /** An extension for minecraft's {@link ProfilerFiller} class that returns {@link AutoCloseable} profiler sections. */
 public class ProfilerBC {
 
-    @OnlyIn(Dist.CLIENT)
     public static ProfilerBC getClient() {
         return new ProfilerBC(net.minecraft.util.profiling.Profiler.get());
     }

@@ -17,8 +17,6 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.laser.LaserBoxRenderer;
 import buildcraft.lib.client.render.tile.RecordedRenderState;
@@ -27,7 +25,6 @@ import buildcraft.builders.tile.TileArchitectTable;
 import buildcraft.core.client.BuildCraftLaserManager;
 
 /** The box an architect table is scanning, when it took it from markers. */
-@OnlyIn(Dist.CLIENT)
 public class RenderArchitectTable implements BlockEntityRenderer<TileArchitectTable, RecordedRenderState> {
     @Override
     public RecordedRenderState createRenderState() {

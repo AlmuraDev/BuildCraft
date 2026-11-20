@@ -14,12 +14,9 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 /** 1.12.2's GuiTextField API on top of 26.3's {@link EditBox}, so BuildCraft's screens can keep driving their text
  * fields by hand (typed keys, clicks and drawing in the foreground layer). */
-@OnlyIn(Dist.CLIENT)
 public class GuiTextFieldBC extends EditBox {
     public GuiTextFieldBC(int id, Font font, int x, int y, int width, int height) {
         super(font, x, y, width, height, Component.empty());

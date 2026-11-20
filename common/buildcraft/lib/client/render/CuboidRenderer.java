@@ -12,8 +12,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.phys.Vec3;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.MutableVertex;
 import buildcraft.lib.client.render.fluid.FluidRenderer;
@@ -23,7 +21,6 @@ import buildcraft.lib.misc.SpriteUtil;
  * as well.<br>
  * For fluid rendering look at {@link FluidRenderer} - it deals with fluid types so that you don't have to manage the
  * sprite collection. */
-@OnlyIn(Dist.CLIENT)
 public class CuboidRenderer {
     // ##############
     //

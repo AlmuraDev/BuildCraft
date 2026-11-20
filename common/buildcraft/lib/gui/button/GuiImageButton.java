@@ -11,15 +11,12 @@ import buildcraft.lib.gui.GuiDraw;
 import net.minecraft.resources.Identifier;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.gui.BuildCraftGui;
 import buildcraft.lib.gui.pos.GuiRectangle;
 import buildcraft.lib.misc.GuiUtil;
 
 /** An image button that draws its states downwards, starting at baseU. */
-@OnlyIn(Dist.CLIENT)
 @Deprecated
 public class GuiImageButton extends GuiAbstractButton {
     private final int u, v, baseU, baseV;

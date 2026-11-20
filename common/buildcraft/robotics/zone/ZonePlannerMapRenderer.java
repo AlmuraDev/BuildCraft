@@ -21,14 +21,11 @@ import net.minecraft.client.renderer.Tessellator;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.MutableVertex;
 
 import buildcraft.robotics.zone.ZonePlannerMapChunk.MapColourData;
 
-@OnlyIn(Dist.CLIENT)
 public enum ZonePlannerMapRenderer {
     INSTANCE;
 

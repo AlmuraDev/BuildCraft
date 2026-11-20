@@ -5,8 +5,6 @@
 package buildcraft.builders.snapshot.pattern;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.filler.IFilledTemplate;
 import buildcraft.api.filler.IFillerPatternShape;
@@ -22,7 +20,6 @@ public class PatternFill extends Pattern implements IFillerPatternShape {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public SpriteHolder getSprite() {
         return BCBuildersSprites.FILLER_FILL;
     }

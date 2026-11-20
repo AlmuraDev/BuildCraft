@@ -7,8 +7,6 @@ package buildcraft.core;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 import buildcraft.api.enums.EnumEngineType;
@@ -32,7 +30,6 @@ import buildcraft.core.tile.TileEngineCreative;
 import buildcraft.core.tile.TileEngineRedstone_BC8;
 
 /** Core's client models: the engines' variable models and their block entity renderers. */
-@OnlyIn(Dist.CLIENT)
 public class BCCoreModels {
     private static final NodeVariableDouble ENGINE_PROGRESS;
     private static final NodeVariableObject<EnumPowerStage> ENGINE_STAGE;

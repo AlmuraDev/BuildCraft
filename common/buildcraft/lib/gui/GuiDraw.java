@@ -22,15 +22,12 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.item.ItemStack;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 /** The drawing context for BuildCraft's GUI code. 1.12.2's GUIs drew straight to OpenGL (bind a texture, set a colour,
  * push a matrix, draw a quad); 26.3 screens draw into a {@link GuiGraphicsExtractor} that is only handed to the
  * screen's render methods. Screens call {@link #begin(GuiGraphicsExtractor)} / {@link #end()} around their drawing,
  * and everything below (icons, sprites, elements, ledgers) draws through the static methods here, which keep the
  * 1.12.2 "current texture" and "current colour" state. Drawing outside a screen's render pass does nothing. */
-@OnlyIn(Dist.CLIENT)
 public final class GuiDraw {
     /** UV resolution for quads with arbitrary (non-pixel) texture coordinates. */
     private static final int UV_SCALE = 1 << 16;

@@ -14,8 +14,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.MutableVertex;
 import buildcraft.lib.client.sprite.SpriteHolderRegistry;
@@ -23,7 +21,6 @@ import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 /** A variable sized element (like LED) that can render somewhere in a tile renderer. Its centre vertex sets the
  * location, colour, lightmap and texture of the single element (one texture for every face). Vertices are written in
  * the entity format, relative to the block. */
-@OnlyIn(Dist.CLIENT)
 public class RenderPartCube {
     /** The centre of this element. */
     public final MutableVertex center = new MutableVertex();

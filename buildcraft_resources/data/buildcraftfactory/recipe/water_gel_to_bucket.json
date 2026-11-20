@@ -14,8 +14,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftfactory:gel"
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:gel"
     }
   ]
 }

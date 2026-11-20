@@ -17,8 +17,6 @@ import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.laser.LaserBoxRenderer;
 import buildcraft.lib.client.render.tile.RecordedRenderState;
@@ -27,7 +25,6 @@ import buildcraft.builders.tile.TileFiller;
 import buildcraft.core.client.BuildCraftLaserManager;
 
 /** The filler's robot and, when it took its area from markers, its box (1.12.2's FastTESR). */
-@OnlyIn(Dist.CLIENT)
 public class RenderFiller implements BlockEntityRenderer<TileFiller, BuilderRenderState> {
     @Override
     public BuilderRenderState createRenderState() {

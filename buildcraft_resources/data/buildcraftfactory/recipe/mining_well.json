@@ -17,8 +17,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftfactory:mining_well"
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:mining_well"
     }
   ]
 }

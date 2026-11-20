@@ -13,14 +13,11 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.MenuAccess;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 import buildcraft.lib.gui.BCMenu;
 
 /** Binds BuildCraft menus to their screens (1.12.2's IGuiHandler.getClientGuiElement). */
-@OnlyIn(Dist.CLIENT)
 public final class BCMenuScreens {
     private BCMenuScreens() {}
 

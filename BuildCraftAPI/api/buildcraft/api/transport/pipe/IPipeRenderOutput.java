@@ -13,13 +13,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 /** Where a pipe's dynamic renderers draw (26.3 draws from extracted render state, so they run while it is extracted).
  * Vertices are in the entity vertex format (position, colour, uv, overlay, light, normal), relative to the pipe's block,
  * on the block atlas. */
-@OnlyIn(Dist.CLIENT)
 public interface IPipeRenderOutput {
     VertexConsumer cutout();
 

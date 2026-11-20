@@ -14,8 +14,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftcore:paintbrush"
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:paintbrush"
     }
   ]
 }

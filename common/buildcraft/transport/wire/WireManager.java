@@ -23,8 +23,6 @@ import net.minecraft.core.Direction;
 
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.transport.EnumWirePart;
 import buildcraft.api.transport.IWireManager;
@@ -235,7 +233,6 @@ public class WireManager implements IWireManager {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     public void readPayload(PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         if (side == LogicalSide.CLIENT) {
             parts.clear();

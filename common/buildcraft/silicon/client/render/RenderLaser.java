@@ -20,8 +20,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.properties.BuildCraftProperties;
 
@@ -36,7 +34,6 @@ import buildcraft.silicon.BCSiliconConfig;
 import buildcraft.silicon.tile.TileLaser;
 
 /** The laser beam to the table being powered (1.12.2's FastTESR), brighter for more power. */
-@OnlyIn(Dist.CLIENT)
 public class RenderLaser implements BlockEntityRenderer<TileLaser, RecordedRenderState> {
     private static final int MAX_POWER = BuildCraftLaserManager.POWERS.length - 1;
 

@@ -25,8 +25,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.transport.pipe.IPipeBehaviourRenderer;
 import buildcraft.api.transport.pipe.IPipeFlowRenderer;
@@ -45,7 +43,6 @@ import buildcraft.transport.tile.TilePipeHolder;
 
 /** Draws a pipe's dynamic parts: wires, dynamic pluggables, and the flow and behaviour contents (1.12.2's FastTESR).
  * The renderers write while the render state is extracted; the recorded geometry is replayed when submitting. */
-@OnlyIn(Dist.CLIENT)
 public class RenderPipeHolder implements BlockEntityRenderer<TilePipeHolder, RenderPipeHolder.PipeRenderState> {
 
     private static final double MAX_DISTANCE_SQ = 64;

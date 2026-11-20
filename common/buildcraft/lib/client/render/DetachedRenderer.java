@@ -16,8 +16,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.event.SubmitCustomGeometryEvent;
 
 import buildcraft.lib.debug.IDetachedRenderer;
@@ -26,7 +24,6 @@ import buildcraft.lib.debug.IDetachedRenderer;
  * (perhaps held item HUD elements). The renderers run while the level render state is extracted ({@link #extract}),
  * drawing through {@link WorldRenderContext}; what they drew is submitted with the rest of the frame
  * ({@link #submit}). */
-@OnlyIn(Dist.CLIENT)
 public enum DetachedRenderer {
     INSTANCE;
 

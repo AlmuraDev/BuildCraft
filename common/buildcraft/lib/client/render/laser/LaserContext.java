@@ -13,8 +13,6 @@ import org.joml.Vector4f;
 import net.minecraft.world.phys.Vec3;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.MutableQuad;
 
@@ -69,7 +67,6 @@ public class LaserContext {
             .rotateZ((float) angleY);
     }
 
-    @OnlyIn(Dist.CLIENT)
     public void setFaceNormal(double nx, double ny, double nz) {
         if (useNormalColour) {
             normal.x = (float) nx;
@@ -94,7 +91,6 @@ public class LaserContext {
     private final float[] n = { 0, 1, 0 };
     private float diffuse;
 
-    @OnlyIn(Dist.CLIENT)
     public void addPoint(double xIn, double yIn, double zIn, double uIn, double vIn) {
         point.x = (float) xIn;
         point.y = (float) yIn;

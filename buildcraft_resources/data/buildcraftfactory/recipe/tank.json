@@ -14,8 +14,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftfactory:tank"
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:tank"
     }
   ]
 }

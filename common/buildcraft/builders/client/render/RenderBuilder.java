@@ -20,8 +20,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.laser.LaserBoxRenderer;
 import buildcraft.lib.client.render.laser.LaserData_BC8;
@@ -33,7 +31,6 @@ import buildcraft.builders.tile.TileBuilder;
 import buildcraft.core.client.BuildCraftLaserManager;
 
 /** The builder's box, its path and its robot (1.12.2's FastTESR). */
-@OnlyIn(Dist.CLIENT)
 public class RenderBuilder implements BlockEntityRenderer<TileBuilder, BuilderRenderState> {
     private static final double OFFSET = 0.1;
 

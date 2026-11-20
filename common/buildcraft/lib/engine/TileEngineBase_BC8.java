@@ -28,8 +28,6 @@ import buildcraft.lib.misc.CapUtil;
 import buildcraft.api.transfer.IEnergyStorage;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.enums.EnumPowerStage;
 import buildcraft.api.mj.IMjConnector;
@@ -623,7 +621,6 @@ public abstract class TileEngineBase_BC8 extends TileBC_Neptune implements ITick
         return getEnergyStored();
     }
 
-    @OnlyIn(Dist.CLIENT)
     public float getProgressClient(float partialTicks) {
         float last = lastProgress;
         float now = progress;
@@ -649,7 +646,6 @@ public abstract class TileEngineBase_BC8 extends TileBC_Neptune implements ITick
         left.add("last = " + LocaleUtil.localizeMjFlow(lastPower));
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
     public void getClientDebugInfo(List<String> left, List<String> right, Direction side) {
         left.add("Current Model Variables:");

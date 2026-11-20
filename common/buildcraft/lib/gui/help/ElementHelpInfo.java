@@ -8,8 +8,6 @@ package buildcraft.lib.gui.help;
 
 
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.gui.IGuiElement;
 import buildcraft.lib.gui.pos.IGuiArea;
@@ -42,13 +40,11 @@ public class ElementHelpInfo {
         return new ElementHelpInfo(title, colour, true, lines);
     }
 
-    @OnlyIn(Dist.CLIENT)
     public final HelpPosition target(IGuiArea target) {
         return new HelpPosition(this, target);
     }
 
     /** Stores an {@link ElementHelpInfo} information, as well as the target area which the help element relates to. */
-    @OnlyIn(Dist.CLIENT)
     public static final class HelpPosition {
         public final ElementHelpInfo info;
         public final IGuiArea target;

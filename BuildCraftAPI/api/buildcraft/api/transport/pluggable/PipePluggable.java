@@ -24,9 +24,7 @@ import net.neoforged.neoforge.capabilities.BlockCapability;
 import buildcraft.api.core.BCRenderLayer;
 import buildcraft.api.core.ICapabilityProvider;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.transport.pipe.IPipeHolder;
 import buildcraft.api.transport.pipe.IPipeHolder.PipeMessageReceiver;
@@ -123,7 +121,6 @@ public abstract class PipePluggable {
      * <code>data * 6 + key.side.ordinal()</code>. <code>"data"</code> is passed in here as <code>"tintIndex"</code>.
      * 
      * @return The tint index to render the quad with, or -1 for default. */
-    @OnlyIn(Dist.CLIENT)
     public int getBlockColor(int tintIndex) {
         return -1;
     }

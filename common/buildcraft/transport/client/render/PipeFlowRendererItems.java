@@ -18,8 +18,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.Level;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 import buildcraft.api.transport.pipe.IPipeFlowRenderer;
@@ -34,7 +32,6 @@ import buildcraft.transport.BCTransportSprites;
 import buildcraft.transport.pipe.flow.PipeFlowItems;
 import buildcraft.transport.pipe.flow.TravellingItem;
 
-@OnlyIn(Dist.CLIENT)
 public enum PipeFlowRendererItems implements IPipeFlowRenderer<PipeFlowItems> {
     INSTANCE;
 

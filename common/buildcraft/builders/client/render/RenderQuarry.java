@@ -20,8 +20,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.laser.LaserBoxRenderer;
 import buildcraft.lib.client.render.laser.LaserData_BC8;
@@ -35,7 +33,6 @@ import buildcraft.core.client.BuildCraftLaserManager;
 
 /** The quarry's frame box, its moving gantry and drill, and the laser it breaks blocks with before the frame is
  * done. */
-@OnlyIn(Dist.CLIENT)
 public class RenderQuarry implements BlockEntityRenderer<TileQuarry, RecordedRenderState> {
     public static final LaserData_BC8.LaserType FRAME;
     public static final LaserData_BC8.LaserType FRAME_BOTTOM;

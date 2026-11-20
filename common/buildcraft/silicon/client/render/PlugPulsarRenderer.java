@@ -11,8 +11,6 @@ import buildcraft.api.transport.pipe.IPipeRenderOutput;
 import net.minecraft.util.LightCoordsUtil;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.transport.pluggable.IPlugDynamicRenderer;
 
@@ -22,7 +20,6 @@ import buildcraft.lib.client.model.MutableQuad;
 import buildcraft.silicon.BCSiliconModels;
 import buildcraft.silicon.plug.PluggablePulsar;
 
-@OnlyIn(Dist.CLIENT)
 public enum PlugPulsarRenderer implements IPlugDynamicRenderer<PluggablePulsar> {
     INSTANCE;
 

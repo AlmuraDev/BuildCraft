@@ -15,8 +15,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftcore:gear_diamond"
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:gear_diamond"
     }
   ]
 }

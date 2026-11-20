@@ -17,8 +17,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftenergy:mj_dynamo"
+      "type": "neoforge:registered",
+      "value": "buildcraftenergy:mj_dynamo"
     }
   ]
 }

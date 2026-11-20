@@ -19,8 +19,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftfactory:water_gel_spawn"
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:water_gel_spawn"
     }
   ]
 }

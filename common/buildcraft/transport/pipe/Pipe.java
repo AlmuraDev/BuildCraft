@@ -27,8 +27,6 @@ import net.minecraft.core.BlockPos;
 import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.InvalidInputDataException;
 import buildcraft.api.tiles.IDebuggable;
@@ -63,7 +61,6 @@ public final class Pipe implements IPipe, IDebuggable {
     private final EnumMap<Direction, Float> connected = new EnumMap<>(Direction.class);
     private final EnumMap<Direction, ConnectedType> types = new EnumMap<>(Direction.class);
 
-    @OnlyIn(Dist.CLIENT)
     private PipeModelKey lastModel;
 
     public Pipe(IPipeHolder holder, PipeDefinition definition) {
@@ -159,7 +156,6 @@ public final class Pipe implements IPipe, IDebuggable {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     public void readPayload(PacketBufferBC buffer, LogicalSide side, IPayloadContext ctx) throws IOException {
         if (side == LogicalSide.CLIENT) {
             connected.clear();
@@ -361,7 +357,6 @@ public final class Pipe implements IPipe, IDebuggable {
         updateMarked = true;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public PipeModelKey getModel() {
         PipeFaceTex[] sides = new PipeFaceTex[6];
         float[] mc = new float[6];

@@ -61,7 +61,6 @@ public class AddonFillerPlanner extends Addon implements ISingleAddon, IFillerSt
     }
 
     @Override
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     public IFastAddonRenderer<AddonFillerPlanner> getRenderer() {
         return new buildcraft.core.marker.volume.AddonDefaultRenderer<AddonFillerPlanner>(
             BCBuildersSprites.FILLER_PLANNER::getSprite).then(new AddonRendererFillerPlanner());

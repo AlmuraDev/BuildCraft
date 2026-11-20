@@ -13,15 +13,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.phys.AABB;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.net.PacketBufferBC;
 
 public abstract class Addon {
     public VolumeBox volumeBox;
 
-    @OnlyIn(Dist.CLIENT)
     public abstract IFastAddonRenderer<? extends Addon> getRenderer();
 
     public EnumAddonSlot getSlot() {

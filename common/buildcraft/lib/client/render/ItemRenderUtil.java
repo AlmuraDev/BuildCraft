@@ -26,14 +26,11 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.BCLibConfig;
 
 /** Draws small item stacks inside blocks (travelling items in pipes, builder snapshots). 26.3 draws from extracted render
  * state, so stacks are resolved with {@link #extractItemStack} while extracting and drawn with {@link #submitItems}. */
-@OnlyIn(Dist.CLIENT)
 public final class ItemRenderUtil {
 
     private static final float SCALE = 0.30f;

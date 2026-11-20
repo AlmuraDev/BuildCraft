@@ -16,8 +16,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftfactory:chute"
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:chute"
     }
   ]
 }

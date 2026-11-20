@@ -24,8 +24,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftsilicon:plug_gate"
+      "type": "neoforge:registered",
+      "value": "buildcraftsilicon:plug_gate"
     }
   ]
 }

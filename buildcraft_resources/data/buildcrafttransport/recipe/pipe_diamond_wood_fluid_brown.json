@@ -20,12 +20,12 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcrafttransport:pipe_diamond_wood_item"
+      "type": "neoforge:registered",
+      "value": "buildcrafttransport:pipe_diamond_wood_item"
     },
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcrafttransport:pipe_diamond_wood_fluid"
+      "type": "neoforge:registered",
+      "value": "buildcrafttransport:pipe_diamond_wood_fluid"
     }
   ]
 }

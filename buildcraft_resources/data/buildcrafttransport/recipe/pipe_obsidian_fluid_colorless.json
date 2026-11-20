@@ -16,12 +16,12 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcrafttransport:pipe_obsidian_item"
+      "type": "neoforge:registered",
+      "value": "buildcrafttransport:pipe_obsidian_item"
     },
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcrafttransport:pipe_obsidian_fluid"
+      "type": "neoforge:registered",
+      "value": "buildcrafttransport:pipe_obsidian_fluid"
     }
   ]
 }

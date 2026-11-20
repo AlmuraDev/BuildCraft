@@ -9,8 +9,6 @@ package buildcraft.energy;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 import buildcraft.api.enums.EnumEngineType;
@@ -42,7 +40,6 @@ import buildcraft.energy.tile.TileEngineStone_BC8;
  * <p>
  * TODO(26.3): engine and dynamo items. 1.12.2 baked the variable model into the item model; 26.3 needs a special item
  * model renderer for that, so the items show plain fallback models for now (as core's engines do). */
-@OnlyIn(Dist.CLIENT)
 public class BCEnergyModels {
     private static final NodeVariableDouble ENGINE_PROGRESS;
     private static final NodeVariableObject<EnumPowerStage> ENGINE_STAGE;

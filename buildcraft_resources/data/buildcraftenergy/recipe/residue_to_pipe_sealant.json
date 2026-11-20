@@ -14,8 +14,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcrafttransport:waterproof"
+      "type": "neoforge:registered",
+      "value": "buildcrafttransport:waterproof"
     }
   ]
 }

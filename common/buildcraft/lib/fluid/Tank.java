@@ -26,8 +26,6 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import buildcraft.api.transfer.NeoTransfer;
 import buildcraft.api.transfer.IFluidHandlerItem;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.IFluidFilter;
 import buildcraft.api.core.IFluidHandlerAdv;
@@ -224,7 +222,6 @@ public class Tank extends FluidTank implements IFluidHandlerAdv {
         buffer.writeInt(getFluidAmount());
     }
 
-    @OnlyIn(Dist.CLIENT)
     public void readFromBuffer(PacketBufferBC buffer) {
         if (buffer.readBoolean()) {
             clientFluid = BuildCraftObjectCaches.CACHE_FLUIDS.client().retrieve(buffer.readInt());

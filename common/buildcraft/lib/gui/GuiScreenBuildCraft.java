@@ -16,8 +16,6 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.gui.json.BuildCraftJsonGui;
 import buildcraft.lib.gui.ledger.LedgerHelp;
@@ -25,7 +23,6 @@ import buildcraft.lib.gui.pos.IGuiArea;
 import buildcraft.lib.misc.GuiUtil;
 
 /** Reference implementation for a gui that delegates to a {@link BuildCraftGui} for most of its functionality. */
-@OnlyIn(Dist.CLIENT)
 public class GuiScreenBuildCraft extends Screen {
 
     public final BuildCraftGui mainGui;

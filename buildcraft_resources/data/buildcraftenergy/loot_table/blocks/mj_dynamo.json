@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftenergy:blocks/mj_dynamo"
+  "random_sequence": "buildcraftenergy:blocks/mj_dynamo",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftenergy:mj_dynamo"
+    }
+  ]
 }

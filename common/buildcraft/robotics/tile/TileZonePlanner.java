@@ -20,8 +20,6 @@ import net.minecraft.core.BlockPos;
 import buildcraft.lib.net.IMessage;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.tiles.IDebuggable;
 

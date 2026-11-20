@@ -15,10 +15,7 @@ import org.lwjgl.opengl.GL14;
 import net.minecraft.client.Minecraft;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
 public class GlUtil {
     private static ByteBuffer depthBuffer = null;
 

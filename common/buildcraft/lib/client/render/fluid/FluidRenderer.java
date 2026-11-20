@@ -34,8 +34,6 @@ import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 import buildcraft.api.transfer.IFluidTank;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.MutableVertex;
 import buildcraft.lib.misc.MathUtil;
@@ -46,7 +44,6 @@ import buildcraft.lib.misc.VecUtil;
  * call this from the main client thread. */
 // TODO: thread safety (per thread context?)
 // Perhaps move this into IModelRenderer? And that way we get the buffer, force shaders to cope with fluids (?!), etc
-@OnlyIn(Dist.CLIENT)
 public class FluidRenderer {
 
     private static final EnumMap<FluidSpriteType, Map<String, TextureAtlasSprite>> fluidSprites

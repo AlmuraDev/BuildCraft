@@ -31,8 +31,6 @@ import buildcraft.api.transfer.FluidTankProperties;
 import buildcraft.api.transfer.IFluidTankProperties;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.core.IFluidFilter;
@@ -209,7 +207,6 @@ public class TileTank extends TileBC_Neptune implements ITickable, IDebuggable, 
 
     // Rendering
 
-    @OnlyIn(Dist.CLIENT)
     public FluidStackInterp getFluidForRender(float partialTicks) {
         return smoothedTank.getFluidForRender(partialTicks);
     }

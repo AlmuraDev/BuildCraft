@@ -20,8 +20,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.Explosion;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.BCModules;
 import buildcraft.api.facades.FacadeType;
@@ -166,7 +164,6 @@ public class PluggableFacade extends PipePluggable implements IFacade {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public int getBlockColor(int tintIndex) {
         FacadePhasedState state = states.phasedStates[activeState];
         return buildcraft.silicon.client.FacadeTints.getColour(state.stateInfo.state, holder.getPipeWorld(),

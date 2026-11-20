@@ -9,8 +9,6 @@ package buildcraft.core.statements;
 import net.minecraft.core.Direction;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.statements.IActionInternal;
 import buildcraft.api.statements.IStatementContainer;
@@ -84,7 +82,6 @@ public class ActionRedstoneOutput extends BCStatement implements IActionInternal
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public SpriteHolder getSprite() {
         return BCCoreSprites.ACTION_REDSTONE;
     }

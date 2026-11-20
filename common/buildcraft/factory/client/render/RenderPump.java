@@ -16,8 +16,6 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.tile.RecordedRenderState;
 
@@ -36,7 +34,6 @@ import buildcraft.lib.client.sprite.SpriteHolderRegistry.SpriteHolder;
 import buildcraft.factory.tile.TilePump;
 
 /** The pump's power and status LEDs and its tube (1.12.2's FastTESR). */
-@OnlyIn(Dist.CLIENT)
 public class RenderPump implements BlockEntityRenderer<TilePump, RecordedRenderState> {
     private static final int[] COLOUR_POWER = new int[16];
     private static final int COLOUR_STATUS_ON = 0xFF_77_DD_77; // a light green

@@ -13,8 +13,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftfactory:autoworkbench_item"
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:autoworkbench_item"
     }
   ]
 }

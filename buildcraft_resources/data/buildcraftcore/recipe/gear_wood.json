@@ -15,8 +15,8 @@
   "group": "buildcraft",
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftcore:gear_wood"
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:gear_wood"
     }
   ]
 }

@@ -17,8 +17,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftsilicon:advanced_crafting_table"
+      "type": "neoforge:registered",
+      "value": "buildcraftsilicon:advanced_crafting_table"
     }
   ]
 }

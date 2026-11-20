@@ -43,7 +43,7 @@ public class FacadeAssemblyRecipes extends AssemblyRecipe implements IRecipeView
     public static final FacadeAssemblyRecipes INSTANCE = new FacadeAssemblyRecipes();
 
     static {
-        INSTANCE.setRegistryName(Identifier.parse("buildcrafttransport:facadeRecipes"));
+        INSTANCE.setRegistryName(Identifier.parse("buildcraftsilicon:facade_recipes"));
     }
 
     private static final int TIME_GAP = 500;

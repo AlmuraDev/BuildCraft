@@ -22,8 +22,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.ModelUtil;
 import buildcraft.lib.client.render.WorldRenderContext;
@@ -35,7 +33,6 @@ import buildcraft.builders.client.ClientArchitectTables;
 
 /** The fading "scanned" overlay on blocks an architect table has just read. 1.12.2 clipped it to the scanned box
  * with the stencil buffer; 26.3 has no stencil access here, so the overlay is only limited to blocks inside a box. */
-@OnlyIn(Dist.CLIENT)
 public enum RenderArchitectTables implements IDetachedRenderer {
     INSTANCE;
 

@@ -21,8 +21,6 @@ import net.minecraft.core.NonNullList;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.lists.ListMatchHandler;
 import buildcraft.api.lists.ListMatchHandler.Type;
@@ -180,7 +178,6 @@ public final class ListHandler {
             }
         }
 
-        @OnlyIn(Dist.CLIENT)
         public NonNullList<ItemStack> getExamples() {
             ItemStack firstStack = stacks.get(0);
             if (firstStack.isEmpty()) {

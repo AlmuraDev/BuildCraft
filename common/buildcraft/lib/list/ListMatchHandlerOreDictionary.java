@@ -18,8 +18,6 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.lists.ListMatchHandler;
 
@@ -87,7 +85,6 @@ public class ListMatchHandlerOreDictionary extends ListMatchHandler {
         return !namedTags(stack).isEmpty();
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
     public NonNullList<ItemStack> getClientExamples(Type type, @Nonnull ItemStack stack) {
         NonNullList<ItemStack> stacks = NonNullList.create();

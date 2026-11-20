@@ -1,14 +1,11 @@
 package buildcraft.api.transport.pipe;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.transport.pluggable.IPlugDynamicRenderer;
 import buildcraft.api.transport.pluggable.IPluggableStaticBaker;
 import buildcraft.api.transport.pluggable.PipePluggable;
 import buildcraft.api.transport.pluggable.PluggableModelKey;
 
-@OnlyIn(Dist.CLIENT)
 public enum PipeApiClient {
     INSTANCE;
 

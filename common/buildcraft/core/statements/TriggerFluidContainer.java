@@ -17,8 +17,6 @@ import buildcraft.lib.misc.FluidUtilBC;
 import buildcraft.api.transfer.IFluidHandler;
 import buildcraft.api.transfer.IFluidTankProperties;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.statements.IStatement;
 import buildcraft.api.statements.IStatementContainer;
@@ -45,7 +43,6 @@ public class TriggerFluidContainer extends BCStatement implements ITriggerExtern
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public SpriteHolder getSprite() {
         return BCCoreSprites.TRIGGER_FLUID.get(state);
     }

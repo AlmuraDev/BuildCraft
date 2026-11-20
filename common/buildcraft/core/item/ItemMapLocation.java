@@ -30,8 +30,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.IAreaProvider;
 import buildcraft.api.core.IBox;
@@ -67,7 +65,6 @@ public class ItemMapLocation extends ItemBC_Neptune implements IMapLocation {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
     public void addInformation(ItemStack stack, Level world, List<String> strings, TooltipFlag flag) {
         stack = StackUtil.asNonNull(stack);

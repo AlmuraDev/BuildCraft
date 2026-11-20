@@ -15,8 +15,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftcore:gear_iron"
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:gear_iron"
     }
   ]
 }

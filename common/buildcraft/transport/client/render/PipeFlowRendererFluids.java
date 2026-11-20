@@ -22,8 +22,6 @@ import net.minecraft.world.phys.Vec3;
 
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.transport.pipe.IPipeFlowRenderer;
@@ -35,7 +33,6 @@ import buildcraft.lib.misc.VecUtil;
 import buildcraft.transport.pipe.Pipe;
 import buildcraft.transport.pipe.flow.PipeFlowFluids;
 
-@OnlyIn(Dist.CLIENT)
 public enum PipeFlowRendererFluids implements IPipeFlowRenderer<PipeFlowFluids> {
     INSTANCE;
 

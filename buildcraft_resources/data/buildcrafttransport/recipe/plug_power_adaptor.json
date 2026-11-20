@@ -18,8 +18,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcrafttransport:plug_power_adaptor"
+      "type": "neoforge:registered",
+      "value": "buildcrafttransport:plug_power_adaptor"
     }
   ]
 }

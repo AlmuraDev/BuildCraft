@@ -12,14 +12,11 @@ import java.util.Objects;
 import net.minecraft.world.item.DyeColor;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.transport.pipe.EnumPipeColourType;
 import buildcraft.api.transport.pipe.PipeDefinition;
 import buildcraft.api.transport.pipe.PipeFaceTex;
 
-@OnlyIn(Dist.CLIENT)
 public final class PipeModelKey {
     public static final PipeModelKey DEFAULT_KEY;
 

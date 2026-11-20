@@ -8,8 +8,6 @@ package buildcraft.lib.gui;
 
 import net.minecraft.resources.Identifier;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 
@@ -18,7 +16,6 @@ import buildcraft.lib.gui.pos.GuiRectangle;
 import buildcraft.lib.gui.pos.IGuiArea;
 import buildcraft.lib.gui.pos.IGuiPosition;
 
-@OnlyIn(Dist.CLIENT)
 public class GuiIcon implements ISimpleDrawable {
     public final ISprite sprite;
     public final int textureSize;

@@ -80,10 +80,18 @@ public class BCSilicon {
         BCSiliconGuis.fmlPreInit(modBus);
         BCSiliconProxy.getProxy().fmlPreInit();
 
-        NeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event) -> {
-            // The facade scan makes stacks, which 26.3 can only do once a world's data (components) has loaded
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.DefaultDataComponentsBoundEvent event) -> {
+            // After every data load: tags and item components are both bound by now (26.3 needs both for stacks)
+            if (!event.shouldUpdateStaticData()) {
+                return;
+            }
             FacadeStateManager.initOnce();
-            BCSiliconRecipes.registerAssemblyRecipes();
+            try {
+                BCSiliconRecipes.registerAssemblyRecipes();
+            } catch (RuntimeException e) {
+                // A broken recipe (a missing tag, say) must not stop the world from loading
+                buildcraft.api.core.BCLog.logger.error("[silicon.assembly] Failed to register the assembly recipes", e);
+            }
         });
 
         modBus.addListener(BCSilicon::init);

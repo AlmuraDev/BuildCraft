@@ -26,8 +26,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.model.DynamicBlockStateModel;
 import net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel;
 import net.neoforged.neoforge.model.data.ModelData;
@@ -49,7 +47,6 @@ import buildcraft.transport.tile.TilePipeHolder;
  * The quads come from BuildCraft's model caches, which are not thread safe, so they are baked on the main thread when
  * the tile's model data is collected ({@link #createModelData}) and only read by the chunk meshing threads. Tints are
  * applied there too, as they read the tile's pluggables. */
-@OnlyIn(Dist.CLIENT)
 public final class ModelPipe implements DynamicBlockStateModel {
     public static final ModelPipe INSTANCE = new ModelPipe();
     public static final Identifier TYPE = Identifier.fromNamespaceAndPath("buildcrafttransport", "pipe_holder");

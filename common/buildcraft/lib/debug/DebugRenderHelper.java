@@ -18,8 +18,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.ModelUtil;
 import buildcraft.lib.client.render.WorldRenderContext;
@@ -27,7 +25,6 @@ import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import buildcraft.lib.client.model.MutableQuad;
 import buildcraft.lib.debug.IDetachedRenderer;
 
-@OnlyIn(Dist.CLIENT)
 public enum DebugRenderHelper implements IDetachedRenderer {
     INSTANCE;
 
@@ -46,7 +43,6 @@ public enum DebugRenderHelper implements IDetachedRenderer {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public void render(Player player, float partialTicks) {
         IAdvDebugTarget target = BCAdvDebugging.INSTANCE.targetClient;
         if (target == null) {

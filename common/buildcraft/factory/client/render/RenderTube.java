@@ -10,8 +10,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.laser.LaserData_BC8;
 import buildcraft.lib.client.render.laser.LaserData_BC8.LaserType;
@@ -21,7 +19,6 @@ import buildcraft.lib.client.render.tile.RecordedRenderState;
 import buildcraft.factory.tile.TileMiner;
 
 /** The tube that a mining well or pump lowers, drawn as a laser from the block down to the tube's end. */
-@OnlyIn(Dist.CLIENT)
 public final class RenderTube {
     private RenderTube() {}
 

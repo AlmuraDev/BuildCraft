@@ -7,13 +7,10 @@
 package buildcraft.lib.client.guide.parts;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.guide.GuiGuide;
 
 @FunctionalInterface
-@OnlyIn(Dist.CLIENT)
 public interface GuidePageFactory extends GuidePartFactory {
     @Override
     GuidePageBase createNew(GuiGuide gui);

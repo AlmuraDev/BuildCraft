@@ -16,8 +16,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 import buildcraft.api.statements.IStatement;
@@ -73,7 +71,6 @@ public enum PatternParameterFacing implements IStatementParameter {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public ISprite getSprite() {
         return BCBuildersSprites.PARAM_FACE.get(face);
     }

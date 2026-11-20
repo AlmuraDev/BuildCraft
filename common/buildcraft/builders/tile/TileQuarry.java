@@ -50,7 +50,6 @@ import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.EnumPipePart;
@@ -883,7 +882,6 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
     }
 
 
-    @OnlyIn(Dist.CLIENT)
     @Override
     public IDetachedRenderer getDebugRenderer() {
         return new AdvDebuggerQuarry(this);

@@ -17,8 +17,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.core.render.ISprite;
@@ -57,7 +55,6 @@ public class StatementParameterDirection implements IStatementParameter {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public ISprite getSprite() {
         Direction dir = getDirection();
         if (dir == null) {

@@ -4,8 +4,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 import buildcraft.api.enums.EnumPowerStage;
@@ -39,7 +37,6 @@ public class TriggerEnginePowerStage extends BCStatement implements ITriggerExte
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public ISprite getSprite() {
         return BCCoreSprites.TRIGGER_POWER_STAGE.get(stage);
     }

@@ -17,8 +17,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftsilicon:integration_table"
+      "type": "neoforge:registered",
+      "value": "buildcraftsilicon:integration_table"
     }
   ]
 }

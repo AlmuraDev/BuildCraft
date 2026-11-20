@@ -16,14 +16,11 @@ import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.phys.Vec3;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.laser.LaserData_BC8.LaserType;
 import buildcraft.lib.misc.VecUtil;
 import buildcraft.lib.misc.data.Box;
 
-@OnlyIn(Dist.CLIENT)
 public class LaserBoxRenderer {
     private static final double RENDER_SCALE = 1 / 16.05;
 

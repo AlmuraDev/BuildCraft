@@ -16,8 +16,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftsilicon:laser"
+      "type": "neoforge:registered",
+      "value": "buildcraftsilicon:laser"
     }
   ]
 }

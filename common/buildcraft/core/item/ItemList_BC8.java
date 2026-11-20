@@ -20,8 +20,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.world.level.Level;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.items.IList;
 
@@ -47,7 +45,6 @@ public class ItemList_BC8 extends ItemBC_Neptune implements IList {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public void addInformation(ItemStack stack, Level world, List<String> tooltip, TooltipFlag flag) {
         String name = getLabel(StackUtil.asNonNull(stack));
         if (StringUtil.isNullOrEmpty(name)) return;

@@ -14,8 +14,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftcore:marker_path"
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:marker_path"
     }
   ]
 }

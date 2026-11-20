@@ -24,8 +24,6 @@ import buildcraft.api.core.INBTSerializable;
 import net.neoforged.neoforge.fluids.FluidStack;
 import buildcraft.api.transfer.IFluidTankProperties;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.IFluidFilter;
 import buildcraft.api.core.IFluidHandlerAdv;
@@ -209,7 +207,6 @@ public class TankManager extends ForwardingList<Tank> implements IFluidHandlerAd
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     public void readData(PacketBufferBC buffer) {
         for (Tank tank : tanks) {
             tank.readFromBuffer(buffer);

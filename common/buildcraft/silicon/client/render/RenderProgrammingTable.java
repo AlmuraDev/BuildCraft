@@ -20,8 +20,6 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.tile.RecordedRenderState;
 import buildcraft.lib.client.sprite.SpriteHolderRegistry;
@@ -29,7 +27,6 @@ import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import buildcraft.silicon.tile.TileProgrammingTable_Neptune;
 
 /** The glass pane over the (dev only) programming table. */
-@OnlyIn(Dist.CLIENT)
 public class RenderProgrammingTable implements BlockEntityRenderer<TileProgrammingTable_Neptune, RecordedRenderState> {
     private static final Identifier GLASS = Identifier.withDefaultNamespace("block/white_stained_glass");
 

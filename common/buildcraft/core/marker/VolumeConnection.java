@@ -14,8 +14,6 @@ import net.minecraft.core.Direction.Axis;
 import net.minecraft.core.BlockPos;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.marker.MarkerConnection;
 import buildcraft.lib.misc.PositionUtil;

@@ -10,12 +10,9 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import net.minecraft.core.Direction;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.MutableVertex;
 
-@OnlyIn(Dist.CLIENT)
 public class RenderMachineWave {
     private static final double SIZE = 1 / 16.0;
 

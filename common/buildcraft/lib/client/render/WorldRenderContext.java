@@ -18,14 +18,11 @@ import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 /** Where BuildCraft's "detached" world rendering (lasers, debug boxes, volume boxes) draws. 1.12.2 drew with GL calls
  * straight into the world matrix; 26.3 only draws what was submitted, so {@link DetachedRenderer} lets the renderers
  * record their quads (in world coordinates) while the level render state is extracted, and submits the recording
  * afterwards. Everything recorded is drawn as {@link #TRANSLUCENT_BLOCK_ATLAS}. */
-@OnlyIn(Dist.CLIENT)
 public final class WorldRenderContext {
     /** Block-atlas quads with alpha (lasers). */
     public static final RenderType TRANSLUCENT_BLOCK_ATLAS = RenderTypes.entityTranslucent(TextureAtlas.LOCATION_BLOCKS);

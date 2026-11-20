@@ -13,8 +13,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftcore:diamond_shard"
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:diamond_shard"
     }
   ]
 }

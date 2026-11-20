@@ -24,8 +24,6 @@ import buildcraft.lib.misc.CapUtil;
 import buildcraft.api.transfer.IEnergyStorage;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.enums.EnumPowerStage;
 import buildcraft.api.mj.MjAPI;
@@ -694,7 +692,6 @@ public class TileDynamoMJ extends TileBC_Neptune implements ITickable, IEngineLi
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     public float getProgressClient(float partialTicks) {
         float last = lastProgress;
         float now = progress;

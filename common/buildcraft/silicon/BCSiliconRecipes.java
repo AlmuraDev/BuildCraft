@@ -47,6 +47,11 @@ import buildcraft.silicon.recipe.FacadeAssemblyRecipes;
  * assets/&lt;mod&gt;/assembly_recipes_pre_mj and config/buildcraft/assembly_recipes_pre_mj; that isn't ported. */
 public class BCSiliconRecipes {
 
+    /** Assembly recipes are registered outside any mod's loading context, so they name their namespace. */
+    private static String id(String name) {
+        return "buildcraftsilicon:" + name;
+    }
+
     public static void registerAssemblyRecipes() {
         if (BCSiliconItems.plugPulsar != null) {
             ItemStack output = new ItemStack(BCSiliconItems.plugPulsar);
@@ -61,7 +66,7 @@ public class BCSiliconRecipes {
             Set<IngredientStack> input = new HashSet<>();
             input.add(new IngredientStack(DataComponentIngredient.of(false, redstoneEngine)));
             input.add(new IngredientStack(IngredientStack.toIngredient("c:ingots/iron"), 2));
-            register(new AssemblyRecipeBasic("plug_pulsar", 1000 * MjAPI.MJ, input, output));
+            register(new AssemblyRecipeBasic(id("plug_pulsar"), 1000 * MjAPI.MJ, input, output));
         }
         if (BCSiliconItems.plugGate != null) {
             IngredientStack lapis = IngredientStack.of("c:gems/lapis");
@@ -90,13 +95,13 @@ public class BCSiliconRecipes {
         }
 
         if (BCSiliconItems.plugLightSensor != null) {
-            register(new AssemblyRecipeBasic("light-sensor", 500 * MjAPI.MJ,
+            register(new AssemblyRecipeBasic(id("light-sensor"), 500 * MjAPI.MJ,
                 ImmutableSet.of(IngredientStack.of(Blocks.DAYLIGHT_DETECTOR)),
                 new ItemStack(BCSiliconItems.plugLightSensor)));
         }
 
         if (BCSiliconItems.plugTimer != null) {
-            register(new AssemblyRecipeBasic("timer", 500 * MjAPI.MJ,
+            register(new AssemblyRecipeBasic(id("timer"), 500 * MjAPI.MJ,
                 ImmutableSet.of(IngredientStack.of(Items.CLOCK)), new ItemStack(BCSiliconItems.plugTimer)));
         }
 
@@ -107,25 +112,27 @@ public class BCSiliconRecipes {
         if (BCSiliconItems.plugLens != null) {
             for (DyeColor colour : ColourUtil.COLOURS) {
                 String name = StringUtilBC.formatDirect("lens-regular-%s", colour.getName());
-                IngredientStack stainedGlass = IngredientStack.of("c:glass_blocks/" + colour.getName());
+                // 26.3 has no per-colour glass tags (1.12.2: "blockGlass<Colour>")
+                IngredientStack stainedGlass = IngredientStack.of(net.minecraft.core.registries.BuiltInRegistries.ITEM
+                    .getValue(net.minecraft.resources.Identifier.withDefaultNamespace(colour.getName() + "_stained_glass")));
                 ImmutableSet<IngredientStack> input = ImmutableSet.of(stainedGlass);
                 ItemStack output = BCSiliconItems.plugLens.getStack(colour, false);
-                register(new AssemblyRecipeBasic(name, 500 * MjAPI.MJ, input, output));
+                register(new AssemblyRecipeBasic(id(name), 500 * MjAPI.MJ, input, output));
 
                 name = StringUtilBC.formatDirect("lens-filter-%s", colour.getName());
                 output = BCSiliconItems.plugLens.getStack(colour, true);
                 input = ImmutableSet.of(stainedGlass, IngredientStack.of(Blocks.IRON_BARS));
-                register(new AssemblyRecipeBasic(name, 500 * MjAPI.MJ, input, output));
+                register(new AssemblyRecipeBasic(id(name), 500 * MjAPI.MJ, input, output));
             }
 
             IngredientStack glass = IngredientStack.of("c:glass_blocks");
             ImmutableSet<IngredientStack> input = ImmutableSet.of(glass);
             ItemStack output = BCSiliconItems.plugLens.getStack(null, false);
-            register(new AssemblyRecipeBasic("lens-regular", 500 * MjAPI.MJ, input, output));
+            register(new AssemblyRecipeBasic(id("lens-regular"), 500 * MjAPI.MJ, input, output));
 
             output = BCSiliconItems.plugLens.getStack(null, true);
             input = ImmutableSet.of(glass, IngredientStack.of(Blocks.IRON_BARS));
-            register(new AssemblyRecipeBasic("lens-filter", 500 * MjAPI.MJ, input, output));
+            register(new AssemblyRecipeBasic(id("lens-filter"), 500 * MjAPI.MJ, input, output));
         }
 
         if (!BCSiliconItems.redstoneChipsets.isEmpty()) {
@@ -157,7 +164,7 @@ public class BCSiliconRecipes {
                 input.add(IngredientStack.of("c:dusts/redstone"));
                 input.add(IngredientStack.of("c:ingots/gold"));
             }
-            register(new AssemblyRecipeBasic("gate_copier", 500 * MjAPI.MJ, input.build(),
+            register(new AssemblyRecipeBasic(id("gate_copier"), 500 * MjAPI.MJ, input.build(),
                 new ItemStack(BCSiliconItems.gateCopier)));
         }
     }
@@ -169,7 +176,7 @@ public class BCSiliconRecipes {
     private static void chipset(String name, int mj, EnumRedstoneChipset type, ImmutableSet<IngredientStack> input) {
         ItemStack output = type.getStack(1);
         if (!output.isEmpty()) {
-            register(new AssemblyRecipeBasic(name, mj * MjAPI.MJ, input, output));
+            register(new AssemblyRecipeBasic(id(name), mj * MjAPI.MJ, input, output));
         }
     }
 
@@ -188,7 +195,7 @@ public class BCSiliconRecipes {
             Builder<IngredientStack> inputBuilder = new ImmutableSet.Builder<>();
             inputBuilder.add(new IngredientStack(exact(toUpgrade)));
             inputBuilder.add(mods);
-            register(new AssemblyRecipeBasic(name, MjAPI.MJ * multiplier, inputBuilder.build(), output));
+            register(new AssemblyRecipeBasic(id(name), MjAPI.MJ * multiplier, inputBuilder.build(), output));
         }
     }
 
@@ -201,10 +208,10 @@ public class BCSiliconRecipes {
 
         String name = StringUtilBC.formatDirect("gate-and-%s-%s", material, modifier);
         ItemStack output = BCSiliconItems.plugGate.getStack(new GateVariant(EnumGateLogic.AND, material, modifier));
-        register(new AssemblyRecipeBasic(name, MjAPI.MJ * multiplier, input, output));
+        register(new AssemblyRecipeBasic(id(name), MjAPI.MJ * multiplier, input, output));
 
         name = StringUtilBC.formatDirect("gate-or-%s-%s", material, modifier);
         output = BCSiliconItems.plugGate.getStack(new GateVariant(EnumGateLogic.OR, material, modifier));
-        register(new AssemblyRecipeBasic(name, MjAPI.MJ * multiplier, input, output));
+        register(new AssemblyRecipeBasic(id(name), MjAPI.MJ * multiplier, input, output));
     }
 }

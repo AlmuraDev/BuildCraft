@@ -19,13 +19,10 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.PlayerSkin;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import buildcraft.lib.gui.GuiDraw;
 
-@OnlyIn(Dist.CLIENT)
 public class SpriteUtil {
     private static final Map<GameProfile, Supplier<PlayerSkin>> SKINS = new HashMap<>();
 

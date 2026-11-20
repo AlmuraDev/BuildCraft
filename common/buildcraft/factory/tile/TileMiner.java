@@ -22,8 +22,6 @@ import net.minecraft.core.BlockPos;
 
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.mj.IMjReceiver;
@@ -237,7 +235,6 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
 
     // Rendering
 
-    @OnlyIn(Dist.CLIENT)
     public float getPercentFilledForRender() {
         float val = battery.getStored() / (float) battery.getCapacity();
         return val < 0 ? 0 : val > 1 ? 1 : val;

@@ -24,8 +24,6 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 import buildcraft.api.core.render.ISprite;
@@ -44,7 +42,6 @@ import buildcraft.lib.gui.pos.IGuiArea;
 import buildcraft.lib.gui.pos.IGuiPosition;
 
 /** GUI helpers. Everything draws through {@link GuiDraw}, so it only works inside a BuildCraft screen's render. */
-@OnlyIn(Dist.CLIENT)
 public class GuiUtil {
 
     public static final IGuiArea AREA_WHOLE_SCREEN;

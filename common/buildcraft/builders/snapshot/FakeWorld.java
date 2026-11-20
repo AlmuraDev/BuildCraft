@@ -30,13 +30,10 @@ import net.minecraft.world.storage.SaveHandlerMP;
 import net.minecraft.world.storage.WorldInfo;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.schematics.ISchematicBlock;
 
 @SuppressWarnings("NullableProblems")
-@OnlyIn(Dist.CLIENT)
 public class FakeWorld extends Level {
     private static final Biome BIOME = Biomes.PLAINS;
     @SuppressWarnings("WeakerAccess")

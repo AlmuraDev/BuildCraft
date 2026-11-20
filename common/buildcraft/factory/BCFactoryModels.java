@@ -10,8 +10,6 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterBlockStateModels;
@@ -30,7 +28,6 @@ import buildcraft.factory.tile.TileDistiller_BC8;
 /** Factory's client models and tile renderers. The heat exchanger's block model is {@link ModelHeatExchange}, named by
  * its blockstate file. TODO(26.3): the heat exchanger item used its baked variable model; it shows a plain fallback
  * model until it has a special item model renderer. */
-@OnlyIn(Dist.CLIENT)
 public class BCFactoryModels {
     public static final ModelHolderVariable DISTILLER = new ModelHolderVariable(
         "buildcraftfactory:models/tiles/distiller.json",

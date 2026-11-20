@@ -39,8 +39,6 @@ import net.neoforged.neoforge.fluids.FluidStack;
 import buildcraft.api.transfer.IFluidHandler;
 import buildcraft.api.transfer.IFluidTankProperties;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.BCLog;
 import buildcraft.api.core.EnumPipePart;
@@ -421,12 +419,10 @@ public class PipeFlowFluids extends PipeFlow implements IFlowFluid, IDebuggable 
 
     // Rendering
 
-    @OnlyIn(Dist.CLIENT)
     public FluidStack getFluidStackForRender() {
         return clientFluid == null ? null : clientFluid.get();
     }
 
-    @OnlyIn(Dist.CLIENT)
     public double[] getAmountsForRender(float partialTicks) {
         double[] arr = new double[7];
         for (EnumPipePart part : EnumPipePart.VALUES) {
@@ -436,7 +432,6 @@ public class PipeFlowFluids extends PipeFlow implements IFlowFluid, IDebuggable 
         return arr;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public Vec3[] getOffsetsForRender(float partialTicks) {
         Vec3[] arr = new Vec3[7];
         for (EnumPipePart part : EnumPipePart.VALUES) {

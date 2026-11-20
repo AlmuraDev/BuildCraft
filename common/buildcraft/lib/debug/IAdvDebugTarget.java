@@ -7,8 +7,6 @@
 package buildcraft.lib.debug;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.debug.IDetachedRenderer;
 
@@ -29,6 +27,5 @@ public interface IAdvDebugTarget {
     /** Called on the client to actually render off the target. Note that this might not be called every frame this this
      * is rendered, so the returned render should always correctly render the current debug target, provided that
      * {@link #doesExistInWorld()} returns true. */
-    @OnlyIn(Dist.CLIENT)
     IDetachedRenderer getDebugRenderer();
 }

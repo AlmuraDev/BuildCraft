@@ -16,8 +16,6 @@ import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.tile.RecordedRenderState;
 
@@ -53,7 +51,6 @@ import buildcraft.factory.tile.TileHeatExchange.ExchangeSectionEnd;
 import buildcraft.factory.tile.TileHeatExchange.ExchangeSectionStart;
 
 /** The fluids in a heat exchanger and the flow between its ends, all drawn by the start block. */
-@OnlyIn(Dist.CLIENT)
 public class RenderHeatExchange implements BlockEntityRenderer<TileHeatExchange, RecordedRenderState> {
     private static final Map<Direction, TankSideData> TANK_SIDES = new EnumMap<>(Direction.class);
     private static final TankSize TANK_BOTTOM, TANK_TOP;

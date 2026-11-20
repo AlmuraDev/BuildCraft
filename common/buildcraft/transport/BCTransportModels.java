@@ -9,8 +9,6 @@ package buildcraft.transport;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterBlockStateModels;
 
@@ -47,7 +45,6 @@ import buildcraft.transport.tile.TilePipeHolder;
  * The pipe holder's block model is {@link ModelPipe}, named by its blockstate file. Pipe and plug items use flat item
  * models for now. TODO(26.3): 1.12.2 drew pipe items as small pipes (ModelPipeItem) and plug items from their plug
  * models (ModelPluggableItem); both need special item model renderers. */
-@OnlyIn(Dist.CLIENT)
 public class BCTransportModels {
     public static final ModelHolderStatic BLOCKER;
     public static final ModelHolderStatic POWER_ADAPTER;

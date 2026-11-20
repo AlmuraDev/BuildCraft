@@ -3,8 +3,8 @@
   "category": "misc",
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftsilicon:plug_facade"
+      "type": "neoforge:registered",
+      "value": "buildcraftsilicon:plug_facade"
     }
   ]
 }

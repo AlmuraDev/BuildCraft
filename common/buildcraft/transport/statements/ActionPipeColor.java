@@ -9,8 +9,6 @@ package buildcraft.transport.statements;
 import net.minecraft.world.item.DyeColor;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.statements.IActionInternal;
 import buildcraft.api.statements.IStatement;
@@ -51,7 +49,6 @@ public class ActionPipeColor extends BCStatement implements IActionInternal {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public SpriteHolder getSprite() {
         return BCTransportSprites.ACTION_PIPE_COLOUR[color.ordinal()];
     }

@@ -20,14 +20,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.tiles.IDebuggable;
 
 import buildcraft.lib.item.ItemDebugger;
 
-@OnlyIn(Dist.CLIENT)
 public class ClientDebuggables {
     public static final List<String> SERVER_LEFT = new ArrayList<>();
     public static final List<String> SERVER_RIGHT = new ArrayList<>();

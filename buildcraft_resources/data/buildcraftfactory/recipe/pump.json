@@ -18,8 +18,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftfactory:pump"
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:pump"
     }
   ]
 }

@@ -23,13 +23,10 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.Level;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.WorldRenderContext;
 import buildcraft.lib.client.render.laser.LaserData_BC8.LaserType;
 
-@OnlyIn(Dist.CLIENT)
 public class LaserRenderer_BC8 {
     private static final Map<LaserType, CompiledLaserType> COMPILED_LASER_TYPES = new HashMap<>();
     /** Lasers are baked into vertex lists (1.12.2 also compiled GL display lists for static ones; 26.3 has none). */

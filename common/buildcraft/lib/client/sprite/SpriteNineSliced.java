@@ -6,8 +6,6 @@
 
 package buildcraft.lib.client.sprite;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 
@@ -15,7 +13,6 @@ import buildcraft.lib.gui.GuiDraw;
 import buildcraft.lib.gui.pos.IGuiArea;
 
 /** Defines and draws a 9-sliced sprite. */
-@OnlyIn(Dist.CLIENT)
 public class SpriteNineSliced {
     public final ISprite sprite;
     public final double xMin, yMin, xMax, yMax;

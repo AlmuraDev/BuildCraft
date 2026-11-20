@@ -18,8 +18,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftbuilders:quarry"
+      "type": "neoforge:registered",
+      "value": "buildcraftbuilders:quarry"
     }
   ]
 }

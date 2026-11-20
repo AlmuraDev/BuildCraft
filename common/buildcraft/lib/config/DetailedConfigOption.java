@@ -10,8 +10,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.BCLog;
 

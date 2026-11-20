@@ -9,8 +9,6 @@ package buildcraft.lib.config;
 import net.minecraft.resources.Identifier;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 public class OverridableConfigOption extends DetailedConfigOption {
     private final String assetName;
@@ -24,7 +22,6 @@ public class OverridableConfigOption extends DetailedConfigOption {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     protected boolean refresh() {
         if (manager.exists()) {
             return manager.refresh(this, assetName);

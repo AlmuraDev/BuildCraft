@@ -20,8 +20,6 @@ import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.core.SafeTimeTracker;
@@ -346,7 +344,6 @@ public class TileDistiller_BC8 extends TileBC_Neptune implements ITickable, IDeb
         left.add("CurrRecipe = " + currentRecipe);
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
     public void getClientDebugInfo(List<String> left, List<String> right, Direction side) {
         setClientModelVariables(1);

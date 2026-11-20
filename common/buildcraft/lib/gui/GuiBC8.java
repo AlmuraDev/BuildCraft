@@ -19,8 +19,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 
@@ -37,7 +35,6 @@ import buildcraft.lib.misc.GuiUtil;
  * 26.3 notes: the size is the mutable {@link #xSize}/{@link #ySize} pair, as in 1.12.2 (vanilla's image size is final
  * and set before subclasses know theirs), and everything is drawn through {@link GuiDraw}: the background layer in
  * {@link #extractBackground}, the foreground layer after the slots in {@link #extractContents}. */
-@OnlyIn(Dist.CLIENT)
 public abstract class GuiBC8<C extends ContainerBC_Neptune> extends AbstractContainerScreen<C> {
     public final BuildCraftGui mainGui;
     public final C container;

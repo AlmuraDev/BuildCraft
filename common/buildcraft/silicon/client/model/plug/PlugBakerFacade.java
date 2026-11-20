@@ -30,8 +30,6 @@ import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.BCModules;
 import buildcraft.api.transport.pluggable.IPluggableStaticBaker;
@@ -45,7 +43,6 @@ import buildcraft.silicon.plug.PluggableFacade;
 import buildcraft.transport.BCTransportModels;
 import buildcraft.transport.client.model.key.KeyPlugBlocker;
 
-@OnlyIn(Dist.CLIENT)
 public enum PlugBakerFacade implements IPluggableStaticBaker<KeyPlugFacade> {
     INSTANCE;
 

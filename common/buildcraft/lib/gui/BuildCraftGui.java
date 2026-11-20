@@ -47,7 +47,6 @@ import buildcraft.lib.misc.GuiUtil;
  * For both {@link #drawBackgroundLayer(float, int, int, Runnable)} and {@link #drawElementForegrounds(Runnable)} the
  * {@link Runnable} passed will only be called once, and it's call time will differ based on the
  * {@link #currentMenu}. */
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 public class BuildCraftGui {
 
     /** Used to control if this gui should show debugging lines, and other oddities that help development. */

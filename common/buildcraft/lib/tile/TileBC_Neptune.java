@@ -51,8 +51,6 @@ import net.neoforged.neoforge.capabilities.BlockCapability;
 import buildcraft.lib.net.IMessage;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import buildcraft.api.transfer.IItemHandlerModifiable;
 
 import buildcraft.api.core.BCDebugging;
@@ -817,7 +815,6 @@ public abstract class TileBC_Neptune extends BlockEntity
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public IDetachedRenderer getDebugRenderer() {
         return null;
     }

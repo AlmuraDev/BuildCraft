@@ -16,8 +16,8 @@
   },
   "neoforge:conditions": [
     {
-      "type": "neoforge:item_exists",
-      "item": "buildcraftcore:list"
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:list"
     }
   ]
 }

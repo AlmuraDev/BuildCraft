@@ -19,8 +19,6 @@ import net.minecraft.world.item.ItemStack;
 import buildcraft.lib.net.IMessage;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.BCLog;
 
@@ -124,7 +122,6 @@ public class WidgetPhantomSlot extends Widget_Neptune<ContainerBC_Neptune> {
 
     protected void onSetStack() {}
 
-    @OnlyIn(Dist.CLIENT)
     public class GuiElementPhantomSlot extends GuiElementSimple implements IInteractionElement {
         private final ToolTip tooltip = GuiUtil.createToolTip(this::getStack);
 
