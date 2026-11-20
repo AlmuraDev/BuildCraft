@@ -125,8 +125,9 @@ for _m, _tex in [('wood', 'wood'), ('cobble', 'cobblestone'), ('stone', 'stone')
 ITEMS['buildcrafttransport'] = {
     'waterproof': model('buildcrafttransport:item/waterproof'),
     'filtered_buffer': model('buildcrafttransport:item/filtered_buffer'),
-    'plug_blocker': model('buildcrafttransport:item/plug_blocker'),
-    'plug_power_adaptor': model('buildcrafttransport:item/plug_power_adaptor'),
+    # Plug models drawn in code (BCTransportModels.registerPlugItemModels)
+    'plug_blocker': {'type': 'buildcrafttransport:plug_blocker'},
+    'plug_power_adaptor': {'type': 'buildcrafttransport:plug_power_adaptor'},
     'wire': select_component('buildcrafttransport:colour',
                              [(d, 'buildcrafttransport:item/wire/' + DYE_MODEL[d]) for d in DYES],
                              'buildcrafttransport:item/wire/white'),
@@ -134,9 +135,6 @@ ITEMS['buildcrafttransport'] = {
 
 # Item models written by this tool: mod -> {model path: model json}
 MODELS = {'buildcrafttransport': {
-    'item/plug_blocker': {'parent': 'item/generated', 'textures': {'layer0': 'buildcrafttransport:pipes/plug'}},
-    'item/plug_power_adaptor': {'parent': 'item/generated',
-                                'textures': {'layer0': 'buildcrafttransport:items/pipePowerAdapter'}},
     # Unused by the blockstate (ModelPipe draws the pipe holder); kept for anything that names the model
     'block/pipe_holder': {'textures': {'particle': 'buildcrafttransport:pipes/structure'}},
 }}
@@ -302,16 +300,12 @@ def _add_silicon():
                             'component': 'minecraft:custom_data',
                             'on_true': {'type': 'minecraft:model', 'model': 'buildcraftsilicon:item/gatecopier_full'},
                             'on_false': {'type': 'minecraft:model', 'model': 'buildcraftsilicon:item/gatecopier_empty'}}
-    flat = {
-        'plug_gate': 'items/gates/gate_logic_and',
-        'plug_lens': 'items/lens/clear',
-        'plug_pulsar': 'items/gates/gate_expansion_pulsar',
-        'plug_light_sensor': 'items/gates/gate_expansion_light_sensor',
-        'plug_timer': 'items/gates/gate_expansion_timer',
-    }
-    for item, tex in flat.items():
-        models['item/' + item] = {'parent': 'item/generated', 'textures': {'layer0': 'buildcraftsilicon:' + tex}}
-        items[item] = model('buildcraftsilicon:item/' + item)
+    # Pulsar, light sensor and timer items are their plug models, drawn in code (BCSiliconModels.registerItemModels)
+    for plug in ['pulsar', 'light_sensor', 'timer']:
+        items['plug_' + plug] = {'type': 'buildcraftsilicon:' + plug}
+    # Gates and lenses are also drawn from their plug models in code (BCSiliconModels.registerItemModels)
+    items['plug_gate'] = {'type': 'buildcraftsilicon:gate'}
+    items['plug_lens'] = {'type': 'buildcraftsilicon:lens'}
     items['plug_facade'] = model('minecraft:block/stone')
     for block in ['laser', 'assembly_table', 'advanced_crafting_table', 'integration_table', 'charging_table',
                   'programming_table']:

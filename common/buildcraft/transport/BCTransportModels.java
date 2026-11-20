@@ -43,8 +43,8 @@ import buildcraft.transport.tile.TilePipeHolder;
 /** Transport's client models and renderers.
  * <p>
  * The pipe holder's block model is {@link ModelPipe}, named by its blockstate file. Pipe items are small upright pipes
- * ({@link buildcraft.transport.client.model.ModelPipeItem}, item model type "buildcrafttransport:pipe"). Plug items
- * use flat item models for now. TODO(26.3): 1.12.2 drew plug items from their plug models (ModelPluggableItem). */
+ * ({@link buildcraft.transport.client.model.ModelPipeItem}, item model type "buildcrafttransport:pipe"); the blocker
+ * and power adaptor items are their plug models (item model types buildcrafttransport:plug_blocker/plug_power_adaptor). */
 public class BCTransportModels {
     public static final ModelHolderStatic BLOCKER;
     public static final ModelHolderStatic POWER_ADAPTER;
@@ -84,6 +84,7 @@ public class BCTransportModels {
         BCTransport.MOD_BUS.addListener(
             (net.neoforged.neoforge.client.event.RegisterItemModelsEvent event) -> event.register(
                 buildcraft.transport.client.model.ModelPipeItem.TYPE, buildcraft.transport.client.model.ModelPipeItem.Unbaked.CODEC));
+        BCTransport.MOD_BUS.addListener(BCTransportModels::registerPlugItemModels);
     }
 
     public static void fmlInit() {
@@ -99,6 +100,29 @@ public class BCTransportModels {
     }
 
     public static void fmlPostInit() {}
+
+    /** The blocker and power adaptor items are their plug models (1.12.2's ModelPluggableItem). */
+    private static void registerPlugItemModels(net.neoforged.neoforge.client.event.RegisterItemModelsEvent event) {
+        registerPlugItem(event, "plug_blocker", BLOCKER);
+        registerPlugItem(event, "plug_power_adaptor", POWER_ADAPTER);
+    }
+
+    private static void registerPlugItem(net.neoforged.neoforge.client.event.RegisterItemModelsEvent event, String id,
+        ModelHolderStatic model) {
+        event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("buildcrafttransport", id),
+            buildcraft.lib.client.model.ItemModelParts.codec(
+                new buildcraft.lib.client.model.ItemModelParts.Source<Boolean>() {
+                    @Override
+                    public Boolean key(net.minecraft.world.item.ItemStack stack) {
+                        return Boolean.TRUE;
+                    }
+
+                    @Override
+                    public void addQuads(Boolean key, buildcraft.lib.client.model.ItemModelParts.QuadSink sink) {
+                        sink.add(model.getCutoutQuads(), false);
+                    }
+                }, buildcraft.lib.client.model.ItemModelParts.TRANSFORM_PLUG_AS_ITEM));
+    }
 
     private static void registerBlockStateModels(RegisterBlockStateModels event) {
         event.registerModel(ModelPipe.TYPE, ModelPipe.Unbaked.CODEC);

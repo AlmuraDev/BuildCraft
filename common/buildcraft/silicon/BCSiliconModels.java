@@ -92,6 +92,71 @@ public class BCSiliconModels {
     public static void fmlPreInit() {
         BCSilicon.MOD_BUS.addListener(BCSiliconModels::registerRenderers);
         BCSilicon.MOD_BUS.addListener((ModelEvent.BakingCompleted event) -> onModelBake());
+        BCSilicon.MOD_BUS.addListener(BCSiliconModels::registerItemModels);
+    }
+
+    /** Gate and lens items are drawn from their plug models, like 1.12.2's ModelGateItem and ModelLensItem. */
+    private static void registerItemModels(net.neoforged.neoforge.client.event.RegisterItemModelsEvent event) {
+        event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("buildcraftsilicon", "gate"),
+            buildcraft.lib.client.model.ItemModelParts.codec(
+                new buildcraft.lib.client.model.ItemModelParts.Source<GateVariant>() {
+                    @Override
+                    public GateVariant key(net.minecraft.world.item.ItemStack stack) {
+                        return buildcraft.silicon.item.ItemPluggableGate.getVariant(stack);
+                    }
+
+                    @Override
+                    public void addQuads(GateVariant variant, buildcraft.lib.client.model.ItemModelParts.QuadSink sink) {
+                        sink.add(getGateStaticQuads(Direction.WEST, variant), false);
+                        sink.add(GATE_DYNAMIC.getCutoutQuads(), false);
+                    }
+                }, buildcraft.lib.client.model.ItemModelParts.TRANSFORM_PLUG_AS_ITEM_BIGGER));
+        event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("buildcraftsilicon", "lens"),
+            buildcraft.lib.client.model.ItemModelParts.codec(
+                new buildcraft.lib.client.model.ItemModelParts.Source<buildcraft.silicon.item.ItemPluggableLens.LensData>() {
+                    @Override
+                    public buildcraft.silicon.item.ItemPluggableLens.LensData key(net.minecraft.world.item.ItemStack stack) {
+                        return buildcraft.silicon.item.ItemPluggableLens.getData(stack);
+                    }
+
+                    @Override
+                    public void addQuads(buildcraft.silicon.item.ItemPluggableLens.LensData data,
+                        buildcraft.lib.client.model.ItemModelParts.QuadSink sink) {
+                        if (data.isFilter) {
+                            sink.add(getFilterCutoutQuads(Direction.WEST, data.colour), false);
+                            sink.add(getFilterTranslucentQuads(Direction.WEST, data.colour), true);
+                        } else {
+                            sink.add(getLensCutoutQuads(Direction.WEST, data.colour), false);
+                            sink.add(getLensTranslucentQuads(Direction.WEST, data.colour), true);
+                        }
+                    }
+                }, buildcraft.lib.client.model.ItemModelParts.TRANSFORM_PLUG_AS_ITEM));
+        registerPlugItem(event, "pulsar", () -> {
+            PluggablePulsar.setModelVariablesForItem();
+            return new MutableQuad[][] { PULSAR_STATIC.getCutoutQuads(), PULSAR_DYNAMIC.getCutoutQuads() };
+        });
+        registerPlugItem(event, "light_sensor", () -> new MutableQuad[][] { LIGHT_SENSOR.getCutoutQuads() });
+        registerPlugItem(event, "timer", () -> new MutableQuad[][] { TIMER.getCutoutQuads() });
+    }
+
+    /** A plug item drawn as its plug's model (1.12.2's ModelPluggableItem). */
+    private static void registerPlugItem(net.neoforged.neoforge.client.event.RegisterItemModelsEvent event, String id,
+        java.util.function.Supplier<MutableQuad[][]> quads) {
+        event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("buildcraftsilicon", id),
+            buildcraft.lib.client.model.ItemModelParts.codec(
+                new buildcraft.lib.client.model.ItemModelParts.Source<Boolean>() {
+                    @Override
+                    public Boolean key(net.minecraft.world.item.ItemStack stack) {
+                        return Boolean.TRUE;
+                    }
+
+                    @Override
+                    public void addQuads(Boolean key, buildcraft.lib.client.model.ItemModelParts.QuadSink sink) {
+                        for (MutableQuad[] q : quads.get()) {
+                            sink.add(q, false);
+                        }
+                    }
+                }, buildcraft.lib.client.model.ItemModelParts.TRANSFORM_PLUG_AS_ITEM));
     }
 
     public static void fmlInit() {

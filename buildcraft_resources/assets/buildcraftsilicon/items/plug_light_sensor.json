@@ -1,6 +1,5 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "buildcraftsilicon:item/plug_light_sensor"
+    "type": "buildcraftsilicon:light_sensor"
   }
 }

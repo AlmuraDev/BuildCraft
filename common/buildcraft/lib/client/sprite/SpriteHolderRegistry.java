@@ -53,6 +53,7 @@ public class SpriteHolderRegistry {
      *         block atlas (1.12.2's getTextureMapBlocks().getAtlasSprite). The block atlas's missing sprite if neither
      *         has it. */
     public static TextureAtlasSprite lookupSprite(Identifier location) {
+        location = fromLegacyVanillaName(location);
         Minecraft mc = Minecraft.getInstance();
         net.minecraft.client.renderer.texture.TextureAtlas blocks = mc.getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
         TextureAtlasSprite found = blocks.getSprite(location);
@@ -64,6 +65,28 @@ public class SpriteHolderRegistry {
             }
         }
         return found;
+    }
+
+    /** 1.12.2 vanilla texture names (minecraft:blocks/..., minecraft:items/...) as BuildCraft's models and GUI files
+     * still use them, mapped to 26.3's (block/, item/, and the textures renamed in 1.13). */
+    private static Identifier fromLegacyVanillaName(Identifier location) {
+        if (!"minecraft".equals(location.getNamespace())) {
+            return location;
+        }
+        String path = location.getPath();
+        if (path.startsWith("blocks/")) {
+            String name = path.substring("blocks/".length());
+            name = switch (name) {
+                case "brick" -> "bricks";
+                case "nether_brick" -> "nether_bricks";
+                default -> name;
+            };
+            return Identifier.withDefaultNamespace("block/" + name);
+        }
+        if (path.startsWith("items/")) {
+            return Identifier.withDefaultNamespace("item/" + path.substring("items/".length()));
+        }
+        return location;
     }
 
     public static TextureAtlasSprite missingSprite() {

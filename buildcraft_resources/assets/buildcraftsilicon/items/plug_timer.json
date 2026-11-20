@@ -1,6 +1,5 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "buildcraftsilicon:item/plug_timer"
+    "type": "buildcraftsilicon:timer"
   }
 }
