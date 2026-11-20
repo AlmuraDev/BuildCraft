@@ -1,11 +1,18 @@
 package buildcraft.silicon.plug;
 
+import net.minecraft.world.level.block.TintedGlassBlock;
+import net.minecraft.world.level.block.HoneyBlock;
+import net.minecraft.world.level.block.SlimeBlock;
+import net.minecraft.world.level.block.IceBlock;
+import net.minecraft.world.level.block.StainedGlassPaneBlock;
+import net.minecraft.world.level.block.StainedGlassBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.core.registries.BuiltInRegistries;
 import java.util.Objects;
 
 import com.google.common.collect.ImmutableSet;
 
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
@@ -24,22 +31,27 @@ public class FacadeBlockStateInfo implements IFacadeState {
     public final boolean isTransparent;
     public final boolean isVisible;
     public final boolean[] isSideSolid = new boolean[6];
-    public final BlockFaceShape[] blockFaceShape = new BlockFaceShape[6];
+    /** True if the block draws in the translucent layer (stained glass, ice...). 26.3 picks a block's layer from its
+     * textures on the client; this is the server-safe guess that pipes use for the facade model's layer. */
+    public final boolean isTranslucentLayer;
 
     public FacadeBlockStateInfo(BlockState state, ItemStack requiredStack,
         ImmutableSet<Property<?>> varyingProperties) {
         this.state = Objects.requireNonNull(state, "state must not be null!");
         Objects.requireNonNull(state.getBlock(), "state.getBlock must not be null!");
-        Objects.requireNonNull(state.getBlock().getRegistryName(),
+        Objects.requireNonNull(BuiltInRegistries.BLOCK.getKey(state.getBlock()),
             "state.getBlock.getRegistryName() must not be null!");
         this.requiredStack = requiredStack;
         this.varyingProperties = varyingProperties;
-        this.isTransparent = !state.isOpaqueCube();
+        this.isTransparent = !state.canOcclude();
         this.isVisible = !requiredStack.isEmpty();
+        Block block = state.getBlock();
+        this.isTranslucentLayer = block instanceof StainedGlassBlock || block instanceof StainedGlassPaneBlock
+            || block instanceof IceBlock || block instanceof SlimeBlock || block instanceof HoneyBlock
+            || block instanceof TintedGlassBlock;
         BlockGetter access = new SingleBlockAccess(state);
         for (Direction side : Direction.values()) {
-            isSideSolid[side.ordinal()] = state.isSideSolid(access, BlockPos.ZERO, side);
-            blockFaceShape[side.ordinal()] = state.getBlockFaceShape(access, BlockPos.ZERO, side);
+            isSideSolid[side.ordinal()] = state.isFaceSturdy(access, BlockPos.ZERO, side);
         }
     }
 

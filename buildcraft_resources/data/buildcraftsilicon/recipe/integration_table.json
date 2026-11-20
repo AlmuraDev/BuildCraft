@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "r": "buildcraftsilicon:redstone_chipset_iron",
+    "g": "#c:gears/diamond",
+    "i": "#c:ingots/gold",
+    "O": "minecraft:obsidian"
+  },
+  "pattern": [
+    "OiO",
+    "OrO",
+    "OgO"
+  ],
+  "result": {
+    "id": "buildcraftsilicon:integration_table"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftsilicon:integration_table"
+    }
+  ]
+}

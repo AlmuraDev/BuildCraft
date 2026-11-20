@@ -6,14 +6,16 @@
 
 package buildcraft.silicon.recipe;
 
-import net.minecraft.world.inventory.CraftingContainer;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.core.NonNullList;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.level.Level;
+import com.mojang.serialization.MapCodec;
 
-import net.neoforged.neoforge.common.CommonHooks;
+import net.minecraft.core.NonNullList;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CustomRecipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.level.Level;
 
 import buildcraft.api.facades.FacadeAPI;
 
@@ -26,15 +28,24 @@ import buildcraft.silicon.item.ItemPluggableFacade;
 import buildcraft.silicon.plug.FacadeBlockStateInfo;
 import buildcraft.silicon.plug.FacadeInstance;
 import buildcraft.silicon.plug.FacadeStateManager;
-import buildcraft.transport.BCTransport;
 
-public enum FacadeSwapRecipe implements Recipe, IRecipeViewable.IViewableGrid {
-    INSTANCE;
+/** A facade on its own in a crafting grid swaps between solid and hollow. 26.3 recipes come from data, so this is the
+ * recipe type "buildcraftsilicon:facade_swap" (data/buildcraftsilicon/recipe/facade_swap.json); 1.12.2 registered the
+ * recipe object in code. */
+public class FacadeSwapRecipe extends CustomRecipe implements IRecipeViewable.IViewableGrid {
+    public static final FacadeSwapRecipe INSTANCE = new FacadeSwapRecipe();
+    public static final MapCodec<FacadeSwapRecipe> MAP_CODEC = MapCodec.unit(INSTANCE);
+    public static final StreamCodec<RegistryFriendlyByteBuf, FacadeSwapRecipe> STREAM_CODEC =
+        StreamCodec.unit(INSTANCE);
+    public static final RecipeSerializer<FacadeSwapRecipe> SERIALIZER =
+        new RecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
 
     private static final int TIME_GAP = 500;
 
     private static final ChangingItemStack[] INPUTS = { null };
     private static ChangingItemStack OUTPUTS;
+
+    private FacadeSwapRecipe() {}
 
     public static void genRecipes() {
         if (FacadeAPI.facadeItem == null) {
@@ -55,22 +66,21 @@ public enum FacadeSwapRecipe implements Recipe, IRecipeViewable.IViewableGrid {
         if (!list1.isEmpty()) {
             INPUTS[0] = new ChangingItemStack(list1);
             INPUTS[0].setTimeGap(TIME_GAP);
-
             OUTPUTS = new ChangingItemStack(list2);
             OUTPUTS.setTimeGap(TIME_GAP);
         }
     }
 
     @Override
-    public boolean matches(CraftingContainer inv, Level world) {
-        return !getCraftingResult(inv).isEmpty();
+    public boolean matches(CraftingInput input, Level world) {
+        return !assemble(input).isEmpty();
     }
 
     @Override
-    public ItemStack getCraftingResult(CraftingContainer inv) {
+    public ItemStack assemble(CraftingInput input) {
         ItemStack stackIn = StackUtil.EMPTY;
-        for (int s = 0; s < inv.getContainerSize(); s++) {
-            ItemStack stack = inv.getStackInSlot(s);
+        for (int s = 0; s < input.size(); s++) {
+            ItemStack stack = input.getItem(s);
             if (!stack.isEmpty()) {
                 if (stackIn.isEmpty()) {
                     stackIn = stack;
@@ -79,7 +89,7 @@ public enum FacadeSwapRecipe implements Recipe, IRecipeViewable.IViewableGrid {
                 }
             }
         }
-        if (stackIn.getItem() != BCSiliconItems.plugFacade) {
+        if (BCSiliconItems.plugFacade == null || stackIn.getItem() != BCSiliconItems.plugFacade) {
             return StackUtil.EMPTY;
         }
         FacadeInstance states = ItemPluggableFacade.getStates(stackIn);
@@ -88,13 +98,8 @@ public enum FacadeSwapRecipe implements Recipe, IRecipeViewable.IViewableGrid {
     }
 
     @Override
-    public ItemStack getRecipeOutput() {
-        return StackUtil.EMPTY;
-    }
-
-    @Override
-    public NonNullList<ItemStack> getRemainingItems(CraftingContainer inv) {
-        return CommonHooks.defaultRecipeGetRemainingItems(inv);
+    public RecipeSerializer<FacadeSwapRecipe> getSerializer() {
+        return SERIALIZER;
     }
 
     @Override
@@ -126,25 +131,5 @@ public enum FacadeSwapRecipe implements Recipe, IRecipeViewable.IViewableGrid {
     @Override
     public int getRecipeHeight() {
         return 1;
-    }
-
-    @Override
-    public Recipe setRegistryName(Identifier name) {
-        return this;
-    }
-
-    @Override
-    public Identifier getRegistryName() {
-        return Identifier.fromNamespaceAndPath(BCTransport.MODID, "facade_swap");
-    }
-
-    @Override
-    public Class<Recipe> getRegistryType() {
-        return Recipe.class;
-    }
-
-    @Override
-    public boolean canFit(int width, int height) {
-        return width >= 1 && height >= 1;
     }
 }

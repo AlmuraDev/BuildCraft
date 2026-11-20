@@ -95,3 +95,27 @@ type = "required"
 versionRange = "[${version}]"
 ordering = "AFTER"
 side = "BOTH"
+
+[[mods]]
+modId = "buildcraftsilicon"
+version = "${version}"
+displayName = "BuildCraft Silicon"
+bannerFile = "assets/buildcraft/logo.png"
+credits = "Created by SpaceToad"
+authors = "SpaceToad, BuildCraft Team, AlmuraDev"
+displayURL = "https://www.mod-buildcraft.com/"
+description = '''Lasers, assembly and integration tables, gates, lenses and facades.'''
+
+[[dependencies.buildcraftsilicon]]
+modId = "buildcraftcore"
+type = "required"
+versionRange = "[${version}]"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies.buildcraftsilicon]]
+modId = "buildcrafttransport"
+type = "optional"
+versionRange = "[${version}]"
+ordering = "AFTER"
+side = "BOTH"

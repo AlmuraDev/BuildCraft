@@ -6,96 +6,61 @@
 
 package buildcraft.silicon.block;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.entity.player.Player;
-import buildcraft.api.core.BCRenderLayer;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import buildcraft.api.enums.EnumLaserTableType;
 import buildcraft.api.mj.ILaserTargetBlock;
 
 import buildcraft.lib.block.BlockBCTile_Neptune;
-import buildcraft.lib.tile.TileBC_Neptune;
 
 import buildcraft.silicon.BCSiliconGuis;
-import buildcraft.silicon.tile.TileAdvancedCraftingTable;
-import buildcraft.silicon.tile.TileAssemblyTable;
-import buildcraft.silicon.tile.TileChargingTable;
-import buildcraft.silicon.tile.TileIntegrationTable;
-import buildcraft.silicon.tile.TileProgrammingTable_Neptune;
 
+/** The assembly, advanced crafting, integration, charging and programming tables (each its own block). */
 public class BlockLaserTable extends BlockBCTile_Neptune implements ILaserTargetBlock {
+    private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 9, 16);
+
     private final EnumLaserTableType type;
 
-    public BlockLaserTable(EnumLaserTableType type, Material material, String id) {
-        super(material, id);
+    public BlockLaserTable(EnumLaserTableType type, BlockBehaviour.Properties properties, String id) {
+        super(properties.noOcclusion(), id);
         this.type = type;
     }
 
     @Override
-    public boolean isOpaqueCube(BlockState state) {
-        return false;
+    protected VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return SHAPE;
     }
 
     @Override
-    public boolean isFullCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    public BCRenderLayer getBlockLayer() {
-        return BCRenderLayer.CUTOUT;
-    }
-
-    @Override
-    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
-        switch(type) {
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player,
+        BlockHitResult hit) {
+        BCSiliconGuis gui;
+        switch (type) {
             case ASSEMBLY_TABLE:
-                return new TileAssemblyTable();
+                gui = BCSiliconGuis.ASSEMBLY_TABLE;
+                break;
             case ADVANCED_CRAFTING_TABLE:
-                return new TileAdvancedCraftingTable();
+                gui = BCSiliconGuis.ADVANCED_CRAFTING_TABLE;
+                break;
             case INTEGRATION_TABLE:
-                return new TileIntegrationTable();
-            case CHARGING_TABLE:
-                return new TileChargingTable();
-            case PROGRAMMING_TABLE:
-                return new TileProgrammingTable_Neptune();
+                gui = BCSiliconGuis.INTEGRATION_TABLE;
+                break;
+            default:
+                return InteractionResult.PASS;
         }
-        return null;
-    }
-
-    @Override
-    public AABB getBoundingBox(BlockState state, BlockGetter source, BlockPos pos) {
-        return new AABB(0 / 16D, 0 / 16D, 0 / 16D, 16 / 16D, 9 / 16D, 16 / 16D);
-    }
-
-    @Override
-    public boolean onBlockActivated(Level world, BlockPos pos, BlockState state, Player player, InteractionHand hand, Direction side, float hitX, float hitY, float hitZ) {
-        switch(type) {
-            case ASSEMBLY_TABLE:
-                if (!world.isClientSide()) {
-                    BCSiliconGuis.ASSEMBLY_TABLE.openGUI(player, pos);
-                }
-                return true;
-            case ADVANCED_CRAFTING_TABLE:
-                if (!world.isClientSide()) {
-                    BCSiliconGuis.ADVANCED_CRAFTING_TABLE.openGUI(player, pos);
-                }
-                return true;
-            case INTEGRATION_TABLE:
-                if (!world.isClientSide()) {
-                    BCSiliconGuis.INTEGRATION_TABLE.openGUI(player, pos);
-                }
-                return true;
-            case CHARGING_TABLE:
-            case PROGRAMMING_TABLE:
+        if (!world.isClientSide()) {
+            gui.openGUI(player, pos);
         }
-        return false;
+        return InteractionResult.SUCCESS;
     }
 }

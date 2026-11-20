@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "r": "#c:dusts/redstone",
+    "d": "#c:gems/diamond",
+    "g": "#c:gears/diamond",
+    "O": "minecraft:obsidian"
+  },
+  "pattern": [
+    "OdO",
+    "OrO",
+    "OgO"
+  ],
+  "result": {
+    "id": "buildcraftsilicon:assembly_table"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftsilicon:assembly_table"
+    }
+  ]
+}

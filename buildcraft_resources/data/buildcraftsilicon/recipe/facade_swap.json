@@ -1,0 +1,10 @@
+{
+  "type": "buildcraftsilicon:facade_swap",
+  "category": "misc",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftsilicon:plug_facade"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "r": "buildcraftsilicon:redstone_chipset_red",
+    "c": "#c:chests/wooden",
+    "t": "#c:player_workstations/crafting_tables",
+    "O": "minecraft:obsidian"
+  },
+  "pattern": [
+    "OtO",
+    "OcO",
+    "OrO"
+  ],
+  "result": {
+    "id": "buildcraftsilicon:advanced_crafting_table"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftsilicon:advanced_crafting_table"
+    }
+  ]
+}

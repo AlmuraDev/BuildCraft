@@ -287,6 +287,39 @@ def _add_factory():
 _add_factory()
 
 
+# ---- Silicon ----
+# 1.12.2 baked the gate, lens, pulsar, light sensor, timer and facade items from their pluggable models in code
+# (TODO(26.3): special item model renderers); until then they are flat items.
+def _add_silicon():
+    ns = 'buildcraftsilicon'
+    models = MODELS.setdefault(ns, {})
+    items = ITEMS.setdefault(ns, {})
+    for chipset in ['red', 'iron', 'gold', 'quartz', 'diamond']:
+        items['redstone_chipset_' + chipset] = model('buildcraftsilicon:item/redstone_chipset/' + chipset)
+    # The copier shows "full" while it holds copied gate data (custom data)
+    items['gate_copier'] = {'type': 'minecraft:condition', 'property': 'minecraft:has_component',
+                            'component': 'minecraft:custom_data',
+                            'on_true': {'type': 'minecraft:model', 'model': 'buildcraftsilicon:item/gatecopier_full'},
+                            'on_false': {'type': 'minecraft:model', 'model': 'buildcraftsilicon:item/gatecopier_empty'}}
+    flat = {
+        'plug_gate': 'items/gates/gate_logic_and',
+        'plug_lens': 'items/lens/clear',
+        'plug_pulsar': 'items/gates/gate_expansion_pulsar',
+        'plug_light_sensor': 'items/gates/gate_expansion_light_sensor',
+        'plug_timer': 'items/gates/gate_expansion_timer',
+    }
+    for item, tex in flat.items():
+        models['item/' + item] = {'parent': 'item/generated', 'textures': {'layer0': 'buildcraftsilicon:' + tex}}
+        items[item] = model('buildcraftsilicon:item/' + item)
+    items['plug_facade'] = model('minecraft:block/stone')
+    for block in ['laser', 'assembly_table', 'advanced_crafting_table', 'integration_table', 'charging_table',
+                  'programming_table']:
+        items[block] = model('buildcraftsilicon:item/' + block)
+
+
+_add_silicon()
+
+
 def write_models_and_states():
     for ns, models in MODELS.items():
         for path, data in models.items():

@@ -7,8 +7,10 @@
 package buildcraft.silicon.client.render;
 
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
 
+import buildcraft.api.transport.pipe.IPipeRenderOutput;
+import net.minecraft.util.LightCoordsUtil;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -32,8 +34,9 @@ public enum PlugGateRenderer implements IPlugDynamicRenderer<PluggableGate> {
     }
 
     @Override
-    public void render(PluggableGate gate, double x, double y, double z, float partialTicks, BufferBuilder vb) {
-        vb.setTranslation(x, y, z);
+    public void render(PluggableGate gate, float partialTicks, IPipeRenderOutput out) {
+        VertexConsumer vb = out.cutout();
+        int light = out.light();
         gate.setClientModelVariables();
         if (gate.clientModelData.hasNoNodes()) {
             gate.clientModelData.setNodes(BCSiliconModels.GATE_DYNAMIC.createTickableNodes());
@@ -42,9 +45,9 @@ public enum PlugGateRenderer implements IPlugDynamicRenderer<PluggableGate> {
         MutableQuad copy = new MutableQuad();
         for (MutableQuad q : cache.getCutoutQuads()) {
             copy.copyFrom(q);
+            copy.maxLighti(LightCoordsUtil.block(light), LightCoordsUtil.sky(light));
             copy.multShade();
             copy.render(vb);
         }
-        vb.setTranslation(0, 0, 0);
     }
 }

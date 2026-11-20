@@ -6,8 +6,10 @@
 
 package buildcraft.silicon.client.render;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
 
+import buildcraft.api.transport.pipe.IPipeRenderOutput;
+import net.minecraft.util.LightCoordsUtil;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -32,16 +34,19 @@ public enum PlugPulsarRenderer implements IPlugDynamicRenderer<PluggablePulsar> 
     }
 
     @Override
-    public void render(PluggablePulsar pulsar, double x, double y, double z, float partialTicks, BufferBuilder bb) {
-        bb.setTranslation(x, y, z);
+    public void render(PluggablePulsar pulsar, float partialTicks, IPipeRenderOutput out) {
+        VertexConsumer bb = out.cutout();
+        int light = out.light();
         if (pulsar.clientModelData.hasNoNodes()) {
             pulsar.clientModelData.setNodes(BCSiliconModels.PULSAR_DYNAMIC.createTickableNodes());
         }
         pulsar.setModelVariables(partialTicks);
         pulsar.clientModelData.refresh();
+        MutableQuad copy = new MutableQuad();
         for (MutableQuad q : cache.getCutoutQuads()) {
-            q.render(bb);
+            copy.copyFrom(q);
+            copy.maxLighti(LightCoordsUtil.block(light), LightCoordsUtil.sky(light));
+            copy.render(bb);
         }
-        bb.setTranslation(0, 0, 0);
     }
 }

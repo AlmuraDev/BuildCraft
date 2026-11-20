@@ -6,15 +6,14 @@
 
 package buildcraft.silicon.item;
 
+import net.minecraft.network.chat.Component;
 import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import gnu.trove.map.hash.TIntObjectHashMap;
 
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
@@ -45,8 +44,8 @@ import buildcraft.silicon.gate.GateVariant;
 import buildcraft.silicon.plug.PluggableGate;
 
 public class ItemPluggableGate extends ItemBC_Neptune implements IItemPluggable {
-    public ItemPluggableGate(String id) {
-        super(id);
+    public ItemPluggableGate(Item.Properties properties, String id) {
+        super(properties, id);
     }
 
     public static GateVariant getVariant(@Nonnull ItemStack stack) {
@@ -56,7 +55,7 @@ public class ItemPluggableGate extends ItemBC_Neptune implements IItemPluggable 
     @Nonnull
     public ItemStack getStack(GateVariant variant) {
         ItemStack stack = new ItemStack(this);
-        NBTUtilBC.getItemData(stack).put("gate", variant.writeToNBT());
+        NBTUtilBC.updateItemData(stack, nbt -> nbt.put("gate", variant.writeToNBT()));
         return stack;
     }
 
@@ -69,13 +68,12 @@ public class ItemPluggableGate extends ItemBC_Neptune implements IItemPluggable 
     }
 
     @Override
-    public String getItemStackDisplayName(ItemStack stack) {
-        return getVariant(StackUtil.asNonNull(stack)).getLocalizedName();
+    public Component getName(ItemStack stack) {
+        return Component.literal(getVariant(stack).getLocalizedName());
     }
 
 
     @Override
-    @OnlyIn(Dist.CLIENT)
     public void addInformation(ItemStack stack, Level world, List<String> tooltip, TooltipFlag flag) {
         GateVariant variant = getVariant(StackUtil.asNonNull(stack));
 
@@ -96,7 +94,7 @@ public class ItemPluggableGate extends ItemBC_Neptune implements IItemPluggable 
     }
 
     @Override
-    protected void addSubItems(CreativeTabs tab, NonNullList<ItemStack> subItems) {
+    public void addSubItems(NonNullList<ItemStack> subItems) {
         subItems.add(new ItemStack(this));
         for (EnumGateMaterial material : EnumGateMaterial.VALUES) {
             if (!material.canBeModified) {
@@ -110,9 +108,4 @@ public class ItemPluggableGate extends ItemBC_Neptune implements IItemPluggable 
         }
     }
 
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
-        variants.put(0, new ModelResourceLocation("buildcraftsilicon:gate_item#inventory"));
-    }
 }

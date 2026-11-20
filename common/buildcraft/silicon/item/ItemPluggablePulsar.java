@@ -8,6 +8,7 @@ package buildcraft.silicon.item;
 
 import javax.annotation.Nonnull;
 
+import net.minecraft.world.item.Item;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
@@ -28,8 +29,8 @@ import buildcraft.silicon.plug.PluggablePulsar;
 
 @Deprecated
 public class ItemPluggablePulsar extends ItemBC_Neptune implements IItemPluggable {
-    public ItemPluggablePulsar(String id) {
-        super(id);
+    public ItemPluggablePulsar(Item.Properties properties, String id) {
+        super(properties, id);
     }
 
     @Override

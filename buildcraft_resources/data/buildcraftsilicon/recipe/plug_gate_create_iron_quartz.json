@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "m": "minecraft:quartz",
+    "g": {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcraftsilicon:plug_gate",
+      "components": {
+        "minecraft:custom_data": "{gate:{logic:0b,material:1b,modifier:0b}}"
+      }
+    }
+  },
+  "pattern": [
+    " m ",
+    "mgm",
+    " m "
+  ],
+  "result": {
+    "id": "buildcraftsilicon:plug_gate",
+    "components": {
+      "minecraft:custom_data": "{gate:{logic:0b,material:1b,modifier:2b}}"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftsilicon:plug_gate"
+    }
+  ]
+}

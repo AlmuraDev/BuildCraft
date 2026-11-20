@@ -6,39 +6,61 @@
 
 package buildcraft.silicon.client.render;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import net.minecraft.client.Minecraft;
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
+
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
 
-import net.minecraftforge.client.model.animation.FastTESR;
-import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
+import buildcraft.lib.client.render.tile.RecordedRenderState;
+import buildcraft.lib.client.sprite.SpriteHolderRegistry;
+
 import buildcraft.silicon.tile.TileProgrammingTable_Neptune;
 
+/** The glass pane over the (dev only) programming table. */
 @OnlyIn(Dist.CLIENT)
-public class RenderProgrammingTable extends FastTESR<TileProgrammingTable_Neptune> {
+public class RenderProgrammingTable implements BlockEntityRenderer<TileProgrammingTable_Neptune, RecordedRenderState> {
+    private static final Identifier GLASS = Identifier.withDefaultNamespace("block/white_stained_glass");
+
     @Override
-    public void renderTileEntityFast(@Nonnull TileProgrammingTable_Neptune tile, double x, double y, double z, float partialTicks, int destroyStage, float partial, @Nonnull BufferBuilder buffer) {
-        Minecraft.getMinecraft().mcProfiler.startSection("bc");
-        Minecraft.getMinecraft().mcProfiler.startSection("table");
-        Minecraft.getMinecraft().mcProfiler.startSection("programming");
+    public RecordedRenderState createRenderState() {
+        return new RecordedRenderState();
+    }
 
-        TextureAtlasSprite sprite = Minecraft.getMinecraft().getTextureMapBlocks().registerSprite(Identifier.parse("blocks/glass_white"));
-        int combinedLight = tile.getWorld().getCombinedLight(tile.getPos(), 0);
-        int light1 = combinedLight >> 16 & 65535;
-        int light2 = combinedLight & 65535;
-        buffer.pos(x + 4 / 16D, y + 9 / 16D, z + 4 / 16D).color(255, 255, 255, 255).tex(sprite.getInterpolatedU(4), sprite.getInterpolatedV(4)).lightmap(light1, light2).endVertex();
-        buffer.pos(x + 12 / 16D, y + 9 / 16D, z + 4 / 16D).color(255, 255, 255, 255).tex(sprite.getInterpolatedU(12), sprite.getInterpolatedV(4)).lightmap(light1, light2).endVertex();
-        buffer.pos(x + 12 / 16D, y + 9 / 16D, z + 12 / 16D).color(255, 255, 255, 255).tex(sprite.getInterpolatedU(12), sprite.getInterpolatedV(12)).lightmap(light1, light2).endVertex();
-        buffer.pos(x + 4 / 16D, y + 9 / 16D, z + 12 / 16D).color(255, 255, 255, 255).tex(sprite.getInterpolatedU(4), sprite.getInterpolatedV(12)).lightmap(light1, light2).endVertex();
+    @Override
+    public void extractRenderState(TileProgrammingTable_Neptune tile, RecordedRenderState state, float partialTicks,
+        Vec3 cameraPosition, @Nullable ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(tile, state, partialTicks, cameraPosition, breakProgress);
+        state.reset();
+        TextureAtlasSprite sprite = SpriteHolderRegistry.lookupSprite(GLASS);
+        int light = state.lightCoords;
+        VertexConsumer out = state.translucent;
+        vertex(out, 4, 4, sprite, light);
+        vertex(out, 12, 4, sprite, light);
+        vertex(out, 12, 12, sprite, light);
+        vertex(out, 4, 12, sprite, light);
+        state.finish();
+    }
 
-        Minecraft.getMinecraft().mcProfiler.endSection();
-        Minecraft.getMinecraft().mcProfiler.endSection();
-        Minecraft.getMinecraft().mcProfiler.endSection();
+    private static void vertex(VertexConsumer out, int x, int z, TextureAtlasSprite sprite, int light) {
+        out.addVertex(x / 16f, 9 / 16f, z / 16f).setColor(0xFFFFFFFF).setUv(sprite.getU(x / 16f), sprite.getV(z / 16f))
+            .setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(0, 1, 0);
+    }
+
+    @Override
+    public void submit(RecordedRenderState state, PoseStack poseStack, SubmitNodeCollector collector,
+        CameraRenderState camera) {
+        state.submit(poseStack, collector);
     }
 }

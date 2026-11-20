@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.core.Direction;
 
@@ -25,7 +24,7 @@ import buildcraft.silicon.client.model.key.KeyPlugLens;
 public enum PlugBakerLens implements IPluggableStaticBaker<KeyPlugLens> {
     INSTANCE;
 
-    private static final Map<KeyPlugLens, List<BakedQuad>> cached = new HashMap<>();
+    private static final Map<KeyPlugLens, List<MutableQuad>> cached = new HashMap<>();
 
     private static final IQuadGetter lensCutout = BCSiliconModels::getLensCutoutQuads;
     private static final IQuadGetter lensTranslucent = BCSiliconModels::getLensTranslucentQuads;
@@ -51,15 +50,14 @@ public enum PlugBakerLens implements IPluggableStaticBaker<KeyPlugLens> {
     }
 
     @Override
-    public List<BakedQuad> bake(KeyPlugLens key) {
+    public List<MutableQuad> bake(KeyPlugLens key) {
         if (!cached.containsKey(key)) {
             MutableQuad[] quads = getGetter(key).get(key.side, key.colour);
-            MutableQuad c = new MutableQuad();
-            List<BakedQuad> list = new ArrayList<>(quads.length);
+            List<MutableQuad> list = new ArrayList<>(quads.length);
             for (MutableQuad q : quads) {
-                c.copyFrom(q);
+                MutableQuad c = new MutableQuad(q);
                 c.multShade();
-                list.add(c.toBakedBlock());
+                list.add(c);
             }
             cached.put(key, list);
         }

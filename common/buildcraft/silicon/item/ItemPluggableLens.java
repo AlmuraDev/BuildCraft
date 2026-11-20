@@ -6,24 +6,27 @@
 
 package buildcraft.silicon.item;
 
+import java.util.Optional;
+
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import gnu.trove.map.hash.TIntObjectHashMap;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.item.DyeColor;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.core.NonNullList;
-
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Blocks;
 
 import buildcraft.api.transport.IItemPluggable;
 import buildcraft.api.transport.pipe.IFlowItems;
@@ -32,35 +35,37 @@ import buildcraft.api.transport.pipe.IPipeHolder;
 import buildcraft.api.transport.pluggable.PipePluggable;
 import buildcraft.api.transport.pluggable.PluggableDefinition;
 
-import buildcraft.lib.client.render.font.SpecialColourFontRenderer;
 import buildcraft.lib.item.ItemBC_Neptune;
 import buildcraft.lib.misc.ColourUtil;
 import buildcraft.lib.misc.LocaleUtil;
 import buildcraft.lib.misc.SoundUtil;
 
+import buildcraft.silicon.BCSiliconItems;
 import buildcraft.silicon.BCSiliconPlugs;
 import buildcraft.silicon.plug.PluggableLens;
 
+/** Lenses and filters, clear or in a colour. The variant is the "buildcraftsilicon:lens" component (1.12.2 used the
+ * damage: colour's dye damage, +16 for a filter; 32 clear lens, 33 clear filter; see {@link LensData#fromDamage}). */
 public class ItemPluggableLens extends ItemBC_Neptune implements IItemPluggable {
-    public ItemPluggableLens(String id) {
-        super(id);
-        setMaxDamage(0);
-        setHasSubtypes(true);
+
+    public ItemPluggableLens(Item.Properties properties, String id) {
+        super(properties, id);
     }
 
     public static LensData getData(ItemStack stack) {
-        return new LensData(stack);
+        LensData data = stack.get(BCSiliconItems.LENS);
+        return data == null ? LensData.CLEAR_LENS : data;
     }
 
     @Nonnull
-    public ItemStack getStack(DyeColor colour, boolean isFilter) {
+    public ItemStack getStack(@Nullable DyeColor colour, boolean isFilter) {
         return getStack(new LensData(colour, isFilter));
     }
 
     @Nonnull
     public ItemStack getStack(LensData variant) {
         ItemStack stack = new ItemStack(this);
-        variant.writeToStack(stack);
+        stack.set(BCSiliconItems.LENS, variant);
         return stack;
     }
 
@@ -78,69 +83,65 @@ public class ItemPluggableLens extends ItemBC_Neptune implements IItemPluggable 
     }
 
     @Override
-    public String getItemStackDisplayName(ItemStack stack) {
+    public Component getName(ItemStack stack) {
         LensData data = getData(stack);
         String colour = data.colour == null ? LocaleUtil.localize("color.clear")
             : ColourUtil.getTextFullTooltipSpecial(data.colour);
         String first = LocaleUtil.localize(data.isFilter ? "item.Filter.name" : "item.Lens.name");
-        return colour + " " + first;
+        return Component.literal(colour + " " + first);
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
-    public Font getFontRenderer(ItemStack stack) {
-        return SpecialColourFontRenderer.INSTANCE;
-    }
-
-    @Override
-    protected void addSubItems(CreativeTabs tab, NonNullList<ItemStack> subItems) {
+    public void addSubItems(NonNullList<ItemStack> subItems) {
         for (int i = 0; i < 34; i++) {
-            subItems.add(new ItemStack(this, 1, i));
+            subItems.add(getStack(LensData.fromDamage(i)));
         }
     }
 
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
-        for (int i = 0; i < 34; i++) {
-            variants.put(i, new ModelResourceLocation("buildcraftsilicon:lens_item#inventory"));
-        }
-    }
+    public static final class LensData {
+        public static final LensData CLEAR_LENS = new LensData(null, false);
 
-    public static class LensData {
+        public static final Codec<LensData> CODEC = RecordCodecBuilder.create(i -> i.group(
+            DyeColor.CODEC.optionalFieldOf("colour").forGetter(d -> Optional.ofNullable(d.colour)),
+            Codec.BOOL.optionalFieldOf("filter", false).forGetter(d -> d.isFilter)
+        ).apply(i, (colour, filter) -> new LensData(colour.orElse(null), filter)));
+
+        public static final StreamCodec<RegistryFriendlyByteBuf, LensData> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.optional(DyeColor.STREAM_CODEC), d -> Optional.ofNullable(d.colour),
+            ByteBufCodecs.BOOL, d -> d.isFilter,
+            (colour, filter) -> new LensData(colour.orElse(null), filter));
+
+        @Nullable
         public final DyeColor colour;
         public final boolean isFilter;
 
-        public LensData(DyeColor colour, boolean isFilter) {
+        public LensData(@Nullable DyeColor colour, boolean isFilter) {
             this.colour = colour;
             this.isFilter = isFilter;
         }
 
-        public LensData(ItemStack stack) {
-            this(stack.getItemDamage());
-        }
-
-        public LensData(int damage) {
+        /** The variant a 1.12.2 lens damage value meant (for converting 3.5 stacks). */
+        public static LensData fromDamage(int damage) {
             if (damage >= 32) {
-                colour = null;
-                isFilter = damage == 33;
-            } else {
-                colour = DyeColor.byDyeDamage(damage & 15);
-                isFilter = damage >= 16;
+                return new LensData(null, damage == 33);
             }
+            return new LensData(ColourUtil.COLOURS[15 - (damage & 15)], damage >= 16);
         }
 
-        public int getItemDamage() {
-            if (colour == null) {
-                return isFilter ? 33 : 32;
-            } else {
-                return colour.getDyeDamage() + (isFilter ? 16 : 0);
-            }
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof LensData other && other.colour == colour && other.isFilter == isFilter;
         }
 
-        public ItemStack writeToStack(ItemStack stack) {
-            stack.setItemDamage(getItemDamage());
-            return stack;
+        @Override
+        public int hashCode() {
+            return (colour == null ? 16 : colour.ordinal()) * 2 + (isFilter ? 1 : 0);
         }
+    }
+
+    /** The "buildcraftsilicon:lens" component type (registered in BCSiliconItems). */
+    public static DataComponentType<LensData> createComponent() {
+        return DataComponentType.<LensData> builder().persistent(LensData.CODEC)
+            .networkSynchronized(LensData.STREAM_CODEC).build();
     }
 }

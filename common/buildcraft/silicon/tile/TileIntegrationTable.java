@@ -11,6 +11,8 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
@@ -30,6 +32,10 @@ import buildcraft.lib.tile.item.ItemHandlerManager;
 import buildcraft.lib.tile.item.ItemHandlerSimple;
 
 public class TileIntegrationTable extends TileLaserTableBase {
+    public TileIntegrationTable(BlockPos pos, BlockState state) {
+        super(pos, state);
+    }
+
     public final ItemHandlerSimple invTarget = itemManager.addInvHandler(
         "target",
         1,

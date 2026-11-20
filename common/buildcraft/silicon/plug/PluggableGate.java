@@ -91,12 +91,12 @@ public class PluggableGate extends PipePluggable implements IWireEmitter {
         double min = 5 / 16.0;
         double max = 11 / 16.0;
 
-        BOXES[Direction.DOWN.getIndex()] = new AABB(min, ll, min, max, lu, max);
-        BOXES[Direction.UP.getIndex()] = new AABB(min, ul, min, max, uu, max);
-        BOXES[Direction.NORTH.getIndex()] = new AABB(min, min, ll, max, max, lu);
-        BOXES[Direction.SOUTH.getIndex()] = new AABB(min, min, ul, max, max, uu);
-        BOXES[Direction.WEST.getIndex()] = new AABB(ll, min, min, lu, max, max);
-        BOXES[Direction.EAST.getIndex()] = new AABB(ul, min, min, uu, max, max);
+        BOXES[Direction.DOWN.get3DDataValue()] = new AABB(min, ll, min, max, lu, max);
+        BOXES[Direction.UP.get3DDataValue()] = new AABB(min, ul, min, max, uu, max);
+        BOXES[Direction.NORTH.get3DDataValue()] = new AABB(min, min, ll, max, max, lu);
+        BOXES[Direction.SOUTH.get3DDataValue()] = new AABB(min, min, ul, max, max, uu);
+        BOXES[Direction.WEST.get3DDataValue()] = new AABB(ll, min, min, lu, max, max);
+        BOXES[Direction.EAST.get3DDataValue()] = new AABB(ul, min, min, uu, max, max);
 
         MODEL_FUNC_CTX_STATIC = DefaultContexts.createWithAll();
         MODEL_MATERIAL = MODEL_FUNC_CTX_STATIC.putVariableString("material");
@@ -204,7 +204,7 @@ public class PluggableGate extends PipePluggable implements IWireEmitter {
 
     @Override
     public AABB getBoundingBox() {
-        return BOXES[side.getIndex()];
+        return BOXES[side.get3DDataValue()];
     }
 
     @Override
@@ -263,19 +263,19 @@ public class PluggableGate extends PipePluggable implements IWireEmitter {
 
             logic.readConfigData(stored);
 
-            player.sendStatusMessage(Component.translatable("chat.gateCopier.gatePasted"), true);
+            player.sendOverlayMessage(Component.translatable("chat.gateCopier.gatePasted"));
 
         } else {
             stored = logic.writeToNbt();
             stored.remove("wireBroadcasts");
 
-            if (stored.getSize() == 1) {
-                player.sendStatusMessage(Component.translatable("chat.gateCopier.noInformation"), true);
+            if (stored.size() == 1) {
+                player.sendOverlayMessage(Component.translatable("chat.gateCopier.noInformation"));
                 return false;
             }
 
             ItemGateCopier.setCopiedGateData(stack, stored);
-            player.sendStatusMessage(Component.translatable("chat.gateCopier.gateCopied"), true);
+            player.sendOverlayMessage(Component.translatable("chat.gateCopier.gateCopied"));
         }
 
         return true;

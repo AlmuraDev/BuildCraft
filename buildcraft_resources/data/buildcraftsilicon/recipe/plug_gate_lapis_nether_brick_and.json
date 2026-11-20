@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    {
+      "neoforge:ingredient_type": "neoforge:components",
+      "items": "buildcraftsilicon:plug_gate",
+      "components": {
+        "minecraft:custom_data": "{gate:{logic:1b,material:2b,modifier:1b}}"
+      }
+    }
+  ],
+  "result": {
+    "id": "buildcraftsilicon:plug_gate",
+    "components": {
+      "minecraft:custom_data": "{gate:{logic:0b,material:2b,modifier:1b}}"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftsilicon:plug_gate"
+    }
+  ]
+}

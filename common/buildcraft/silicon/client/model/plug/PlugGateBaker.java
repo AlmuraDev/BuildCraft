@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import net.minecraft.client.resources.model.geometry.BakedQuad;
 
 import buildcraft.api.transport.pluggable.IPluggableStaticBaker;
 
@@ -23,21 +22,21 @@ import buildcraft.silicon.client.model.key.KeyPlugGate;
 public enum PlugGateBaker implements IPluggableStaticBaker<KeyPlugGate> {
     INSTANCE;
 
-    private static final Map<KeyPlugGate, List<BakedQuad>> cached = new HashMap<>();
+    private static final Map<KeyPlugGate, List<MutableQuad>> cached = new HashMap<>();
 
     public static void onModelBake() {
         cached.clear();
     }
 
     @Override
-    public List<BakedQuad> bake(KeyPlugGate key) {
+    public List<MutableQuad> bake(KeyPlugGate key) {
         if (!cached.containsKey(key)) {
-            List<BakedQuad> list = new ArrayList<>();
+            List<MutableQuad> list = new ArrayList<>();
             MutableQuad[] quads = BCSiliconModels.getGateStaticQuads(key.side, key.variant);
             for (MutableQuad q : quads) {
                 MutableQuad c = new MutableQuad(q);
                 c.multShade();
-                list.add(c.toBakedBlock());
+                list.add(c);
             }
             cached.put(key, list);
         }

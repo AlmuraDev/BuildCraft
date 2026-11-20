@@ -68,8 +68,8 @@ public class TileLaser extends TileBC_Neptune implements ITickable, IDebuggable,
     private long averageClient;
     private final MjBattery battery;
 
-    public TileLaser() {
-        super();
+    public TileLaser(BlockPos pos, BlockState state) {
+        super(pos, state);
         battery = new MjBattery(1024 * MjAPI.MJ);
         caps.addProvider(new MjCapabilityHelper(new MjBatteryReceiver(battery)));
     }
@@ -123,7 +123,7 @@ public class TileLaser extends TileBC_Neptune implements ITickable, IDebuggable,
             targetPos = null;
             return;
         }
-        targetPos = targetsNeedingPower.get(world.rand.nextInt(targetsNeedingPower.size()));
+        targetPos = targetsNeedingPower.get(world.getRandom().nextInt(targetsNeedingPower.size()));
     }
 
     private boolean isPowerNeededAt(BlockPos position) {
@@ -150,9 +150,9 @@ public class TileLaser extends TileBC_Neptune implements ITickable, IDebuggable,
         if (targetPos != null) {
             laserPos = new Vec3(targetPos)
                 .add(
-                    (5 + world.rand.nextInt(6) + 0.5) / 16D,
+                    (5 + world.getRandom().nextInt(6) + 0.5) / 16D,
                     9 / 16D,
-                    (5 + world.rand.nextInt(6) + 0.5) / 16D
+                    (5 + world.getRandom().nextInt(6) + 0.5) / 16D
                 );
         } else {
             laserPos = null;
@@ -284,25 +284,24 @@ public class TileLaser extends TileBC_Neptune implements ITickable, IDebuggable,
     }
 
     @Override
-    public void validate() {
-        super.validate();
+    public void clearRemoved() {
+        super.clearRemoved();
         if (!world.isClientSide()) {
             LocalBlockUpdateNotifier.instance(world).registerSubscriberForUpdateNotifications(this);
         }
     }
 
     @Override
-    public void invalidate() {
-        super.invalidate();
+    public void setRemoved() {
+        super.setRemoved();
         if (!world.isClientSide()) {
             LocalBlockUpdateNotifier.instance(world).removeSubscriberFromUpdateNotifications(this);
         }
     }
 
+    /** The box the laser's renderer draws in (the laser and its target). */
     @Nonnull
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public AABB getRenderBoundingBox() {
+    public AABB getRenderBox() {
         return new Box(this).extendToEncompass(targetPos).getBoundingBox();
     }
 

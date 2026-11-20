@@ -6,6 +6,7 @@
 
 package buildcraft.silicon.tile;
 
+import buildcraft.api.core.NbtStacks;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -17,6 +18,8 @@ import java.util.TreeMap;
 
 import javax.annotation.Nullable;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -44,6 +47,10 @@ import buildcraft.lib.tile.item.ItemHandlerSimple;
 import buildcraft.silicon.EnumAssemblyRecipeState;
 
 public class TileAssemblyTable extends TileLaserTableBase {
+    public TileAssemblyTable(BlockPos pos, BlockState state) {
+        super(pos, state);
+    }
+
     public static final IdAllocator IDS = TileBC_Neptune.IDS.makeChild("assembly_table");
     public static final int NET_RECIPE_STATE = IDS.allocId("RECIPE_STATE");
 
@@ -185,7 +192,7 @@ public class TileAssemblyTable extends TileLaserTableBase {
         updateRecipes();
 
         if (getTarget() > 0) {
-            AdvancementUtil.unlockAdvancement(getOwner().getId(), ADVANCEMENT);
+            AdvancementUtil.unlockAdvancement(getOwner().id(), ADVANCEMENT);
             if (power >= getTarget()) {
                 AssemblyInstruction instruction = getActiveRecipe();
                 extract(inv, instruction.recipe.getInputsFor(instruction.output), false, false);
@@ -206,7 +213,7 @@ public class TileAssemblyTable extends TileLaserTableBase {
         recipesStates.forEach((instruction, state) -> {
             CompoundTag entryTag = new CompoundTag();
             entryTag.putString("recipe", instruction.recipe.getRegistryName().toString());
-            entryTag.put("output", instruction.output.serializeNBT());
+            entryTag.put("output", NbtStacks.writeItemStack(instruction.output));
             entryTag.putInt("state", state.ordinal());
             recipesStatesTag.add(entryTag);
         });
@@ -223,7 +230,7 @@ public class TileAssemblyTable extends TileLaserTableBase {
             CompoundTag entryTag = recipesStatesTag.getCompoundOrEmpty(i);
             String name = entryTag.getStringOr("recipe", "");
             if (entryTag.contains("output")) {
-                AssemblyInstruction instruction = lookupRecipe(name, new ItemStack(entryTag.getCompoundOrEmpty("output")));
+                AssemblyInstruction instruction = lookupRecipe(name, NbtStacks.readItemStack(entryTag.getCompoundOrEmpty("output")));
                 if (instruction != null)
                     recipesStates.put(instruction, EnumAssemblyRecipeState.values()[entryTag.getIntOr("state", 0)]);
             }
@@ -300,14 +307,14 @@ public class TileAssemblyTable extends TileLaserTableBase {
 
         @Override
         public int compareTo(AssemblyInstruction o) {
-            return recipe.compareTo(o.recipe) + output.serializeNBT().toString().compareTo(o.output.serializeNBT().toString());
+            return recipe.compareTo(o.recipe) + NbtStacks.writeItemStack(output).toString().compareTo(NbtStacks.writeItemStack(o.output).toString());
         }
 
         @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof AssemblyInstruction)) return false;
             AssemblyInstruction instruction = (AssemblyInstruction) obj;
-            return recipe.getRegistryName().equals(instruction.recipe.getRegistryName()) && ItemStack.areItemStacksEqual(output, instruction.output);
+            return recipe.getRegistryName().equals(instruction.recipe.getRegistryName()) && ItemStack.matches(output, instruction.output);
         }
     }
 }

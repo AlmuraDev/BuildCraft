@@ -6,38 +6,18 @@
 
 package buildcraft.silicon.block;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 
 import buildcraft.lib.block.BlockBCTile_Neptune;
 import buildcraft.lib.block.IBlockWithFacing;
-import buildcraft.lib.tile.TileBC_Neptune;
-
-import buildcraft.silicon.tile.TileLaser;
 
 public class BlockLaser extends BlockBCTile_Neptune implements IBlockWithFacing {
-    public BlockLaser(Material material, String id) {
-        super(material, id);
-    }
-
-    @Override
-    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
-        return new TileLaser();
+    public BlockLaser(BlockBehaviour.Properties properties, String id) {
+        super(properties.noOcclusion(), id);
     }
 
     @Override
     public boolean canFaceVertically() {
         return true;
-    }
-
-    @Override
-    public boolean isFullCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    public boolean isOpaqueCube(BlockState state) {
-        return false;
     }
 }

@@ -6,87 +6,27 @@
 
 package buildcraft.silicon;
 
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.core.Direction;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.Level;
+import net.neoforged.fml.loading.FMLEnvironment;
 
-import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.network.IGuiHandler;
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+/** Silicon's proxy. The client one ({@code buildcraft.silicon.client.BCSiliconClientProxy}) is created by name so the
+ * server never loads it. */
+public abstract class BCSiliconProxy {
+    private static final BCSiliconProxy proxy = createProxy();
 
-import buildcraft.api.transport.pipe.IPipeHolder;
-import buildcraft.api.transport.pluggable.PipePluggable;
-
-import buildcraft.lib.misc.MessageUtil;
-
-import buildcraft.silicon.container.ContainerAdvancedCraftingTable;
-import buildcraft.silicon.container.ContainerAssemblyTable;
-import buildcraft.silicon.container.ContainerGate;
-import buildcraft.silicon.container.ContainerIntegrationTable;
-import buildcraft.silicon.gui.GuiAdvancedCraftingTable;
-import buildcraft.silicon.gui.GuiAssemblyTable;
-import buildcraft.silicon.gui.GuiGate;
-import buildcraft.silicon.gui.GuiIntegrationTable;
-import buildcraft.silicon.plug.PluggableGate;
-import buildcraft.silicon.tile.TileAdvancedCraftingTable;
-import buildcraft.silicon.tile.TileAssemblyTable;
-import buildcraft.silicon.tile.TileIntegrationTable;
-
-public abstract class BCSiliconProxy implements IGuiHandler {
-    @SidedProxy(modId = BCSilicon.MODID)
-    private static BCSiliconProxy proxy;
+    private static BCSiliconProxy createProxy() {
+        if (FMLEnvironment.getDist().isClient()) {
+            try {
+                return (BCSiliconProxy) Class.forName("buildcraft.silicon.client.BCSiliconClientProxy")
+                    .getDeclaredConstructor().newInstance();
+            } catch (ReflectiveOperationException e) {
+                throw new IllegalStateException("Couldn't create the client proxy!", e);
+            }
+        }
+        return new ServerProxy();
+    }
 
     public static BCSiliconProxy getProxy() {
         return proxy;
-    }
-
-    @Override
-    public Object getServerGuiElement(int id, Player player, Level world, int x, int y, int z) {
-        BlockEntity tile = world.getBlockEntity(new BlockPos(x, y, z));
-        int data = id >>> 8;
-        id = id & 0xFF;
-        if (id == BCSiliconGuis.ASSEMBLY_TABLE.ordinal()) {
-            if (tile instanceof TileAssemblyTable) {
-                TileAssemblyTable assemblyTable = (TileAssemblyTable) tile;
-                return new ContainerAssemblyTable(player, assemblyTable);
-            }
-        }
-        if (id == BCSiliconGuis.ADVANCED_CRAFTING_TABLE.ordinal()) {
-            if (tile instanceof TileAdvancedCraftingTable) {
-                TileAdvancedCraftingTable advancedCraftingTable = (TileAdvancedCraftingTable) tile;
-                return new ContainerAdvancedCraftingTable(player, advancedCraftingTable);
-            }
-        }
-        if (id == BCSiliconGuis.INTEGRATION_TABLE.ordinal()) {
-            if (tile instanceof TileIntegrationTable) {
-                TileIntegrationTable integrationTable = (TileIntegrationTable) tile;
-                return new ContainerIntegrationTable(player, integrationTable);
-            }
-        }
-        if (id == BCSiliconGuis.GATE.ordinal()) {
-            Direction gateSide = Direction.from3DDataValue(data);
-            if (tile instanceof IPipeHolder) {
-                IPipeHolder holder = (IPipeHolder) tile;
-                PipePluggable plug = holder.getPluggable(gateSide);
-                if (plug instanceof PluggableGate) {
-                    ContainerGate container = new ContainerGate(player, ((PluggableGate) plug).logic);
-                    MessageUtil.doDelayedServer(() -> {
-                        container.sendMessage(ContainerGate.ID_VALID_STATEMENTS);
-                    });
-                    return container;
-                }
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public Object getClientGuiElement(int ID, Player player, Level world, int x, int y, int z) {
-        return null;
     }
 
     public void fmlPreInit() {}
@@ -95,68 +35,5 @@ public abstract class BCSiliconProxy implements IGuiHandler {
 
     public void fmlPostInit() {}
 
-    @SuppressWarnings("unused")
-    @OnlyIn(Dist.DEDICATED_SERVER)
     public static class ServerProxy extends BCSiliconProxy {}
-
-    @SuppressWarnings("unused")
-    @OnlyIn(Dist.CLIENT)
-    public static class ClientProxy extends BCSiliconProxy {
-
-        @Override
-        public void fmlPreInit() {
-            super.fmlPreInit();
-            BCSiliconSprites.fmlPreInit();
-            BCSiliconModels.fmlPreInit();
-        }
-
-        @Override
-        public void fmlInit() {
-            super.fmlInit();
-            BCSiliconModels.fmlInit();
-        }
-
-        @Override
-        public void fmlPostInit() {
-            super.fmlPostInit();
-            BCSiliconModels.fmlPostInit();
-        }
-
-        @Override
-        public Object getClientGuiElement(int id, Player player, Level world, int x, int y, int z) {
-            BlockEntity tile = world.getBlockEntity(new BlockPos(x, y, z));
-            int data = id >>> 8;
-            id = id & 0xFF;
-            if (id == BCSiliconGuis.ASSEMBLY_TABLE.ordinal()) {
-                if (tile instanceof TileAssemblyTable) {
-                    TileAssemblyTable assemblyTable = (TileAssemblyTable) tile;
-                    return new GuiAssemblyTable(new ContainerAssemblyTable(player, assemblyTable));
-                }
-            }
-            if (id == BCSiliconGuis.ADVANCED_CRAFTING_TABLE.ordinal()) {
-                if (tile instanceof TileAdvancedCraftingTable) {
-                    TileAdvancedCraftingTable advancedCraftingTable = (TileAdvancedCraftingTable) tile;
-                    return new GuiAdvancedCraftingTable(
-                        new ContainerAdvancedCraftingTable(player, advancedCraftingTable));
-                }
-            }
-            if (id == BCSiliconGuis.INTEGRATION_TABLE.ordinal()) {
-                if (tile instanceof TileIntegrationTable) {
-                    TileIntegrationTable integrationTable = (TileIntegrationTable) tile;
-                    return new GuiIntegrationTable(new ContainerIntegrationTable(player, integrationTable));
-                }
-            }
-            if (id == BCSiliconGuis.GATE.ordinal()) {
-                Direction gateSide = Direction.from3DDataValue(data);
-                if (tile instanceof IPipeHolder) {
-                    IPipeHolder holder = (IPipeHolder) tile;
-                    PipePluggable plug = holder.getPluggable(gateSide);
-                    if (plug instanceof PluggableGate) {
-                        return new GuiGate(new ContainerGate(player, ((PluggableGate) plug).logic));
-                    }
-                }
-            }
-            return null;
-        }
-    }
 }

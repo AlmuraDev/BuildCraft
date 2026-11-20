@@ -144,6 +144,35 @@ public class MutableQuad {
             net.neoforged.neoforge.client.model.quad.BakedColors.of(argb(v[0]), argb(v[1]), argb(v[2]), argb(v[3])));
     }
 
+    /** Reads a baked quad (from a vanilla or modded block model) into this quad: positions, uvs, the baked normals
+     * (or the face normal when they are unspecified) and colours, the tint and the sprite. Light is left at 0. */
+    public MutableQuad fromBakedQuad(BakedQuad quad) {
+        BakedQuad.MaterialInfo info = quad.materialInfo();
+        tintIndex = info.tintIndex();
+        face = quad.direction();
+        sprite = info.sprite();
+        shade = info.shadeDirectionOverride() == null;
+        MutableVertex[] v = { vertex_0, vertex_1, vertex_2, vertex_3 };
+        for (int i = 0; i < 4; i++) {
+            org.joml.Vector3fc pos = quad.position(i);
+            v[i].positionf(pos.x(), pos.y(), pos.z());
+            long uv = quad.packedUV(i);
+            v[i].texf(net.minecraft.client.model.geom.builders.UVPair.unpackU(uv),
+                net.minecraft.client.model.geom.builders.UVPair.unpackV(uv));
+            int normal = quad.bakedNormals().normal(i);
+            if (net.neoforged.neoforge.client.model.quad.BakedNormals.isUnspecified(normal)) {
+                v[i].normalf(face.getStepX(), face.getStepY(), face.getStepZ());
+            } else {
+                Vector3f n = net.neoforged.neoforge.client.model.quad.BakedNormals.unpack(normal, null);
+                v[i].normalf(n.x, n.y, n.z);
+            }
+            int argb = quad.bakedColors().color(i);
+            v[i].colouri((argb >> 16) & 0xFF, (argb >> 8) & 0xFF, argb & 0xFF, (argb >>> 24) & 0xFF);
+            v[i].lighti(0, 0);
+        }
+        return this;
+    }
+
     private static int packNormal(MutableVertex v) {
         return net.neoforged.neoforge.client.model.quad.BakedNormals.pack(v.normal_x, v.normal_y, v.normal_z);
     }

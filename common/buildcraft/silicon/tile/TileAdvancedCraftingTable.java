@@ -10,6 +10,8 @@ import java.io.IOException;
 
 import javax.annotation.Nonnull;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 
@@ -36,7 +38,8 @@ public class TileAdvancedCraftingTable extends TileLaserTableBase implements IAu
 
     public ItemStack resultClient = ItemStack.EMPTY;
 
-    public TileAdvancedCraftingTable() {
+    public TileAdvancedCraftingTable(BlockPos pos, BlockState state) {
+        super(pos, state);
         invBlueprint = itemManager.addInvHandler("blueprint", 3 * 3, EnumAccess.PHANTOM);
         invMaterials = itemManager.addInvHandler("materials", 5 * 3, EnumAccess.INSERT, EnumPipePart.VALUES);
         invResults = itemManager.addInvHandler("result", 3 * 3, EnumAccess.EXTRACT, EnumPipePart.VALUES);
@@ -47,7 +50,7 @@ public class TileAdvancedCraftingTable extends TileLaserTableBase implements IAu
     protected void onSlotChange(IItemHandlerModifiable handler, int slot, @Nonnull ItemStack before,
         @Nonnull ItemStack after) {
         super.onSlotChange(handler, slot, before, after);
-        if (!ItemStack.areItemStacksEqual(before, after)) {
+        if (!ItemStack.matches(before, after)) {
             crafting.onInventoryChange(handler);
         }
     }

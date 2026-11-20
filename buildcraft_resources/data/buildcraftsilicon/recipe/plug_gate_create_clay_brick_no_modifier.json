@@ -1,0 +1,30 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "m": "minecraft:brick",
+    "r": "#c:dusts/redstone",
+    "b": "buildcrafttransport:plug_blocker"
+  },
+  "pattern": [
+    " m ",
+    "mrm",
+    " b "
+  ],
+  "result": {
+    "id": "buildcraftsilicon:plug_gate",
+    "components": {
+      "minecraft:custom_data": "{gate:{logic:0b,material:0b,modifier:0b}}"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftsilicon:plug_gate"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcrafttransport:plug_blocker"
+    }
+  ]
+}

@@ -6,13 +6,14 @@
 
 package buildcraft.silicon.item;
 
+import net.minecraft.network.chat.Component;
 import java.util.List;
 
 import javax.annotation.Nonnull;
 
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.DyeColor;
@@ -53,17 +54,14 @@ import buildcraft.silicon.plug.FacadeStateManager;
 import buildcraft.silicon.plug.PluggableFacade;
 
 public class ItemPluggableFacade extends ItemBC_Neptune implements IItemPluggable, IFacadeItem {
-    public ItemPluggableFacade(String id) {
-        super(id);
-        setMaxDamage(0);
-        setHasSubtypes(true);
+    public ItemPluggableFacade(Item.Properties properties, String id) {
+        super(properties, id);
     }
 
     @Nonnull
     public ItemStack createItemStack(FacadeInstance state) {
         ItemStack item = new ItemStack(this);
-        CompoundTag nbt = NBTUtilBC.getItemData(item);
-        nbt.put("facade", state.writeToNbt());
+        NBTUtilBC.updateItemData(item, nbt -> nbt.put("facade", state.writeToNbt()));
         return item;
     }
 
@@ -110,15 +108,15 @@ public class ItemPluggableFacade extends ItemBC_Neptune implements IItemPluggabl
     }
 
     @Override
-    public void addSubItems(CreativeTabs tab, NonNullList<ItemStack> subItems) {
+    public void addSubItems(NonNullList<ItemStack> subItems) {
         // Add a single phased facade as a default
         // check if the data is present as we only process in post-init
         FacadeBlockStateInfo stone = FacadeStateManager.getInfoForBlock(Blocks.STONE);
         if (stone != null) {
             FacadePhasedState[] states = { //
                 FacadeStateManager.getInfoForBlock(Blocks.STONE).createPhased(null), //
-                FacadeStateManager.getInfoForBlock(Blocks.PLANKS).createPhased(DyeColor.RED), //
-                FacadeStateManager.getInfoForBlock(Blocks.LOG).createPhased(DyeColor.CYAN),//
+                FacadeStateManager.getInfoForBlock(Blocks.OAK_PLANKS).createPhased(DyeColor.RED), //
+                FacadeStateManager.getInfoForBlock(Blocks.OAK_LOG).createPhased(DyeColor.CYAN),//
             };
             FacadeInstance inst = new FacadeInstance(states, false);
             subItems.add(createItemStack(inst));
@@ -138,22 +136,21 @@ public class ItemPluggableFacade extends ItemBC_Neptune implements IItemPluggabl
     }
 
     @Override
-    public String getItemStackDisplayName(ItemStack stack) {
+    public Component getName(ItemStack stack) {
         FacadeInstance fullState = getStates(stack);
         if (fullState.type == FacadeType.Basic) {
             String displayName = getFacadeStateDisplayName(fullState.phasedStates[0]);
-            return super.getItemStackDisplayName(stack) + ": " + displayName;
+            return super.getName(stack).copy().append(": " + displayName);
         } else {
-            return LocaleUtil.localize("item.FacadePhased.name");
+            return Component.literal(LocaleUtil.localize("item.FacadePhased.name"));
         }
     }
 
     public static String getFacadeStateDisplayName(FacadePhasedState state) {
         ItemStack assumedStack = state.stateInfo.requiredStack;
-        return assumedStack.getHoverName();
+        return assumedStack.getHoverName().getString();
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Override
     public void addInformation(ItemStack stack, Level world, List<String> tooltip, TooltipFlag flag) {
         FacadeInstance states = getStates(stack);
@@ -172,7 +169,7 @@ public class ItemPluggableFacade extends ItemBC_Neptune implements IItemPluggabl
             }
         } else {
             if (flag.isAdvanced()) {
-                tooltip.add(states.phasedStates[0].stateInfo.state.getBlock().getRegistryName().toString());
+                tooltip.add(BuiltInRegistries.BLOCK.getKey(states.phasedStates[0].stateInfo.state.getBlock()).toString());
             }
             String propertiesStart = ChatFormatting.GRAY + "" + ChatFormatting.ITALIC;
             FacadeBlockStateInfo info = states.phasedStates[0].stateInfo;

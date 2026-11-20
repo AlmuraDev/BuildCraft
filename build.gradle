@@ -37,6 +37,7 @@ def portedPackages = [
         'buildcraft/transport/**',
         'buildcraft/energy/**',
         'buildcraft/factory/**',
+        'buildcraft/silicon/**',
 ]
 
 // Client rendering, models, the guide book and the GUI screens inside the ported packages. They are ported in the
@@ -98,6 +99,14 @@ deferredSources += [
         'buildcraft/energy/container/**',
         'buildcraft/factory/gui/**',
         'buildcraft/factory/container/**',
+        'buildcraft/silicon/gui/**',
+        'buildcraft/silicon/container/**',
+        // 1.12.2 item models built from pluggable models in code; they need special item model renderers on 26.3
+        'buildcraft/silicon/client/model/ModelGateItem.java',
+        'buildcraft/silicon/client/model/GateMeshDefinition.java',
+        'buildcraft/silicon/client/model/plug/ModelLensItem.java',
+        'buildcraft/silicon/client/model/plug/ModelFacadeItem.java',
+        'buildcraft/silicon/client/FacadeItemColours.java',
 ]
 
 def mainResourceDirs = ['buildcraft_resources', 'BuildCraft-Localization', 'BuildCraftGuide/guide_resources']

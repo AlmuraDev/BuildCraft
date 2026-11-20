@@ -114,10 +114,10 @@ public class FacadeAssemblyRecipes extends AssemblyRecipe implements IRecipeView
     }
 
     private static ItemStack baseRequirementStack() {
-        if (BCItems.Transport.PIPE_STRUCTURE == null) {
+        if (!BCItems.Transport.PIPE_STRUCTURE.isBound()) {
             return new ItemStack(Blocks.COBBLESTONE_WALL);
         }
-        return new ItemStack(BCItems.Transport.PIPE_STRUCTURE, 3);
+        return new ItemStack(BCItems.Transport.PIPE_STRUCTURE.get(), 3);
     }
 
     @Override
@@ -129,8 +129,8 @@ public class FacadeAssemblyRecipes extends AssemblyRecipe implements IRecipeView
     public Set<IngredientStack> getInputsFor(@Nonnull ItemStack output) {
         FacadePhasedState state = ItemPluggableFacade.getStates(output).getCurrentStateForStack();
         ItemStack stateRequirement = state.stateInfo.requiredStack;
-        IngredientStack ingredientType = new IngredientStack(Ingredient.fromStacks(stateRequirement));
-        IngredientStack ingredientBase = new IngredientStack(Ingredient.fromStacks(baseRequirementStack()), 3);
+        IngredientStack ingredientType = new IngredientStack(Ingredient.of(stateRequirement.getItem()));
+        IngredientStack ingredientBase = new IngredientStack(Ingredient.of(baseRequirementStack().getItem()), 3);
 
         return ImmutableSet.of(ingredientType, ingredientBase);
     }

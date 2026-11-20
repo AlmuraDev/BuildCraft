@@ -1,43 +1,35 @@
 package buildcraft.silicon;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.IBakedModel;
-import net.minecraft.world.item.DyeColor;
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import net.minecraftforge.client.event.ModelBakeEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
-import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 
-import buildcraft.api.BCModules;
 import buildcraft.api.transport.pipe.PipeApiClient;
 import buildcraft.api.transport.pipe.PipeApiClient.IClientRegistry;
 import buildcraft.api.transport.pluggable.IPluggableStaticBaker;
 
 import buildcraft.lib.client.model.ModelHolderStatic;
 import buildcraft.lib.client.model.ModelHolderVariable;
-import buildcraft.lib.client.model.ModelPluggableItem;
 import buildcraft.lib.client.model.MutableQuad;
 import buildcraft.lib.client.model.plug.PlugBakerSimple;
 import buildcraft.lib.expression.DefaultContexts;
 import buildcraft.lib.expression.FunctionContext;
 import buildcraft.lib.expression.node.value.NodeVariableBoolean;
 import buildcraft.lib.expression.node.value.NodeVariableObject;
-import buildcraft.lib.misc.RenderUtil;
 import buildcraft.lib.misc.data.ModelVariableData;
+import buildcraft.lib.registry.TileTypes;
 
-import buildcraft.silicon.client.FacadeItemColours;
-import buildcraft.silicon.client.model.GateMeshDefinition;
-import buildcraft.silicon.client.model.ModelGateItem;
 import buildcraft.silicon.client.model.key.KeyPlugFacade;
 import buildcraft.silicon.client.model.key.KeyPlugGate;
 import buildcraft.silicon.client.model.key.KeyPlugLens;
 import buildcraft.silicon.client.model.key.KeyPlugLightSensor;
 import buildcraft.silicon.client.model.key.KeyPlugPulsar;
 import buildcraft.silicon.client.model.key.KeyPlugTimer;
-import buildcraft.silicon.client.model.plug.ModelFacadeItem;
-import buildcraft.silicon.client.model.plug.ModelLensItem;
 import buildcraft.silicon.client.model.plug.PlugBakerFacade;
 import buildcraft.silicon.client.model.plug.PlugBakerLens;
 import buildcraft.silicon.client.model.plug.PlugGateBaker;
@@ -48,9 +40,8 @@ import buildcraft.silicon.client.render.RenderProgrammingTable;
 import buildcraft.silicon.gate.GateVariant;
 import buildcraft.silicon.plug.PluggableGate;
 import buildcraft.silicon.plug.PluggablePulsar;
-import buildcraft.silicon.tile.TileLaser;
-import buildcraft.silicon.tile.TileProgrammingTable_Neptune;
 
+@OnlyIn(Dist.CLIENT)
 public class BCSiliconModels {
     public static final ModelHolderStatic LIGHT_SENSOR;
     public static final ModelHolderStatic TIMER;
@@ -102,15 +93,11 @@ public class BCSiliconModels {
     }
 
     public static void fmlPreInit() {
-        NeoForge.EVENT_BUS.register(BCSiliconModels.class);
+        BCSilicon.MOD_BUS.addListener(BCSiliconModels::registerRenderers);
+        BCSilicon.MOD_BUS.addListener((ModelEvent.BakingCompleted event) -> onModelBake());
     }
 
     public static void fmlInit() {
-        Minecraft.getMinecraft().getRenderItem().getItemModelMesher().register(BCSiliconItems.plugGate,
-            GateMeshDefinition.INSTANCE);
-        ClientRegistry.bindTileEntitySpecialRenderer(TileLaser.class, new RenderLaser());
-        ClientRegistry.bindTileEntitySpecialRenderer(TileProgrammingTable_Neptune.class, new RenderProgrammingTable());
-
         IClientRegistry pipeRegistryClient = PipeApiClient.registry;
         if (pipeRegistryClient != null) {
             pipeRegistryClient.registerBaker(KeyPlugGate.class, PlugGateBaker.INSTANCE);
@@ -125,32 +112,26 @@ public class BCSiliconModels {
         }
     }
 
-    public static void fmlPostInit() {
-        RenderUtil.registerItemColour(BCSiliconItems.plugFacade, FacadeItemColours.INSTANCE);
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        if (BCSiliconBlocks.laser != null) {
+            BlockEntityType type = TileTypes.forState(BCSiliconBlocks.laser.defaultBlockState());
+            event.registerBlockEntityRenderer(type, ctx -> new RenderLaser());
+        }
+        if (BCSiliconBlocks.programmingTable != null) {
+            BlockEntityType type = TileTypes.forState(BCSiliconBlocks.programmingTable.defaultBlockState());
+            event.registerBlockEntityRenderer(type, ctx -> new RenderProgrammingTable());
+        }
     }
 
-    @SubscribeEvent
-    public static void onModelBake(ModelBakeEvent event) {
-        putModel(event, "gate_item#inventory", ModelGateItem.INSTANCE);
-        putModel(event, "lens_item#inventory", ModelLensItem.INSTANCE);
-        PluggablePulsar.setModelVariablesForItem();
-        putModel(event, "plug_pulsar#inventory",
-            new ModelPluggableItem(PULSAR_STATIC.getCutoutQuads(), PULSAR_DYNAMIC.getCutoutQuads()));
-        putModel(event, "plug_light_sensor#inventory", new ModelPluggableItem(LIGHT_SENSOR.getCutoutQuads()));
-        putModel(event, "plug_timer#inventory", new ModelPluggableItem(TIMER.getCutoutQuads()));
-        putModel(event, "plug_facade#inventory", ModelFacadeItem.INSTANCE);
-
+    /** The variable models were reloaded: forget everything baked from them. TODO(26.3): the gate, lens, pulsar,
+     * light sensor, timer and facade items used models baked from these (ModelGateItem, ModelLensItem,
+     * ModelPluggableItem, ModelFacadeItem); they show flat item models until they have special item renderers. */
+    private static void onModelBake() {
         PlugGateBaker.onModelBake();
         PlugBakerLens.onModelBake();
-        ModelGateItem.onModelBake();
-        ModelLensItem.onModelBake();
-        ModelFacadeItem.onModelBake();
         PlugPulsarRenderer.onModelBake();
         PlugGateRenderer.onModelBake();
-    }
-
-    private static void putModel(ModelBakeEvent event, String str, IBakedModel model) {
-        event.getModelRegistry().putObject(BCModules.SILICON.createModelLocation(str), model);
     }
 
     public static MutableQuad[] getGateStaticQuads(Direction side, GateVariant variant) {

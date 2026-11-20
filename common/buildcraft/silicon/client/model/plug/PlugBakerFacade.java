@@ -18,14 +18,17 @@ import org.apache.commons.lang3.tuple.Pair;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
-import net.minecraft.client.renderer.block.model.IBakedModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.EmptyBlockGetter;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.Block;
 import buildcraft.api.core.BCRenderLayer;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.phys.Vec3;
 
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.MinecraftForgeClient;
 import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -85,12 +88,12 @@ public enum PlugBakerFacade implements IPluggableStaticBaker<KeyPlugFacade> {
 
     @SuppressWarnings("SuspiciousNameCombination")
     private List<MutableQuad> getTransformedQuads(BlockState state,
-                                                  IBakedModel model,
+                                                  BlockStateModel model,
                                                   Direction side,
                                                   Vec3 pos0, Vec3 pos1, Vec3 pos2, Vec3 pos3) {
-        return model.getQuads(state, side, 0).stream()
+        return quadsFor(model, side).stream()
             .map(quad -> {
-                MutableQuad mutableQuad = new MutableQuad().fromBakedItem(quad);
+                MutableQuad mutableQuad = new MutableQuad().fromBakedQuad(quad);
                 boolean positive = side.getAxisDirection() == Direction.AxisDirection.POSITIVE;
                 Function<Vec3, Vec3> transformPosition = pos -> {
                     switch (side.getAxis()) {
@@ -174,6 +177,17 @@ public enum PlugBakerFacade implements IPluggableStaticBaker<KeyPlugFacade> {
             .collect(Collectors.toList());
     }
 
+    /** The model's quads on the given side (all of its parts; 26.3 block models are made of parts). */
+    private static List<BakedQuad> quadsFor(BlockStateModel model, Direction side) {
+        List<BlockStateModelPart> parts = new ArrayList<>();
+        model.collectParts(RandomSource.create(42), parts);
+        List<BakedQuad> quads = new ArrayList<>();
+        for (BlockStateModelPart part : parts) {
+            quads.addAll(part.getQuads(side));
+        }
+        return quads;
+    }
+
     @SuppressWarnings("SuspiciousNameCombination")
     private Vec3 rotate(Vec3 vec, Rotation rotation) {
         switch (rotation) {
@@ -191,7 +205,7 @@ public enum PlugBakerFacade implements IPluggableStaticBaker<KeyPlugFacade> {
 
     private void addRotatedQuads(List<MutableQuad> quads,
                                  BlockState state,
-                                 IBakedModel model,
+                                 BlockStateModel model,
                                  Direction side,
                                  Rotation rotation,
                                  Vec3 pos0, Vec3 pos1, Vec3 pos2, Vec3 pos3) {
@@ -205,9 +219,7 @@ public enum PlugBakerFacade implements IPluggableStaticBaker<KeyPlugFacade> {
     }
 
     public List<MutableQuad> bakeForKey(KeyPlugFacade key) {
-        IBakedModel model = Minecraft.getMinecraft().getBlockRendererDispatcher().getModelForState(key.state);
-        BCRenderLayer renderLayer = MinecraftForgeClient.getRenderLayer();
-        ForgeHooksClient.setRenderLayer(null);
+        BlockStateModel model = Minecraft.getInstance().getModelManager().getBlockStateModelSet().get(key.state);
         List<MutableQuad> quads = new ArrayList<>();
         int pS = PluggableFacade.SIZE;
         int nS = 16 - pS;
@@ -280,7 +292,6 @@ public enum PlugBakerFacade implements IPluggableStaticBaker<KeyPlugFacade> {
                 }
             }
         }
-        ForgeHooksClient.setRenderLayer(renderLayer);
         for (MutableQuad quad : quads) {
             int tint = quad.getTint();
             if (tint != -1) {
@@ -291,20 +302,17 @@ public enum PlugBakerFacade implements IPluggableStaticBaker<KeyPlugFacade> {
     }
 
     @Override
-    public List<BakedQuad> bake(KeyPlugFacade key) {
-        List<MutableQuad> mutableQuads = bakeForKey(key);
-        List<BakedQuad> baked = new ArrayList<>();
-        for (MutableQuad quad : mutableQuads) {
-            baked.add(quad.toBakedItem());
-        }
-        if (BCModules.TRANSPORT.isLoaded() && key.state.isFullBlock() && !key.isHollow) {
+    public List<MutableQuad> bake(KeyPlugFacade key) {
+        List<MutableQuad> baked = new ArrayList<>(bakeForKey(key));
+        boolean fullBlock = Block.isShapeFullBlock(key.state.getShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO));
+        if (BCModules.TRANSPORT.isLoaded() && fullBlock && !key.isHollow) {
             baked.addAll(TransportCompat.bakeBlocker(key.side));
         }
         return baked;
     }
 
     static final class TransportCompat {
-        static List<BakedQuad> bakeBlocker(Direction side) {
+        static List<MutableQuad> bakeBlocker(Direction side) {
             return BCTransportModels.BAKER_PLUG_BLOCKER.bake(new KeyPlugBlocker(side));
         }
     }

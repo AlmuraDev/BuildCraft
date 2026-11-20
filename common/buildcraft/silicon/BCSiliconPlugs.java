@@ -49,7 +49,7 @@ public class BCSiliconPlugs {
         // TODO: remove this in 7.99.19!
         // This handles the migration of most of the transport pluggables into silicon
         String modId = BCModules.TRANSPORT.getModId();
-        PipeApi.pluggableRegistry.register(Identifier.fromNamespaceAndPath(modId, def.identifier.getResourcePath()), def);
+        PipeApi.pluggableRegistry.register(Identifier.fromNamespaceAndPath(modId, def.identifier.getPath()), def);
         return def;
     }
 

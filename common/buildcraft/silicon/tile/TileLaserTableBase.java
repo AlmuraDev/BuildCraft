@@ -11,6 +11,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
@@ -38,7 +40,8 @@ public abstract class TileLaserTableBase extends TileBC_Neptune implements ILase
     public long avgPowerClient;
     public long power;
 
-    protected TileLaserTableBase() {
+    protected TileLaserTableBase(BlockPos pos, BlockState state) {
+        super(pos, state);
         caps.addCapabilityInstance(TilesAPI.CAP_HAS_WORK, () -> getTarget() > 0, EnumPipePart.VALUES);
     }
 
@@ -59,7 +62,7 @@ public abstract class TileLaserTableBase extends TileBC_Neptune implements ILase
 
     @Override
     public boolean isInvalidTarget() {
-        return isInvalid();
+        return isRemoved();
     }
 
     @Override
@@ -129,7 +132,7 @@ public abstract class TileLaserTableBase extends TileBC_Neptune implements ILase
             for (int i = 0; i < inv.getSlots() && remaining > 0; i++) {
                 ItemStack slotStack = inv.getStackInSlot(i);
                 if (slotStack.isEmpty()) continue;
-                if (definition.ingredient.apply(slotStack)) {
+                if (definition.ingredient.test(slotStack)) {
                     int spend = Math.min(remaining, slotStack.getCount());
                     remaining -= spend;
                     if (!simulate) {

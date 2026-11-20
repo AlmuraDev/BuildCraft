@@ -54,7 +54,7 @@ public class TriggerTimer extends BCStatement implements ITriggerInternal {
 
     @Override
     public boolean isTriggerActive(IStatementContainer source, IStatementParameter[] parameters) {
-        Level world = source.getTile().getWorld();
+        Level world = source.getTile().getLevel();
         return world.getGameTime() % (20 * duration.duration) == 0;
     }
 

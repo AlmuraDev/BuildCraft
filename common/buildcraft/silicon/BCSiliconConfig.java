@@ -6,15 +6,9 @@
 
 package buildcraft.silicon;
 
-import net.neoforged.neoforge.common.NeoForge;
 import buildcraft.lib.config.Configuration;
-import buildcraft.lib.config.Property;
-import net.minecraftforge.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent;
-import net.neoforged.bus.api.SubscribeEvent;
-
-import buildcraft.api.BCModules;
-
 import buildcraft.lib.config.EnumRestartRequirement;
+import buildcraft.lib.config.Property;
 
 import buildcraft.core.BCCoreConfig;
 
@@ -25,23 +19,15 @@ public class BCSiliconConfig {
     private static Property propRenderLaserBeams;
 
     public static void preInit() {
-
         Configuration config = BCCoreConfig.config;
         propRenderLaserBeams = config.get("display", "renderLaserBeams", true,
-                "When false laser beams will not be visible while transmitting power without wearing Goggles");
+            "When false laser beams will not be visible while transmitting power without wearing Goggles");
 
         reloadConfig(EnumRestartRequirement.NONE);
-        NeoForge.EVENT_BUS.register(BCSiliconConfig.class);
+        BCCoreConfig.addReloadListener(BCSiliconConfig::reloadConfig);
     }
 
     public static void reloadConfig(EnumRestartRequirement restarted) {
         renderLaserBeams = propRenderLaserBeams.getBoolean();
-    }
-
-    @SubscribeEvent
-    public static void onConfigChange(OnConfigChangedEvent cce) {
-        if (BCModules.isBcMod(cce.getModID())) {
-            reloadConfig(EnumRestartRequirement.NONE);
-        }
     }
 }

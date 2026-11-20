@@ -108,6 +108,9 @@ def ingredient(value, warnings, where):
     data = value.get('data')
     if data is None or data == 32767:
         return item
+    if item == 'buildcraftsilicon:redstone_chipset':
+        # 1.12.2's one chipset item with the type in its damage; 26.3 has one item per type
+        return 'buildcraftsilicon:redstone_chipset_' + ['red', 'iron', 'gold', 'quartz', 'diamond'][data]
     if item == 'minecraft:dye':
         return '#c:dyes/' + DYE_BY_DAMAGE[data]
     if item in COLOURED_VANILLA:
@@ -212,6 +215,67 @@ CODE_RECIPES = {
         + [('paintbrush_' + c, paint_colouring(c)) for c in DYE_BY_DAMAGE]),
 }
 
+# ---- Silicon gates: 1.12.2 built these in BCSiliconRecipes. A gate's variant is its custom data
+# {gate: {logic, material, modifier}} (ordinals: logic AND 0 / OR 1; material CLAY_BRICK 0, IRON 1, NETHER_BRICK 2,
+# GOLD 3; modifier NO_MODIFIER 0, LAPIS 1, QUARTZ 2, DIAMOND 3).
+GATE_MATERIALS = ['clay_brick', 'iron', 'nether_brick', 'gold']
+GATE_MODIFIERS = ['no_modifier', 'lapis', 'quartz', 'diamond']
+
+
+def gate_data(logic, material, modifier):
+    return '{gate:{logic:%db,material:%db,modifier:%db}}' % (logic, material, modifier)
+
+
+def gate_stack(logic, material, modifier):
+    return {'id': 'buildcraftsilicon:plug_gate', 'components': {'minecraft:custom_data': gate_data(logic, material, modifier)}}
+
+
+def gate_ingredient(logic, material, modifier):
+    return {'neoforge:ingredient_type': 'neoforge:components', 'items': 'buildcraftsilicon:plug_gate',
+            'components': {'minecraft:custom_data': gate_data(logic, material, modifier)}}
+
+
+def silicon_recipes():
+    out = {}
+    cond = exists('buildcraftsilicon:plug_gate')
+    for name, m, material in [('clay_brick', 'minecraft:brick', 0), ('iron', '#c:ingots/iron', 1),
+                              ('nether_brick', 'minecraft:nether_brick', 2)]:
+        out['plug_gate_create_%s_no_modifier' % name] = {
+            'type': 'minecraft:crafting_shaped', 'category': 'redstone',
+            'key': {'m': m, 'r': '#c:dusts/redstone', 'b': 'buildcrafttransport:plug_blocker'},
+            'pattern': [' m ', 'mrm', ' b '],
+            'result': gate_stack(0, material, 0),
+            'neoforge:conditions': cond + exists('buildcrafttransport:plug_blocker'),
+        }
+    for name, m, modifier in [('lapis', '#c:dyes/blue', 1), ('quartz', 'minecraft:quartz', 2)]:
+        out['plug_gate_create_iron_%s' % name] = {
+            'type': 'minecraft:crafting_shaped', 'category': 'redstone',
+            'key': {'m': m, 'g': gate_ingredient(0, 1, 0)},
+            'pattern': [' m ', 'mgm', ' m '],
+            'result': gate_stack(0, 1, modifier),
+            'neoforge:conditions': cond,
+        }
+    for material in range(1, 4):
+        for modifier in range(4):
+            prefix = 'plug_gate_%s_%s' % (GATE_MODIFIERS[modifier], GATE_MATERIALS[material])
+            out[prefix + '_or'] = {
+                'type': 'minecraft:crafting_shapeless', 'category': 'redstone',
+                'ingredients': [gate_ingredient(0, material, modifier)],
+                'result': gate_stack(1, material, modifier), 'neoforge:conditions': cond,
+            }
+            out[prefix + '_and'] = {
+                'type': 'minecraft:crafting_shapeless', 'category': 'redstone',
+                'ingredients': [gate_ingredient(1, material, modifier)],
+                'result': gate_stack(0, material, modifier), 'neoforge:conditions': cond,
+            }
+    out['facade_swap'] = {'type': 'buildcraftsilicon:facade_swap', 'category': 'misc',
+                          'neoforge:conditions': exists('buildcraftsilicon:plug_facade')}
+    return out
+
+
+CODE_RECIPES['buildcraftsilicon'] = silicon_recipes()
+
+
 # Item tags BuildCraft's items had as ore dictionary names: tag -> items (all optional, as items can be disabled)
 TAGS = {
     'c:gears/wood': ['buildcraftcore:gear_wood'],
@@ -265,6 +329,10 @@ LOOT = {
         [(b, self_drop('buildcraftfactory:' + b)) for b in
          ['autoworkbench_item', 'mining_well', 'pump', 'flood_gate', 'tank', 'chute', 'distiller', 'heat_exchange']]
         + [('water_gel', water_gel_loot())]),
+    'buildcraftsilicon': dict(
+        (b, self_drop('buildcraftsilicon:' + b)) for b in
+        ['laser', 'assembly_table', 'advanced_crafting_table', 'integration_table', 'charging_table',
+         'programming_table']),
 }
 
 

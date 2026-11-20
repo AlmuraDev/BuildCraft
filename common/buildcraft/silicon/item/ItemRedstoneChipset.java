@@ -6,44 +6,19 @@
 
 package buildcraft.silicon.item;
 
-import gnu.trove.map.hash.TIntObjectHashMap;
-
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.core.NonNullList;
-
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.world.item.Item;
 
 import buildcraft.api.enums.EnumRedstoneChipset;
 
 import buildcraft.lib.item.ItemBC_Neptune;
 
+/** One redstone chipset type. 1.12.2 had a single "redstone_chipset" item with the type in its damage; 26.3 has one
+ * item per type ("redstone_chipset_iron", see {@link EnumRedstoneChipset#getItemId()}). */
 public class ItemRedstoneChipset extends ItemBC_Neptune {
-    public ItemRedstoneChipset(String id) {
-        super(id);
-        setHasSubtypes(true);
-    }
+    public final EnumRedstoneChipset type;
 
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public void addModelVariants(TIntObjectHashMap<ModelResourceLocation> variants) {
-        for (EnumRedstoneChipset type : EnumRedstoneChipset.values()) {
-            addVariant(variants, type.ordinal(), type.getName());
-        }
-    }
-
-    @Override
-    public void addSubItems(CreativeTabs tab, NonNullList<ItemStack> subItems) {
-        for (EnumRedstoneChipset type : EnumRedstoneChipset.values()) {
-            subItems.add(new ItemStack(this, 1, type.ordinal()));
-        }
-    }
-
-    @Override
-    public String getUnlocalizedName(ItemStack stack) {
-        return "item.redstone_" + EnumRedstoneChipset.values()[stack.getMetadata()].getName() + "_chipset";
+    public ItemRedstoneChipset(Item.Properties properties, String id, EnumRedstoneChipset type) {
+        super(properties, id);
+        this.type = type;
     }
 }

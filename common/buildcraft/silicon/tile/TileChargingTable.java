@@ -6,7 +6,14 @@
 
 package buildcraft.silicon.tile;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+
 public class TileChargingTable extends TileLaserTableBase {
+    public TileChargingTable(BlockPos pos, BlockState state) {
+        super(pos, state);
+    }
+
     @Override
     public long getTarget() {
         return 0;

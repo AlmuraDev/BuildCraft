@@ -1,10 +1,8 @@
 {
-    "forge_marker": 1,
-    "defaults": {
-        "model": "buildcraftsilicon:table/integration"
-    },
-    "variants": {
-        "normal": [{}],
-        "inventory": []
+  "variants": {
+    "": {
+      "model": "buildcraftsilicon:block/table/integration"
     }
+  },
+  "__converted_26_3": true
 }

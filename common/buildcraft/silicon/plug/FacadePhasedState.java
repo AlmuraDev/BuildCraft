@@ -1,8 +1,8 @@
 package buildcraft.silicon.plug;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import javax.annotation.Nullable;
 
-import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.nbt.CompoundTag;
@@ -31,7 +31,7 @@ public class FacadePhasedState implements IFacadePhasedState {
         FacadeBlockStateInfo stateInfo = FacadeStateManager.defaultState;
         if (nbt.contains("state")) {
             try {
-                BlockState blockState = NbtUtils.readBlockState(nbt.getCompoundOrEmpty("state"));
+                BlockState blockState = NbtUtils.readBlockState(BuiltInRegistries.BLOCK, nbt.getCompoundOrEmpty("state"));
                 stateInfo = FacadeStateManager.validFacadeStates.get(blockState);
                 if (stateInfo == null) {
                     stateInfo = FacadeStateManager.defaultState;
@@ -47,7 +47,7 @@ public class FacadePhasedState implements IFacadePhasedState {
     public CompoundTag writeToNbt() {
         CompoundTag nbt = new CompoundTag();
         try {
-            nbt.put("state", NbtUtils.writeBlockState(new CompoundTag(), stateInfo.state));
+            nbt.put("state", NbtUtils.writeBlockState(stateInfo.state));
         } catch (Throwable t) {
             throw new IllegalStateException("Writing facade block state"//
                 + "\n\tState = " + stateInfo//
@@ -85,10 +85,6 @@ public class FacadePhasedState implements IFacadePhasedState {
 
     public boolean isSideSolid(Direction side) {
         return stateInfo.isSideSolid[side.ordinal()];
-    }
-
-    public BlockFaceShape getBlockFaceShape(Direction side) {
-        return stateInfo.blockFaceShape[side.ordinal()];
     }
 
     @Override

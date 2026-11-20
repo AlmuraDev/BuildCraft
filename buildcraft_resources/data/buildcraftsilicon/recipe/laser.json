@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "r": "#c:dusts/redstone",
+    "d": "#c:gems/diamond",
+    "o": "minecraft:obsidian"
+  },
+  "pattern": [
+    "rro",
+    "rdd",
+    "rro"
+  ],
+  "result": {
+    "id": "buildcraftsilicon:laser"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftsilicon:laser"
+    }
+  ]
+}

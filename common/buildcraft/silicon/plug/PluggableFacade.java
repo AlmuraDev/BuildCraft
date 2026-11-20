@@ -8,10 +8,7 @@ package buildcraft.silicon.plug;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.block.state.BlockFaceShape;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -55,25 +52,23 @@ public class PluggableFacade extends PipePluggable implements IFacade {
         double min = 0 / 16.0;
         double max = 16 / 16.0;
 
-        BOXES[Direction.DOWN.getIndex()] = new AABB(min, ll, min, max, lu, max);
-        BOXES[Direction.UP.getIndex()] = new AABB(min, ul, min, max, uu, max);
-        BOXES[Direction.NORTH.getIndex()] = new AABB(min, min, ll, max, max, lu);
-        BOXES[Direction.SOUTH.getIndex()] = new AABB(min, min, ul, max, max, uu);
-        BOXES[Direction.WEST.getIndex()] = new AABB(ll, min, min, lu, max, max);
-        BOXES[Direction.EAST.getIndex()] = new AABB(ul, min, min, uu, max, max);
+        BOXES[Direction.DOWN.get3DDataValue()] = new AABB(min, ll, min, max, lu, max);
+        BOXES[Direction.UP.get3DDataValue()] = new AABB(min, ul, min, max, uu, max);
+        BOXES[Direction.NORTH.get3DDataValue()] = new AABB(min, min, ll, max, max, lu);
+        BOXES[Direction.SOUTH.get3DDataValue()] = new AABB(min, min, ul, max, max, uu);
+        BOXES[Direction.WEST.get3DDataValue()] = new AABB(ll, min, min, lu, max, max);
+        BOXES[Direction.EAST.get3DDataValue()] = new AABB(ul, min, min, uu, max, max);
     }
 
     public static final int SIZE = 2;
     public final FacadeInstance states;
     public final boolean isSideSolid;
-    public final BlockFaceShape blockFaceShape;
     public int activeState;
 
     public PluggableFacade(PluggableDefinition definition, IPipeHolder holder, Direction side, FacadeInstance states) {
         super(definition, holder, side);
         this.states = states;
         isSideSolid = states.areAllStatesSolid(side);
-        blockFaceShape = states.getBlockFaceShape(side);
     }
 
     public PluggableFacade(PluggableDefinition def, IPipeHolder holder, Direction side, CompoundTag nbt) {
@@ -91,7 +86,6 @@ public class PluggableFacade extends PipePluggable implements IFacade {
         this.states = FacadeInstance.readFromNbt(nbt.getCompoundOrEmpty("facade"));
         activeState = MathUtil.clamp(nbt.getIntOr("activeState", 0), 0, states.phasedStates.length - 1);
         isSideSolid = states.areAllStatesSolid(side);
-        blockFaceShape = states.getBlockFaceShape(side);
     }
 
     @Override
@@ -109,7 +103,6 @@ public class PluggableFacade extends PipePluggable implements IFacade {
         PacketBufferBC buf = PacketBufferBC.asPacketBufferBc(buffer);
         states = FacadeInstance.readFromBuffer(buf);
         isSideSolid = buf.readBoolean();
-        blockFaceShape = buf.readEnum(BlockFaceShape.class);
     }
 
     @Override
@@ -117,14 +110,13 @@ public class PluggableFacade extends PipePluggable implements IFacade {
         PacketBufferBC buf = PacketBufferBC.asPacketBufferBc(buffer);
         states.writeToBuffer(buf);
         buf.writeBoolean(isSideSolid);
-        buf.writeEnum(blockFaceShape);
     }
 
     // Pluggable methods
 
     @Override
     public AABB getBoundingBox() {
-        return BOXES[side.getIndex()];
+        return BOXES[side.get3DDataValue()];
     }
 
     @Override
@@ -144,12 +136,7 @@ public class PluggableFacade extends PipePluggable implements IFacade {
 
     @Override
     public float getExplosionResistance(@Nullable Entity exploder, Explosion explosion) {
-        return states.phasedStates[activeState].stateInfo.state.getBlock().getExplosionResistance(exploder);
-    }
-
-    @Override
-    public BlockFaceShape getBlockFaceShape() {
-        return blockFaceShape;
+        return states.phasedStates[activeState].stateInfo.state.getBlock().getExplosionResistance();
     }
 
     @Override
@@ -162,7 +149,8 @@ public class PluggableFacade extends PipePluggable implements IFacade {
         if (states.type == FacadeType.Basic) {
             FacadePhasedState facadeState = states.phasedStates[activeState];
             BlockState blockState = facadeState.stateInfo.state;
-            BCRenderLayer targetLayer = blockState.getBlock().getBlockLayer();
+            BCRenderLayer targetLayer = facadeState.stateInfo.isTranslucentLayer ? BCRenderLayer.TRANSLUCENT
+                : BCRenderLayer.CUTOUT;
             if (targetLayer == BCRenderLayer.TRANSLUCENT) {
                 if (layer != targetLayer) {
                     return null;
@@ -181,8 +169,8 @@ public class PluggableFacade extends PipePluggable implements IFacade {
     @OnlyIn(Dist.CLIENT)
     public int getBlockColor(int tintIndex) {
         FacadePhasedState state = states.phasedStates[activeState];
-        BlockColors colours = Minecraft.getMinecraft().getBlockColors();
-        return colours.colorMultiplier(state.stateInfo.state, holder.getPipeWorld(), holder.getPipePos(), tintIndex);
+        return buildcraft.silicon.client.FacadeTints.getColour(state.stateInfo.state, holder.getPipeWorld(),
+            holder.getPipePos(), tintIndex);
     }
 
     // IFacade

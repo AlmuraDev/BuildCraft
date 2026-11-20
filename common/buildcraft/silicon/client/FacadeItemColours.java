@@ -1,5 +1,6 @@
 package buildcraft.silicon.client;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.item.ItemTintSource;
 import net.minecraft.world.item.ItemStack;
@@ -17,15 +18,15 @@ public enum FacadeItemColours implements ItemTintSource {
         FacadeInstance states = ItemPluggableFacade.getStates(stack);
         FacadePhasedState state = states.getCurrentStateForStack();
         int colour = -1;
-        Identifier id = state.stateInfo.state.getBlock().getRegistryName();
-        if (id != null && "wildnature".equals(id.getResourceDomain())) {
+        Identifier id = BuiltInRegistries.BLOCK.getKey(state.stateInfo.state.getBlock());
+        if (id != null && "wildnature".equals(id.getNamespace())) {
             // Fixes https://github.com/BuildCraft/BuildCraft/issues/4435
             // (Basically wildnature doesn't handle the null world+position correctly)
             // (But instead of throwing an NPE they pass invalid values to "ColourizerGrass")
             return -1;
         }
         try {
-            colour = Minecraft.getMinecraft().getBlockColors().getColor(state.stateInfo.state, null, null);
+            colour = Minecraft.getInstance().getBlockColors().getColor(state.stateInfo.state, null, null);
         } catch (NullPointerException ex) {
             // the block didn't like the null world or player
         }

@@ -1,107 +1,106 @@
-/*
- * Copyright (c) 2017 SpaceToad and the BuildCraft team
+/* Copyright (c) 2016 SpaceToad and the BuildCraft team
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not
- * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/
- */
-
+ * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.silicon;
 
 import java.util.function.Consumer;
 
-import net.neoforged.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLInterModComms.IMCEvent;
-import net.minecraftforge.fml.common.event.FMLInterModComms.IMCMessage;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraft.world.item.ItemStack;
 
-import buildcraft.api.BCModules;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.fml.event.lifecycle.InterModProcessEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.TagsUpdatedEvent;
+
 import buildcraft.api.facades.FacadeAPI;
 
-import buildcraft.lib.BCLib;
 import buildcraft.lib.registry.CreativeTabManager;
-import buildcraft.lib.registry.CreativeTabManager.CreativeTabBC;
 import buildcraft.lib.registry.RegistryConfig;
 import buildcraft.lib.registry.TagManager;
 import buildcraft.lib.registry.TagManager.EnumTagType;
 import buildcraft.lib.registry.TagManager.TagEntry;
 
 import buildcraft.core.BCCore;
-import buildcraft.silicon.plug.FacadeBlockStateInfo;
 import buildcraft.silicon.plug.FacadeInstance;
 import buildcraft.silicon.plug.FacadeStateManager;
+import buildcraft.silicon.plug.FilterEventHandler;
+import buildcraft.transport.tile.TilePipeHolder;
 
-//@formatter:off
-@Mod(
-    modid = BCSilicon.MODID,
-    name = "BuildCraft Silicon",
-    version = BCLib.VERSION,
-    dependencies = "required-after:buildcraftcore@[" + BCLib.VERSION + "];"
-        // Pluggable registration needs to happen *after* the transport registries have been set
-        + "after:buildcrafttransport"
-)
-//@formatter:on
+@Mod(BCSilicon.MODID)
 public class BCSilicon {
     public static final String MODID = "buildcraftsilicon";
 
-    @Mod.Instance(MODID)
     public static BCSilicon INSTANCE = null;
+    public static IEventBus MOD_BUS;
 
-    private static CreativeTabBC tabPlugs;
-    private static CreativeTabBC tabFacades;
-
-    @Mod.EventHandler
-    public static void preInit(FMLPreInitializationEvent evt) {
+    public BCSilicon(IEventBus modBus, ModContainer container) {
+        INSTANCE = this;
+        MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
 
-        tabPlugs = CreativeTabManager.createTab("buildcraft.plugs");
-        tabFacades = CreativeTabManager.createTab("buildcraft.facades");
+        CreativeTabManager.createTab("buildcraft.plugs");
+        CreativeTabManager.createTab("buildcraft.facades");
+        CreativeTabManager.setItemStack("buildcraft.facades", () -> {
+            if (BCSiliconItems.plugFacade == null || FacadeStateManager.previewState == null) {
+                return new ItemStack(net.minecraft.world.item.Items.STONE);
+            }
+            FacadeInstance inst = FacadeInstance.createSingle(FacadeStateManager.previewState, false);
+            return BCSiliconItems.plugFacade.createItemStack(inst);
+        });
+
         FacadeAPI.registry = FacadeStateManager.INSTANCE;
 
         BCSiliconConfig.preInit();
-        BCSiliconBlocks.preInit();
+        BCSiliconBlocks.preInit(modBus);
         BCSiliconPlugs.preInit();
-        BCSiliconItems.preInit();
+        BCSiliconItems.preInit(modBus);
         BCSiliconStatements.preInit();
 
-        NetworkRegistry.INSTANCE.registerGuiHandler(INSTANCE, BCSiliconProxy.getProxy());
+        net.neoforged.neoforge.registries.DeferredRegister<net.minecraft.world.item.crafting.RecipeSerializer<?>> serializers =
+            buildcraft.lib.registry.RegistrationHelper.createRegister(
+                net.minecraft.core.registries.Registries.RECIPE_SERIALIZER, MODID, modBus);
+        serializers.register("facade_swap", () -> buildcraft.silicon.recipe.FacadeSwapRecipe.SERIALIZER);
+
+        // The transport module's pipes look for silicon's filter handler (lens filters on item pipes)
+        TilePipeHolder.ITEM_PIPE_EVENT_HANDLERS.add(FilterEventHandler.class);
 
         BCSiliconProxy.getProxy().fmlPreInit();
+
+        NeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event) -> BCSiliconRecipes.registerAssemblyRecipes());
+
+        modBus.addListener(BCSilicon::init);
+        modBus.addListener(BCSilicon::postInit);
+        modBus.addListener(BCSilicon::processImc);
     }
 
-    @Mod.EventHandler
-    public static void init(FMLInitializationEvent evt) {
-        BCSiliconProxy.getProxy().fmlInit();
-        FacadeStateManager.init();
+    private static void init(FMLCommonSetupEvent evt) {
+        evt.enqueueWork(() -> {
+            BCSiliconProxy.getProxy().fmlInit();
+            FacadeStateManager.init();
+        });
     }
 
-    @Mod.EventHandler
-    public static void postInit(FMLPostInitializationEvent evt) {
-        BCSiliconProxy.getProxy().fmlPostInit();
-        if (BCSiliconItems.plugFacade != null) {
-            FacadeBlockStateInfo state = FacadeStateManager.previewState;
-            FacadeInstance inst = FacadeInstance.createSingle(state, false);
-            tabFacades.setItem(BCSiliconItems.plugFacade.createItemStack(inst));
-        }
-
-        if (!BCModules.TRANSPORT.isLoaded()) {
-            tabPlugs.setItem(BCSiliconItems.plugGate);
-        }
+    private static void postInit(FMLLoadCompleteEvent evt) {
+        evt.enqueueWork(() -> BCSiliconProxy.getProxy().fmlPostInit());
     }
 
-    @Mod.EventHandler
-    public static void onImcEvent(IMCEvent imc) {
-        for (IMCMessage message : imc.getMessages()) {
-            FacadeStateManager.receiveInterModComms(message);
-        }
+    private static void processImc(InterModProcessEvent evt) {
+        evt.getIMCStream().forEach(FacadeStateManager::receiveInterModComms);
     }
 
     static {
         startBatch();
         // Items
-        registerTag("item.redstone_chipset").reg("redstone_chipset").locale("redstone_chipset")
-            .model("redstone_chipset/");
+        for (String chipset : new String[] { "red", "iron", "gold", "quartz", "diamond" }) {
+            // 1.12.2: one "redstone_chipset" item, the type in its damage
+            registerTag("item.redstone_chipset." + chipset).reg("redstone_chipset_" + chipset)
+                .locale("redstone_" + chipset + "_chipset").model("redstone_chipset/" + chipset);
+        }
         registerTag("item.gate_copier").reg("gate_copier").locale("gateCopier")
             .model("gatecopier_");
         registerTag("item.plug.gate").reg("plug_gate").locale("gate").model("pluggable/gate").tab("buildcraft.plugs")
