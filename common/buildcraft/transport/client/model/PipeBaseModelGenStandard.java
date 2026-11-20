@@ -287,7 +287,7 @@ public enum PipeBaseModelGenStandard implements IPipeBaseModelGen {
     public List<MutableQuad> generateCutout(PipeBaseCutoutKey key) {
         List<MutableQuad> quads = new ArrayList<>();
 
-        TextureAtlasSprite[] spriteArray = SPRITES.get(key.definition);
+        TextureAtlasSprite[] spriteArray = key.definition == null ? null : getItemSprites(key.definition);
         TextureAtlasSprite borderSprite = getBorderSprite(key);
         int colour = borderSprite == null ? -1 : getPipeModelColour(key.colour);
         int border_r = (colour >> 0) & 0xFF;

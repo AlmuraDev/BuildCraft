@@ -24,6 +24,8 @@ ASSETS = os.path.normpath(os.path.join(ROOT, 'buildcraft_resources', 'assets'))
 # holders (triggers, icons, lasers...). Item atlas: item textures.
 BLOCK_ATLAS_DIRS = ['blocks', 'icons', 'triggers', 'lasers', 'addons', 'filler', 'filling', 'gates', 'pipes', 'plugs',
                     'wires', 'station', 'entities']
+# (Sprite names must be unique across all atlases on 26.3: a folder can only be in one of them. Item models find
+# block-atlas sprites by name too.)
 ITEM_ATLAS_DIRS = ['items']
 
 DYES = ['white', 'orange', 'magenta', 'light_blue', 'yellow', 'lime', 'pink', 'gray', 'light_gray', 'cyan', 'purple',
@@ -103,8 +105,8 @@ ITEMS = {
 
 
 # ---- Transport ----
-# Pipe items: 1.12.2 built their models from the pipe's sprites in code. Until pipe items get a special model renderer,
-# each one is a flat item of its pipe texture (pipe registry name -> texture under textures/pipes/).
+# Pipe items: drawn in code by ModelPipeItem, like 1.12.2 (pipe registry name -> its texture under textures/pipes/,
+# which only says whether the pipe exists).
 PIPE_ITEM_TEXTURES = {'pipe_structure': 'structure'}
 for _m, _tex in [('wood', 'wood'), ('cobble', 'cobblestone'), ('stone', 'stone'), ('quartz', 'quartz'), ('iron', 'iron'),
                  ('gold', 'gold'), ('clay', 'clay'), ('sandstone', 'sandstone'), ('void', 'void'), ('obsidian', 'obsidian'),
@@ -150,9 +152,8 @@ def _add_pipe_items():
     for pipe, tex in PIPE_ITEM_TEXTURES.items():
         if not os.path.isfile(os.path.join(tex_dir, tex + '.png')):
             continue
-        MODELS['buildcrafttransport']['item/' + pipe] = {
-            'parent': 'item/generated', 'textures': {'layer0': 'buildcrafttransport:pipes/' + tex}}
-        ITEMS['buildcrafttransport'][pipe] = model('buildcrafttransport:item/' + pipe)
+        # ModelPipeItem (BCTransportModels) draws the pipe from the stack's pipe definition, as 1.12.2 did
+        ITEMS['buildcrafttransport'][pipe] = {'type': 'buildcrafttransport:pipe'}
 
 
 _add_pipe_items()

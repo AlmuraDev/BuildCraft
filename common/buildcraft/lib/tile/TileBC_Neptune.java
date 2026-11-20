@@ -157,14 +157,24 @@ public abstract class TileBC_Neptune extends BlockEntity
     /** Every BuildCraft tile is created for a {@link BlockBCTile_Neptune}, which knows its {@link BlockEntityType}. */
     public TileBC_Neptune(BlockPos pos, BlockState state) {
         super(TileTypes.forState(state), pos, state);
-        this.pos = pos;
+        // The chunk loader passes one MutableBlockPos for every tile in the chunk: keep our own copy
+        this.pos = pos.immutable();
         caps.addProvider(itemManager);
     }
+
+    /** Saved data read before this tile had a level (see {@link #loadAdditional(ValueInput)}). */
+    @Nullable
+    private CompoundTag pendingNbt;
 
     @Override
     public void setLevel(Level level) {
         super.setLevel(level);
         this.world = level;
+        if (pendingNbt != null && level != null) {
+            CompoundTag nbt = pendingNbt;
+            pendingNbt = null;
+            readFromNBT(nbt);
+        }
     }
 
     public final Level getWorld() {
@@ -731,13 +741,22 @@ public abstract class TileBC_Neptune extends BlockEntity
     @Override
     protected final void loadAdditional(ValueInput input) {
         super.loadAdditional(input);
-        readFromNBT(input.read(NBTUtilBC.WHOLE_COMPOUND).orElseGet(CompoundTag::new));
+        CompoundTag nbt = input.read(NBTUtilBC.WHOLE_COMPOUND).orElseGet(CompoundTag::new);
+        if (world == null) {
+            // 26.3 reads a chunk's tiles before giving them their level (1.12.2 set the world first), and a lot of
+            // readFromNBT code uses the world (pipe flows read the game time). Read it once the level is set.
+            pendingNbt = nbt;
+        } else {
+            pendingNbt = null;
+            readFromNBT(nbt);
+        }
     }
 
     @Override
     protected final void saveAdditional(ValueOutput output) {
         super.saveAdditional(output);
-        output.store(NBTUtilBC.WHOLE_COMPOUND, writeToNBT(new CompoundTag()));
+        // Never read (the tile was saved before it joined a level): keep the data as it was
+        output.store(NBTUtilBC.WHOLE_COMPOUND, pendingNbt != null ? pendingNbt.copy() : writeToNBT(new CompoundTag()));
     }
 
     public void readFromNBT(CompoundTag nbt) {

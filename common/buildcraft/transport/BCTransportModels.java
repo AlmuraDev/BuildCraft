@@ -42,9 +42,9 @@ import buildcraft.transport.tile.TilePipeHolder;
 
 /** Transport's client models and renderers.
  * <p>
- * The pipe holder's block model is {@link ModelPipe}, named by its blockstate file. Pipe and plug items use flat item
- * models for now. TODO(26.3): 1.12.2 drew pipe items as small pipes (ModelPipeItem) and plug items from their plug
- * models (ModelPluggableItem); both need special item model renderers. */
+ * The pipe holder's block model is {@link ModelPipe}, named by its blockstate file. Pipe items are small upright pipes
+ * ({@link buildcraft.transport.client.model.ModelPipeItem}, item model type "buildcrafttransport:pipe"). Plug items
+ * use flat item models for now. TODO(26.3): 1.12.2 drew plug items from their plug models (ModelPluggableItem). */
 public class BCTransportModels {
     public static final ModelHolderStatic BLOCKER;
     public static final ModelHolderStatic POWER_ADAPTER;
@@ -81,6 +81,9 @@ public class BCTransportModels {
         TilePipeHolder.modelDataFactory = ModelPipe::createModelData;
         BCTransport.MOD_BUS.addListener(BCTransportModels::registerBlockStateModels);
         BCTransport.MOD_BUS.addListener(BCTransportModels::registerRenderers);
+        BCTransport.MOD_BUS.addListener(
+            (net.neoforged.neoforge.client.event.RegisterItemModelsEvent event) -> event.register(
+                buildcraft.transport.client.model.ModelPipeItem.TYPE, buildcraft.transport.client.model.ModelPipeItem.Unbaked.CODEC));
     }
 
     public static void fmlInit() {

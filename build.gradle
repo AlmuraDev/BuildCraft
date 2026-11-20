@@ -130,6 +130,10 @@ neoForge {
         client {
             client()
             gameDirectory = project.file('runs/client')
+            // ./gradlew runClient -Pbc.quickplay="New World" goes straight into that single player world
+            if (project.hasProperty('bc.quickplay')) {
+                programArguments.addAll('--quickPlaySingleplayer', project.property('bc.quickplay').toString())
+            }
         }
         server {
             server()

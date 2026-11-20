@@ -110,6 +110,16 @@ public final class ModelPipe implements DynamicBlockStateModel {
 
     /** Bakes the tile's current pipe model. Called on the main thread (see {@link TilePipeHolder#getModelData()}). */
     public static ModelData createModelData(TilePipeHolder tile) {
+        clearCachesIfReloaded();
+        if (tile.getPipe() == null) {
+            return ModelData.EMPTY;
+        }
+        return createModelDataNoReload(tile);
+    }
+
+    /** Forgets the pipe models and sprites if the resources were reloaded since the last pipe was baked. Main thread
+     * only (block model data and item models). */
+    static void clearCachesIfReloaded() {
         if (reloaded) {
             reloaded = false;
             PipeModelCacheBase.generator.onResourcesReloaded();
@@ -122,9 +132,9 @@ public final class ModelPipe implements DynamicBlockStateModel {
             PipeModelCacheAll.clearModels();
             clearCache();
         }
-        if (tile.getPipe() == null) {
-            return ModelData.EMPTY;
-        }
+    }
+
+    private static ModelData createModelDataNoReload(TilePipeHolder tile) {
         PipeAllCutoutKey cutoutKey = new PipeAllCutoutKey(tile);
         PipeAllTranslucentKey translucentKey = new PipeAllTranslucentKey(tile);
         List<Integer> tints = new ArrayList<>();
