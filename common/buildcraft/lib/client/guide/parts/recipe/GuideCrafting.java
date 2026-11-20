@@ -10,8 +10,6 @@ import java.util.Arrays;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
@@ -87,8 +85,6 @@ public class GuideCrafting extends GuidePartItem {
         if (current.page == index) {
             CRAFTING_GRID.drawAt(x, y);
             // Render the item
-            GlStateManager.enableRescaleNormal();
-            RenderHelper.enableGUIStandardItemLighting();
             for (int itemX = 0; itemX < input.length; itemX++) {
                 for (int itemY = 0; itemY < input[itemX].length; itemY++) {
                     GuiRectangle rect = ITEM_POSITION[itemX][itemY];
@@ -98,8 +94,6 @@ public class GuideCrafting extends GuidePartItem {
 
             drawItemStack(output.get(), x + (int) OUT_POSITION.x, y + (int) OUT_POSITION.y);
 
-            RenderHelper.disableStandardItemLighting();
-            GlStateManager.disableRescaleNormal();
         }
         current = current.nextLine(PIXEL_HEIGHT, height);
         return current;

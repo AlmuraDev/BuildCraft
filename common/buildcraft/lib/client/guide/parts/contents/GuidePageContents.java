@@ -14,7 +14,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiTextField;
+import buildcraft.lib.gui.GuiTextFieldBC;
 import net.minecraft.ChatFormatting;
 
 import buildcraft.lib.BCLib;
@@ -26,7 +26,6 @@ import buildcraft.lib.client.guide.font.IFontRenderer;
 import buildcraft.lib.client.guide.loader.XmlPageLoader;
 import buildcraft.lib.client.guide.parts.GuideChapter;
 import buildcraft.lib.client.guide.parts.GuidePageBase;
-import buildcraft.lib.client.render.font.ConfigurableFontRenderer;
 import buildcraft.lib.gui.GuiIcon;
 import buildcraft.lib.gui.pos.GuiRectangle;
 import buildcraft.lib.misc.GuiUtil;
@@ -42,7 +41,7 @@ public class GuidePageContents extends GuidePageBase {
     private static final int ORDER_OFFSET_Y = -10;
 
     private ContentsNodeGui contents;
-    private final GuiTextField searchText;
+    private final GuiTextFieldBC searchText;
     private String lastSearchText = "";
     /** -1 if all of the results can be displayed or the actual number of results if it's too many. */
     private int realResultCount = -1;
@@ -50,9 +49,10 @@ public class GuidePageContents extends GuidePageBase {
     public GuidePageContents(GuiGuide gui) {
         super(gui);
         loadMainGui();
-        Font fr = new ConfigurableFontRenderer(gui.mc.fontRenderer).disableShadow();
-        searchText = new GuiTextField(0, fr, 0, 0, 80, fr.FONT_HEIGHT + 5);
-        searchText.setEnableBackgroundDrawing(false);
+        Font fr = gui.fontRenderer;
+        searchText = new GuiTextFieldBC(0, fr, 0, 0, 80, fr.lineHeight + 5);
+        searchText.setBordered(false);
+        searchText.setTextShadow(false);
         searchText.setTextColor(0xFF_00_00_00);
         setupChapters();
     }
@@ -63,7 +63,6 @@ public class GuidePageContents extends GuidePageBase {
         newPage.searchText.setText(searchText.getText());
         newPage.searchText.setCursorPosition(searchText.getCursorPosition());
         newPage.searchText.setFocused(searchText.isFocused());
-        newPage.searchText.setSelectionPos(searchText.getSelectionEnd());
         newPage.numPages = numPages;
         newPage.goToPage(getIndex());
         return newPage;
@@ -176,8 +175,8 @@ public class GuidePageContents extends GuidePageBase {
             }
         }
         if (index % 2 == 0) {
-            searchText.x = x + 23;
-            searchText.y = y - 16;
+            searchText.setX(x + 23);
+            searchText.setY(y - 16);
             if (!searchText.isFocused() && searchText.getText().isEmpty()) {
                 GuiGuide.SEARCH_TAB_CLOSED.drawAt(x + 8, y - 20);
                 GuiGuide.SEARCH_ICON.drawAt(x + 8, y - 19);
@@ -248,8 +247,8 @@ public class GuidePageContents extends GuidePageBase {
                 && new GuiRectangle(x - 2, y - 34, 40, 34).contains(mouseX, mouseY)) {
                 searchText.setFocused(true);
             }
-            if (mouseButton == 1 && mouseX >= searchText.x && mouseX < searchText.x + searchText.width
-                && mouseY >= searchText.y && mouseY < searchText.y + searchText.height) {
+            if (mouseButton == 1 && mouseX >= searchText.getX() && mouseX < searchText.getX() + searchText.getWidth()
+                && mouseY >= searchText.getY() && mouseY < searchText.getY() + searchText.getHeight()) {
                 searchText.setText("");
             }
         }

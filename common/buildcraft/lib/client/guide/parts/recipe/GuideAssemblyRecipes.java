@@ -31,10 +31,11 @@ public enum GuideAssemblyRecipes implements IStackRecipes {
     @Override
     public List<GuidePartFactory> getUsages(@Nonnull ItemStack stack) {
         List<GuidePartFactory> usages = new ArrayList<>();
-        boolean all = stack.getItem() == Item.getItemFromBlock(BCBlocks.Silicon.ASSEMBLY_TABLE);
+        boolean all = BCBlocks.Silicon.ASSEMBLY_TABLE.isBound()
+            && stack.getItem() == BCBlocks.Silicon.ASSEMBLY_TABLE.get().asItem();
         for (AssemblyRecipe recipe : AssemblyRecipeRegistry.REGISTRY.values()) {
             for (ItemStack output: recipe.getOutputPreviews()) {
-                if (all || recipe.getInputsFor(output).stream().anyMatch((definition) -> definition.ingredient.apply(stack))) {
+                if (all || recipe.getInputsFor(output).stream().anyMatch((definition) -> definition.ingredient.test(stack))) {
                     usages.add(getFactory(recipe, output));
                 }
             }
@@ -58,7 +59,7 @@ public enum GuideAssemblyRecipes implements IStackRecipes {
 
     private static GuideAssemblyFactory getFactory(AssemblyRecipe recipe, ItemStack output) {
         ChangingItemStack[] stacks = recipe.getInputsFor(output).stream().map(definition -> {
-                NonNullList<ItemStack> items = Arrays.stream(definition.ingredient.getMatchingStacks()).map(ItemStack::copy).collect(StackUtil.nonNullListCollector());
+                NonNullList<ItemStack> items = definition.ingredient.items().map(ItemStack::new).collect(StackUtil.nonNullListCollector());
                 items.forEach(stack -> stack.setCount(definition.count));
                 return items;
         }).map(ChangingItemStack::new).toArray(ChangingItemStack[]::new);

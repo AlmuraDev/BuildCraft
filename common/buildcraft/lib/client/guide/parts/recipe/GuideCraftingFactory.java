@@ -4,141 +4,74 @@
 
 package buildcraft.lib.client.guide.parts.recipe;
 
-import buildcraft.api.core.NbtStacks;
 import java.util.List;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.core.NonNullList;
-
-import net.minecraftforge.common.crafting.IShapedRecipe;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraftforge.oredict.OreDictionary;
-
-import buildcraft.api.core.BCLog;
 
 import buildcraft.lib.client.guide.GuiGuide;
 import buildcraft.lib.client.guide.parts.GuidePartFactory;
-import buildcraft.lib.misc.StackUtil;
-import buildcraft.lib.misc.data.NonNullMatrix;
+import buildcraft.lib.recipe.ChangingItemStack;
 
+/** A crafting grid panel in the guide (see {@link GuideRecipeAccess} for where the recipes come from). */
 public class GuideCraftingFactory implements GuidePartFactory {
 
-    private final NonNullMatrix<Ingredient> input;
-    private final @Nonnull ItemStack output;
+    private final GuideRecipeAccess.Crafting recipe;
     private final int hash;
 
-    public GuideCraftingFactory(Ingredient[][] input, ItemStack output) {
-        this.input = new NonNullMatrix<>(input, Ingredient.EMPTY);
-        this.output = StackUtil.asNonNull(output);
-        ListTag hashNbt = new ListTag();
-        for (Ingredient ingredient : this.input) {
-            ListTag list = new ListTag();
-            for (ItemStack stack : ingredient.getMatchingStacks()) {
-                list.add(NbtStacks.writeItemStack(stack));
-            }
-            hashNbt.add(list);
+    public GuideCraftingFactory(GuideRecipeAccess.Crafting recipe) {
+        this.recipe = recipe;
+        int h = hashStacks(recipe.outputs());
+        for (List<ItemStack> slot : recipe.grid()) {
+            h = h * 31 + hashStacks(slot);
         }
-        this.hash = hashNbt.hashCode();
+        this.hash = h;
     }
 
+    private static int hashStacks(List<ItemStack> stacks) {
+        int h = 1;
+        for (ItemStack stack : stacks) {
+            h = h * 31 + BuiltInRegistries.ITEM.getId(stack.getItem());
+            h = h * 31 + stack.getCount();
+        }
+        return h;
+    }
+
+    @Nullable
     public static GuidePartFactory create(@Nonnull ItemStack stack) {
-        for (Recipe recipe : ForgeRegistries.RECIPES) {
-            if (OreDictionary.itemMatches(stack, StackUtil.asNonNull(recipe.getRecipeOutput()), false)) {
-                GuidePartFactory val = getFactory(recipe);
-                if (val != null) {
-                    return val;
-                } else {
-                    BCLog.logger.warn("[lib.guide.crafting] Found a matching recipe, but of an unknown "
-                        + recipe.getClass() + " for " + stack.getHoverName());
-                }
+        for (GuideRecipeAccess.Crafting recipe : GuideRecipeAccess.crafting()) {
+            if (GuideRecipeAccess.anyMatches(recipe.outputs(), stack)) {
+                return new GuideCraftingFactory(recipe);
             }
         }
         return null;
     }
 
-    public static GuidePartFactory getFactory(Recipe recipe) {
-        ItemStack output = recipe.getRecipeOutput();
-        NonNullList<Ingredient> input = recipe.getIngredients();
-        if (input == null || input.isEmpty() || output.isEmpty()) {
-            return null;
-        }
-        Ingredient[][] matrix = new Ingredient[3][3];
-        int maxX = recipe instanceof IShapedRecipe ? ((IShapedRecipe) recipe).getRecipeWidth() : 3;
-        int maxY = recipe instanceof IShapedRecipe ? ((IShapedRecipe) recipe).getRecipeHeight() : 3;
-        int offsetX = maxX == 1 ? 1 : 0;
-        int offsetY = maxY == 1 ? 1 : 0;
-        for (int y = 0; y < 3; y++) {
-            for (int x = 0; x < 3; x++) {
-                if (x < offsetX || y < offsetY) {
-                    matrix[x][y] = Ingredient.EMPTY;
-                    continue;
-                }
-                int i = x - offsetX + (y - offsetY) * maxX;
-                if (i >= input.size() || x - offsetX >= maxX) {
-                    matrix[x][y] = Ingredient.EMPTY;
-                } else {
-                    matrix[x][y] = input.get(i);
-                }
-            }
-        }
-        return new GuideCraftingFactory(matrix, output);
-    }
-
-    @Nonnull
-    private static ItemStack oreConvert(Object object) {
-        if (object == null) {
-            return StackUtil.EMPTY;
-        }
-        if (object instanceof ItemStack) {
-            return ((ItemStack) object).copy();
-        }
-        if (object instanceof String) {
-            NonNullList<ItemStack> stacks = OreDictionary.getOres((String) object);
-            // It will be sorted out below
-            object = stacks;
-        }
-        if (object instanceof List<?>) {
-            List<?> list = (List<?>) object;
-            if (list.isEmpty()) {
-                return StackUtil.EMPTY;
-            }
-            Object first = list.get(0);
-            if (first == null) {
-                return StackUtil.EMPTY;
-            }
-            if (first instanceof ItemStack) {
-                ItemStack best = (ItemStack) first;
-                for (Object obj : list) {
-                    if (!(obj instanceof ItemStack)) {
-                        continue;
-                    }
-                    ItemStack stack = (ItemStack) obj;
-                    // The lower the ID of an item, the closer it is to minecraft. Hmmm.
-                    if (Item.getId(stack.getItem()) < Item.getId(best.getItem())) {
-                        best = stack;
-                    }
-                }
-                return best.copy();
-            }
-            BCLog.logger.warn("Found a list with unknown contents! " + first.getClass());
-        }
-        BCLog.logger.warn("Found an ore with an unknown " + object.getClass());
-        return StackUtil.EMPTY;
-    }
-
+    @Nullable
     public static GuidePartFactory create(Item output) {
         return create(new ItemStack(output));
     }
 
+    private static ChangingItemStack changing(List<ItemStack> stacks) {
+        NonNullList<ItemStack> list = NonNullList.create();
+        list.addAll(stacks);
+        return new ChangingItemStack(list);
+    }
+
     @Override
     public GuideCrafting createNew(GuiGuide gui) {
-        return new GuideCrafting(gui, input, output);
+        ChangingItemStack[][] input = new ChangingItemStack[3][3];
+        for (int x = 0; x < 3; x++) {
+            for (int y = 0; y < 3; y++) {
+                input[x][y] = changing(recipe.grid().get(x + y * 3));
+            }
+        }
+        return new GuideCrafting(gui, input, changing(recipe.outputs()));
     }
 
     @Override
@@ -149,28 +82,26 @@ public class GuideCraftingFactory implements GuidePartFactory {
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
-        if (obj == null) return false;
-        if (obj.getClass() != getClass()) return false;
+        if (obj == null || obj.getClass() != getClass()) return false;
         GuideCraftingFactory other = (GuideCraftingFactory) obj;
-        // Shortcut out of this full itemstack comparison as its really expensive
         if (hash != other.hash) return false;
-        if (input.getWidth() != other.input.getWidth() || input.getHeight() != other.input.getHeight()) return false;
-        ListTag nbtThis = new ListTag();
-        for (Ingredient ingredient : this.input) {
-            ListTag list = new ListTag();
-            for (ItemStack stack : ingredient.getMatchingStacks()) {
-                list.add(NbtStacks.writeItemStack(stack));
+        return sameStacks(recipe.outputs(), other.recipe.outputs()) && sameGrid(other);
+    }
+
+    private boolean sameGrid(GuideCraftingFactory other) {
+        for (int i = 0; i < 9; i++) {
+            if (!sameStacks(recipe.grid().get(i), other.recipe.grid().get(i))) {
+                return false;
             }
-            nbtThis.add(list);
         }
-        ListTag nbtThat = new ListTag();
-        for (Ingredient ingredient : other.input) {
-            ListTag list = new ListTag();
-            for (ItemStack stack : ingredient.getMatchingStacks()) {
-                list.add(NbtStacks.writeItemStack(stack));
-            }
-            nbtThat.add(list);
+        return true;
+    }
+
+    private static boolean sameStacks(List<ItemStack> a, List<ItemStack> b) {
+        if (a.size() != b.size()) return false;
+        for (int i = 0; i < a.size(); i++) {
+            if (!ItemStack.matches(a.get(i), b.get(i))) return false;
         }
-        return nbtThis.equals(nbtThat);
+        return true;
     }
 }

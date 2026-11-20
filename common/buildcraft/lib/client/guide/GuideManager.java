@@ -7,7 +7,6 @@
 
 package buildcraft.lib.client.guide;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -25,9 +24,9 @@ import javax.annotation.Nullable;
 import com.google.common.base.Stopwatch;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.IResourceManager;
-import net.minecraft.client.resources.IResourceManagerReloadListener;
-import net.minecraft.client.resources.Language;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -66,9 +65,8 @@ import buildcraft.lib.misc.data.ProfilerBC;
 import buildcraft.lib.misc.data.ProfilerBC.IProfilerSection;
 import buildcraft.lib.misc.search.ISuffixArray;
 import buildcraft.lib.misc.search.SimpleSuffixArray;
-import buildcraft.lib.misc.search.VanillaSuffixArray;
 
-public enum GuideManager implements IResourceManagerReloadListener {
+public enum GuideManager implements ResourceManagerReloadListener {
     INSTANCE;
 
     public static final String DEFAULT_LANG = "en_us";
@@ -115,7 +113,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
     }
 
     @Override
-    public void onResourceManagerReload(IResourceManager resourceManager) {
+    public void onResourceManagerReload(ResourceManager resourceManager) {
         reload(resourceManager);
     }
 
@@ -123,7 +121,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
         reload(Minecraft.getInstance().getResourceManager());
     }
 
-    private void reload(IResourceManager resourceManager) {
+    private void reload(ResourceManager resourceManager) {
         if (isInReload) {
             throw new IllegalStateException("Cannot reload while we are reloading!");
         }
@@ -135,9 +133,8 @@ public enum GuideManager implements IResourceManagerReloadListener {
         }
     }
 
-    private void reload0(IResourceManager resourceManager) {
-        ProfilerFiller prof = new ProfilerFiller();
-        prof.profilingEnabled = DEBUG;
+    private void reload0(ResourceManager resourceManager) {
+        ProfilerFiller prof = buildcraft.lib.misc.ProfilerUtil.newProfiler(DEBUG);
         prof.push("root");
         prof.push("reload");
         Stopwatch watch = Stopwatch.createStarted();
@@ -182,13 +179,10 @@ public enum GuideManager implements IResourceManagerReloadListener {
         pages.clear();
 
         prof.popPush("load_lang");
-        Language currentLanguage = Minecraft.getInstance().getLanguageManager().getCurrentLanguage();
-        String langCode;
-        if (currentLanguage == null) {
+        String langCode = Minecraft.getInstance().getLanguageManager().getSelected();
+        if (langCode == null) {
             BCLog.logger.warn("Current language was null!");
             langCode = DEFAULT_LANG;
-        } else {
-            langCode = currentLanguage.getLanguageCode();
         }
 
         // load the default ones
@@ -210,7 +204,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
         int e = p - a;
         prof.pop();
         prof.pop();
-        if (prof.profilingEnabled) {
+        if (buildcraft.lib.misc.ProfilerUtil.isCollecting(prof)) {
             BCLog.logger.info("[lib.guide] " + pageLinksAdded.size() + " search terms");
             BCLog.logger.info(
                 "[lib.guide] Loaded " + p + " possible and " + a + " actual guide pages (" + e + " not found) in "
@@ -222,7 +216,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
         }
     }
 
-    private void loadLangInternal(IResourceManager resourceManager, String lang, ProfilerFiller prof) {
+    private void loadLangInternal(ResourceManager resourceManager, String lang, ProfilerFiller prof) {
         ProfilerBC p = new ProfilerBC(prof);
         main_iteration: for (Entry<Identifier, PageEntry<?>> mapEntry : GuidePageRegistry.INSTANCE
             .getReloadableEntryMap().entrySet()) {
@@ -233,9 +227,13 @@ public enum GuideManager implements IResourceManagerReloadListener {
             for (Entry<String, IPageLoader> entry : PAGE_LOADERS.entrySet()) {
                 Identifier fLoc = Identifier.fromNamespaceAndPath(domain, path + "." + entry.getKey());
 
-                try (IProfilerSection s = p.start("get_resource"); InputStream stream = resourceManager.getResource(
-                    fLoc
-                ).getInputStream(); IProfilerSection l = p.start("load")) {
+                java.util.Optional<Resource> resource = resourceManager.getResource(fLoc);
+                if (resource.isEmpty()) {
+                    // Ignore it, we'll log this later
+                    continue;
+                }
+                try (IProfilerSection s = p.start("get_resource"); InputStream stream = resource.get().open();
+                    IProfilerSection l = p.start("load")) {
                     GuidePageFactory factory = entry.getValue().loadPage(stream, entryKey, mapEntry.getValue(), prof);
                     // put the original page in so that the different lang variants override it
                     pages.put(entryKey, factory);
@@ -243,8 +241,6 @@ public enum GuideManager implements IResourceManagerReloadListener {
                         BCLog.logger.info("[lib.guide.loader] Loaded page '" + entryKey + "'.");
                     }
                     continue main_iteration;
-                } catch (FileNotFoundException f) {
-                    // Ignore it, we'll log this later
                 } catch (IOException io) {
                     io.printStackTrace();
                 }
@@ -277,7 +273,7 @@ public enum GuideManager implements IResourceManagerReloadListener {
         for (GuideBook book : GuideBookRegistry.INSTANCE.getAllEntries()) {
             genTypeMap(book);
         }
-        quickSearcher = false ? new VanillaSuffixArray<>() : new SimpleSuffixArray<>();
+        quickSearcher = new SimpleSuffixArray<>();
         pageLinksAdded.clear();
         prof.popPush("add_pages");
 

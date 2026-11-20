@@ -1,5 +1,7 @@
 package buildcraft.lib.client.guide.loader;
 
+import buildcraft.lib.client.guide.node.GuideFormatting;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -22,12 +24,10 @@ import com.google.common.collect.ImmutableMap;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.TagParser;
-import net.minecraft.nbt.NBTException;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.resources.Identifier;
 import net.minecraft.ChatFormatting;
 
-import net.minecraftforge.oredict.OreDictionary;
 
 import buildcraft.api.core.BCLog;
 import buildcraft.api.core.InvalidInputDataException;
@@ -334,7 +334,7 @@ public enum XmlPageLoader implements IPageLoaderText {
                 if (c == '<') {
                     XmlTag currentTag = parseTag(line.substring(i));
                     if (currentTag != null) {
-                        ChatFormatting formatting = ChatFormatting.getValueByName(currentTag.name.replace("_", ""));
+                        ChatFormatting formatting = GuideFormatting.byName(currentTag.name);
                         if (formatting != null) {
                             if (currentTag.state == XmlTagState.END) {
                                 formattingElements.remove(formatting);
@@ -342,7 +342,7 @@ public enum XmlPageLoader implements IPageLoaderText {
                                     formatColours.remove();
                                 }
                             } else if (currentTag.state == XmlTagState.START) {
-                                if (formatting.isColor()) {
+                                if (GuideFormatting.isColor(formatting)) {
                                     formatColours.push(formatting);
                                 } else {
                                     formattingElements.add(formatting);
@@ -755,44 +755,22 @@ public enum XmlPageLoader implements IPageLoaderText {
             BCLog.logger.warn("[lib.guide.loader.xml] Missing 'stack' for an itemstack from " + tag);
             return null;
         }
-        ItemStack stack = null;
-        Item item = Item.getByNameOrId(id.trim());
-        if (item != null) {
-            stack = new ItemStack(item);
-        } else {
+        int stackSize = 1;
+        int meta = 0;
+        try {
+            if (count != null) {
+                stackSize = Integer.parseInt(count.trim());
+            }
+            if (data != null) {
+                meta = Integer.parseInt(data.trim());
+            }
+        } catch (NumberFormatException nfe) {
+            BCLog.logger.warn("[lib.guide.loader.xml] " + tag + " has an invalid number: " + nfe.getMessage());
+        }
+        ItemStack stack = GuideFormatting.legacyStack(id, stackSize, meta, nbt);
+        if (stack.isEmpty()) {
             BCLog.logger.warn("[lib.guide.loader.xml] " + id + " was not a valid item!");
             return null;
-        }
-
-        if (count != null) {
-            int stackSize = 1;
-            try {
-                stackSize = Integer.parseInt(count.trim());
-            } catch (NumberFormatException nfe) {
-                BCLog.logger.warn("[lib.guide.loader.xml] " + count + " was not a valid number: " + nfe.getMessage());
-            }
-            stack.setCount(stackSize);
-        }
-
-        if (data != null) {
-            try {
-                int meta = Integer.parseInt(data.trim());
-                if (meta == -1) {
-                    // Use oredict
-                    meta = OreDictionary.WILDCARD_VALUE;
-                }
-                stack = new ItemStack(stack.getItem(), stack.getCount(), meta);
-            } catch (NumberFormatException nfe) {
-                BCLog.logger.warn("[lib.guide.loader.xml] " + data + " was not a valid number: " + nfe.getMessage());
-            }
-        }
-
-        if (nbt != null) {
-            try {
-                stack.setTagCompound(TagParser.getTagFromJson(nbt));
-            } catch (NBTException e) {
-                BCLog.logger.warn("[lib.guide.loader.xml] " + nbt + " was not a valid nbt tag: " + e.getMessage());
-            }
         }
         return stack;
     }

@@ -12,7 +12,7 @@ import buildcraft.lib.client.guide.GuiGuide;
 
 public class GuideChapterContents extends GuideChapter {
     public GuideChapterContents(GuiGuide gui) {
-        super(gui, I18n.format("buildcraft.guide.chapter.contents"));
+        super(gui, I18n.get("buildcraft.guide.chapter.contents"));
     }
 
     @Override

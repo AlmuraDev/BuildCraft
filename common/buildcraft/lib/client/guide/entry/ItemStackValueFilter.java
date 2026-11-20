@@ -13,7 +13,8 @@ public class ItemStackValueFilter {
     public final boolean matchMeta;
 
     public ItemStackValueFilter(ItemStack stack) {
-        this(new ItemStackKey(stack), stack.getHasSubtypes(), false);
+        // 26.3 items have no metadata subtypes; components tell variants apart
+        this(new ItemStackKey(stack), true, false);
     }
 
     public ItemStackValueFilter(ItemStackKey stack, boolean matchMeta, boolean matchNbt) {

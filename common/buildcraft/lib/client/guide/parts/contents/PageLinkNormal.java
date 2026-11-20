@@ -20,7 +20,7 @@ public class PageLinkNormal extends PageLink {
     }
 
     private static String strip(String text) {
-        return ChatFormatting.getTextWithoutFormattingCodes(text.trim());
+        return ChatFormatting.stripFormatting(text.trim());
     }
 
     @Override

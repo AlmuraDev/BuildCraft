@@ -6,6 +6,8 @@
 
 package buildcraft.lib.client.guide.font;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -16,8 +18,6 @@ import java.util.Collections;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.GlStateManager.DestFactor;
 import net.minecraft.client.renderer.GlStateManager.SourceFactor;
 
@@ -87,12 +87,8 @@ public class GuideFont implements IFontRenderer {
                 tex.setColor(_x, _y, rgb);
             }
         }
-        GlStateManager.enableAlpha();
-        GlStateManager.disableDepth();
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA);
-        GlStateManager.pushMatrix();
-        GlStateManager.scale(1 / scaleFactor, 1 / scaleFactor, 1);
+        GuiDraw.pushPose();
+        GuiDraw.scale(1 / scaleFactor, 1 / scaleFactor);
         if ((shade & 0xFF_00_00_00) == 0) {
             shade |= 0xFF_00_00_00;
         }
@@ -103,9 +99,8 @@ public class GuideFont implements IFontRenderer {
         tex.draw((int) (x * scaleFactor), (int) (y * scaleFactor - metrics.getMaxDescent()), 0, 0, 0,
             (int) (rect.getWidth()), (int) (rect.getHeight() + 1));
         // tex.draw(x, y, 0);
-        GlStateManager.popMatrix();
-        GlStateManager.color(1, 1, 1);
-        GlStateManager.enableDepth();
+        GuiDraw.popPose();
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), 1f);
 
         return (int) rect.getWidth();
     }

@@ -80,7 +80,7 @@ public class SpecialColourFontRenderer extends Font {
 
     @Override
     public int getStringWidth(String text) {
-        return getRealRenderer().getStringWidth(text);
+        return getRealRenderer().width(text);
     }
 
     @Override

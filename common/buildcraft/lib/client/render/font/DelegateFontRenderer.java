@@ -53,7 +53,7 @@ public class DelegateFontRenderer extends Font {
 
     @Override
     public int getStringWidth(String text) {
-        return delegate.getStringWidth(text);
+        return delegate.width(text);
     }
 
     @Override

@@ -1,12 +1,13 @@
 package buildcraft.lib.client.guide.parts;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import gnu.trove.list.TIntList;
 import gnu.trove.list.array.TIntArrayList;
 
-import net.minecraft.client.gui.Gui;
 
 import buildcraft.lib.client.guide.GuiGuide;
 import buildcraft.lib.client.guide.font.IFontRenderer;
@@ -66,7 +67,7 @@ public class GuidePartCodeBlock extends GuidePart {
                 }
                 int _x = x + 8 + lineNumberWidth;
                 if (darken) {
-                    Gui.drawRect(_x - 2, _y - 1, _x + innerMaxWidth + 4, _y + font.getMaxFontHeight() + 1,
+                    GuiDraw.fill(_x - 2, _y - 1, _x + innerMaxWidth + 4, _y + font.getMaxFontHeight() + 1,
                         0xFF_F0_F0_F0);
                 }
                 font.drawString(line, _x, _y, 0);

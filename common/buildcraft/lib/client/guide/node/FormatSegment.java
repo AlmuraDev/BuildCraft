@@ -38,10 +38,10 @@ public final class FormatSegment {
     public String toString() {
         StringBuilder miscStr = new StringBuilder();
         for (ChatFormatting format : misc) {
-            miscStr.append(format.getFriendlyName());
+            miscStr.append(GuideFormatting.friendlyName(format));
             miscStr.append(' ');
         }
-        return (colour == null ? "" : (colour.getFriendlyName() + ""))//
+        return (colour == null ? "" : (GuideFormatting.friendlyName(colour) + ""))//
             + miscStr + text;
     }
 }

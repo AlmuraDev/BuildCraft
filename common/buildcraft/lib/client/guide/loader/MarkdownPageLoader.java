@@ -6,6 +6,8 @@
 
 package buildcraft.lib.client.guide.loader;
 
+import buildcraft.lib.client.guide.node.GuideFormatting;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
@@ -13,11 +15,9 @@ import java.io.StringReader;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.TagParser;
-import net.minecraft.nbt.NBTException;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.resources.Identifier;
 
-import net.minecraftforge.oredict.OreDictionary;
 
 import buildcraft.api.core.BCDebugging;
 import buildcraft.api.core.BCLog;
@@ -40,55 +40,27 @@ public enum MarkdownPageLoader implements IPageLoaderText {
         return ItemStack.EMPTY;
     }
 
+    /** Reads "id[,count[,meta[,nbt]]]" (1.12.2's format; the metadata and NBT are upgraded like old saved stacks). */
     public static OptionallyDisabled<ItemStack> parseItemStack(String line) {
-        String[] args = line.split(",");
-        if (args.length == 0) {
+        String[] args = line.split(",", 4);
+        if (args.length == 0 || args[0].isBlank()) {
             return new OptionallyDisabled<>(line + " was not a valid complex item string!");
         }
-        ItemStack stack = null;
-        Item item = Item.getByNameOrId(args[0].trim());
-        if (item != null) {
-            stack = new ItemStack(item);
-        } else {
-            return new OptionallyDisabled<>(args[0] + " was not a valid item!");
-        }
-
-        if (args.length == 1) {
-            return new OptionallyDisabled<>(stack);
-        }
-
         int stackSize = 1;
+        int meta = 0;
         try {
-            stackSize = Integer.parseInt(args[1].trim());
-        } catch (NumberFormatException nfe) {
-            return new OptionallyDisabled<>(args[1] + " was not a valid number: " + nfe.getLocalizedMessage());
-        }
-        stack.setCount(stackSize);
-
-        if (args.length == 2) {
-            return new OptionallyDisabled<>(stack);
-        }
-
-        try {
-            int meta = Integer.parseInt(args[2].trim());
-            if (meta == -1) {
-                // Use oredict
-                meta = OreDictionary.WILDCARD_VALUE;
+            if (args.length > 1) {
+                stackSize = Integer.parseInt(args[1].trim());
             }
-            stack = new ItemStack(stack.getItem(), stack.getCount(), meta);
+            if (args.length > 2) {
+                meta = Integer.parseInt(args[2].trim());
+            }
         } catch (NumberFormatException nfe) {
-            return new OptionallyDisabled<>(args[2] + " was not a valid number: " + nfe.getLocalizedMessage());
+            return new OptionallyDisabled<>(line + " has an invalid number: " + nfe.getLocalizedMessage());
         }
-
-        if (args.length == 3) {
-            return new OptionallyDisabled<>(stack);
-        }
-
-        String nbtString = args[3];
-        try {
-            stack.setTagCompound(TagParser.getTagFromJson(nbtString));
-        } catch (NBTException e) {
-            return new OptionallyDisabled<>(nbtString + " was not a valid nbt tag: " + e.getLocalizedMessage());
+        ItemStack stack = GuideFormatting.legacyStack(args[0], stackSize, meta, args.length > 3 ? args[3] : null);
+        if (stack.isEmpty()) {
+            return new OptionallyDisabled<>(args[0] + " was not a valid item!");
         }
         return new OptionallyDisabled<>(stack);
     }

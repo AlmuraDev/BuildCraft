@@ -20,6 +20,23 @@ import buildcraft.api.core.BCLog;
 /** Provides a few methods for writing the results from a vanilla {@link ProfilerFiller} to a file or something else. */
 public class ProfilerUtil {
 
+    /** @return A profiler that records its sections (for {@link #logProfilerResults}) if enabled, or the inactive one.
+     *         (1.12.2's Profiler was one class with a profilingEnabled flag.) */
+    public static ProfilerFiller newProfiler(boolean enabled) {
+        if (!enabled) {
+            return InactiveProfiler.INSTANCE;
+        }
+        net.minecraft.util.profiling.ActiveProfiler profiler =
+            new net.minecraft.util.profiling.ActiveProfiler(System::nanoTime, () -> 0, () -> true);
+        profiler.startTick();
+        return profiler;
+    }
+
+    /** @return True if the profiler records its sections (1.12.2's profilingEnabled). */
+    public static boolean isCollecting(ProfilerFiller profiler) {
+        return profiler instanceof ProfileCollector;
+    }
+
     /** Calls {@link #writeProfilerResults(ProfilerFiller, String, ILogAcceptor)} with {@link System#out} as the
      * {@link ILogAcceptor}. */
     public static void printProfilerResults(ProfilerFiller profiler, String rootName) {

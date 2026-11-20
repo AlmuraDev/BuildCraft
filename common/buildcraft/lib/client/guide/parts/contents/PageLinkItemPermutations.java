@@ -31,8 +31,7 @@ public final class PageLinkItemPermutations extends PageLink {
         return gui -> {
             List<GuidePart> parts = new ArrayList<>();
 
-            ProfilerFiller prof = new ProfilerFiller();
-            prof.profilingEnabled = true;
+            ProfilerFiller prof = buildcraft.lib.misc.ProfilerUtil.newProfiler(true);
             for (ItemStack stack : permutations) {
                 parts.add(PageLinkItemStack.create(true, stack, prof).createGuidePart(gui));
             }

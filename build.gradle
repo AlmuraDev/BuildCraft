@@ -46,16 +46,8 @@ def portedPackages = [
 // special item models and a few 1.12.2-only render helpers. The server side compiles without them.
 def deferredSources = [
         'buildcraft/lib/client/ToastInformation.java',
-        // the guide book (its own batch); its font interface is used by GUI text
-        'buildcraft/lib/client/guide/block/**',
-        'buildcraft/lib/client/guide/data/**',
-        'buildcraft/lib/client/guide/entry/**',
-        'buildcraft/lib/client/guide/loader/**',
-        'buildcraft/lib/client/guide/node/**',
-        'buildcraft/lib/client/guide/parts/**',
-        'buildcraft/lib/client/guide/ref/**',
-        'buildcraft/lib/client/guide/world/**',
-        'buildcraft/lib/client/guide/*.java',
+        // the guide's AWT-font renderer (the guide uses Minecraft's font on 26.3) and 1.12.2 FontRenderer subclasses
+        'buildcraft/lib/client/render/font/**',
         'buildcraft/lib/client/guide/font/FontManager.java',
         'buildcraft/lib/client/guide/font/GuideFont.java',
         // 1.12.2 atlas stitching tricks (unused) and the guide's dynamic texture
@@ -64,7 +56,7 @@ def deferredSources = [
         'buildcraft/lib/misc/GlUtil.java',
         // the phantom recipe book in the auto workbench / advanced crafting table (26.3's recipe book is different)
         'buildcraft/lib/gui/recipe/**',
-        'buildcraft/lib/misc/search/**',
+        'buildcraft/lib/misc/search/VanillaSuffixArray.java',
         'buildcraft/lib/client/model/ModelPluggableItem.java',
         'buildcraft/lib/client/model/ModelItemSimple.java',
         'buildcraft/lib/client/model/ModelNotifyOfRF.java',
@@ -73,7 +65,6 @@ def deferredSources = [
         'buildcraft/lib/client/render/CuboidRenderer.java',
         'buildcraft/lib/client/render/HudRenderer.java',
         'buildcraft/lib/client/render/fluid/SpriteFluidFrozen.java',
-        'buildcraft/lib/client/render/font/**',
         'buildcraft/lib/client/render/tile/RenderMachineWave.java',
         'buildcraft/core/client/*Config*.java',
 ]
@@ -108,7 +99,8 @@ sourceSets {
             srcDir layout.buildDirectory.dir('generated/lang')
             // 1.12.2 .lang files become JSON (generateLang); the old 1.12.2 recipes and advancements under assets/ are
             // replaced by data/ as each module is ported.
-            exclude '**/*.md', 'mcmod.info', 'pack.png', 'pack.mcmeta', '**/*.lang', 'assets/*/recipes/**',
+            // (guide pages are Markdown, so only top-level readmes are left out)
+            exclude '*.md', 'mcmod.info', 'pack.png', 'pack.mcmeta', '**/*.lang', 'assets/*/recipes/**',
                 'assets/*/advancements/**'
         }
     }

@@ -35,7 +35,7 @@ public class PageLinkStatement extends PageLink {
         } else {
             this.tooltip = tip;
             String joinedTooltip = tip.stream().collect(Collectors.joining(" ", "", ""));
-            this.searchText = ChatFormatting.getTextWithoutFormattingCodes(joinedTooltip).toLowerCase(Locale.ROOT);
+            this.searchText = ChatFormatting.stripFormatting(joinedTooltip).toLowerCase(Locale.ROOT);
         }
     }
 

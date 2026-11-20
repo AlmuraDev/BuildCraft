@@ -15,7 +15,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -64,7 +63,7 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
     public void iterateAllDefault(IEntryLinkConsumer consumer, ProfilerFiller prof) {
 
         // For now, we can always re-enable this as a last resort fix.
-        boolean limitDomains = BuiltInRegistries.ITEM.getKeys().size() > BCLibConfig.guideItemSearchLimit;
+        boolean limitDomains = BuiltInRegistries.ITEM.keySet().size() > BCLibConfig.guideItemSearchLimit;
 
         Set<String> domains = new HashSet<>();
         // Always show all of minecraft's items
@@ -78,7 +77,7 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
         if (limitDomains) {
             BCLog.logger.warn(
                 "[lib.guide] Limiting the domians of items to only: " + domains + " because there are "
-                    + BuiltInRegistries.ITEM.getKeys().size() + " items!"
+                    + BuiltInRegistries.ITEM.keySet().size() + " items!"
             );
         }
 
@@ -144,7 +143,7 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
         final ItemStack stack;
         final boolean matchMeta, matchNbt;
         if (jStack.isJsonPrimitive()) {
-            String str = GsonHelper.getAsString(jStack, "stack");
+            String str = jStack.getAsString();
             if (str.startsWith("{") && str.endsWith("}")) {
                 stack = MarkdownPageLoader.loadComplexItemStack(str.substring(1, str.length() - 1));
                 stack.setCount(1);
@@ -179,7 +178,7 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
 
     @Override
     public String getTitle(ItemStackValueFilter value) {
-        return value.stack.baseStack.getHoverName();
+        return value.stack.baseStack.getHoverName().getString();
     }
 
     @Override
@@ -232,6 +231,6 @@ public class PageEntryItemStack extends PageValueType<ItemStackValueFilter> {
 
     @Override
     public void addPageEntries(ItemStackValueFilter value, GuiGuide gui, List<GuidePart> parts) {
-        XmlPageLoader.appendAllCrafting(value.stack.baseStack, parts, gui, new ProfilerFiller());
+        XmlPageLoader.appendAllCrafting(value.stack.baseStack, parts, gui, buildcraft.lib.misc.ProfilerUtil.newProfiler(false));
     }
 }

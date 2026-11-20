@@ -9,10 +9,7 @@ package buildcraft.lib.client.guide.parts;
 import java.io.IOException;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.texture.PngSizeInfo;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.client.resources.IResource;
 import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.BCLog;
@@ -20,6 +17,7 @@ import buildcraft.api.core.render.ISprite;
 
 import buildcraft.lib.client.guide.GuiGuide;
 import buildcraft.lib.client.sprite.SpriteAtlas;
+import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import buildcraft.lib.client.sprite.SpriteRaw;
 
 public class GuideImageFactory implements GuidePartFactory {
@@ -32,27 +30,31 @@ public class GuideImageFactory implements GuidePartFactory {
     }
 
     public GuideImageFactory(String location, int width, int height) {
-        TextureMap textureMap = Minecraft.getInstance().getTextureMapBlocks();
-        TextureAtlasSprite stitched = textureMap.getAtlasSprite(location);
-        if (stitched != textureMap.getMissingSprite()) {
+        TextureAtlasSprite stitched = SpriteHolderRegistry.lookupSprite(Identifier.parse(location));
+        TextureAtlasSprite missing = SpriteHolderRegistry.missingSprite();
+        if (stitched != missing) {
             this.sprite = new SpriteAtlas(stitched);
-            this.srcWidth = stitched.getIconWidth();
-            this.srcHeight = stitched.getIconHeight();
+            this.srcWidth = stitched.contents().width();
+            this.srcHeight = stitched.contents().height();
         } else {
             ISprite s;
             int sw, sh;
             Identifier resLoc = Identifier.parse(location);
-            try (IResource resource = Minecraft.getInstance().getResourceManager().getResource(resLoc)) {
-                PngSizeInfo size = PngSizeInfo.makeFromResource(resource);
+            java.util.Optional<net.minecraft.server.packs.resources.Resource> resource =
+                Minecraft.getInstance().getResourceManager().getResource(resLoc);
+            try (java.io.InputStream stream = resource.isPresent() ? resource.get().open() : null) {
+                if (stream == null) {
+                    throw new java.io.FileNotFoundException(resLoc.toString());
+                }
+                net.minecraft.util.PngInfo size = net.minecraft.util.PngInfo.fromStream(stream);
                 s = new SpriteRaw(resLoc, 0, 0, 1, 1);
-                sw = size.pngWidth;
-                sh = size.pngHeight;
+                sw = size.width();
+                sh = size.height();
             } catch (IOException io) {
                 BCLog.logger.warn("[lib.guide.loader.image] Couldn't load image '" + resLoc + "' because " + io.getMessage());
-                stitched = textureMap.getMissingSprite();
-                s = new SpriteAtlas(stitched);
-                sw = stitched.getIconWidth();
-                sh = stitched.getIconHeight();
+                s = new SpriteAtlas(missing);
+                sw = missing.contents().width();
+                sh = missing.contents().height();
             }
             this.sprite = s;
             this.srcWidth = sw;

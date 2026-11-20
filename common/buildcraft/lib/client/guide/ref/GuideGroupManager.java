@@ -38,19 +38,36 @@ public class GuideGroupManager {
         addTransformer(ItemStack.class, ItemStackValueFilter.class, ItemStackValueFilter::new);
         addTransformer(Item.class, ItemStack.class, ItemStack::new);
         addTransformer(Block.class, ItemStack.class, ItemStack::new);
+        // BCBlocks/BCItems hold deferred holders on 26.3 (unbound when their module is missing)
+        addTransformer(net.neoforged.neoforge.registries.DeferredHolder.class, ItemStack.class,
+            holder -> holder.isBound() && holder.get() instanceof net.minecraft.world.level.ItemLike like
+                ? new ItemStack(like) : ItemStack.EMPTY);
 
         temp();
+    }
+
+    /** An engine of the given 1.12.2 metadata (0 wood, 1 stone, 2 iron): the type is the stack's block state. */
+    private static ItemStack engineStack(int meta) {
+        if (!BCBlocks.Core.ENGINE.isBound()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack stack = new ItemStack(BCBlocks.Core.ENGINE.get());
+        stack.set(net.minecraft.core.component.DataComponents.BLOCK_STATE,
+            net.minecraft.world.item.component.BlockItemStateProperties.EMPTY.with(
+                buildcraft.api.properties.BuildCraftProperties.ENGINE_TYPE,
+                buildcraft.api.enums.EnumEngineType.values()[meta]));
+        return stack;
     }
 
     private static void temp() {
         addEntries("buildcraft", "pipe_power_providers", BCItems.Silicon.PLUG_PULSAR,
             BCItems.Transport.PLUG_POWER_ADAPTOR, new ItemStack(BCBlocks.Core.ENGINE),
-            new ItemStack(BCBlocks.Core.ENGINE, 1, 1), new ItemStack(BCBlocks.Core.ENGINE, 1, 2))//
+            engineStack(1), engineStack(2))//
                 .addKeyArray(BCItems.Transport.PIPE_WOOD_ITEM, BCItems.Transport.PIPE_DIAMOND_WOOD_ITEM,
                     BCItems.Transport.PIPE_EMZULI_ITEM, BCItems.Transport.PIPE_WOOD_FLUID,
                     BCItems.Transport.PIPE_DIAMOND_WOOD_FLUID);
-        addEntries("buildcraft", "full_power_providers", new ItemStack(BCBlocks.Core.ENGINE, 1, 1),
-            new ItemStack(BCBlocks.Core.ENGINE, 1, 2)).addKeyArray(BCBlocks.Builders.BUILDER, BCBlocks.Builders.FILLER,
+        addEntries("buildcraft", "full_power_providers", engineStack(1),
+            engineStack(2)).addKeyArray(BCBlocks.Builders.BUILDER, BCBlocks.Builders.FILLER,
                 BCBlocks.Builders.QUARRY, BCBlocks.Factory.DISTILLER, BCBlocks.Factory.MINING_WELL,
                 BCBlocks.Factory.PUMP, BCBlocks.Silicon.LASER);
         addEntries("buildcraft", "laser_power_providers", BCBlocks.Silicon.LASER).addKeyArray(

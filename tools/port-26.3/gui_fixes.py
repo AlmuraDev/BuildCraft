@@ -86,7 +86,7 @@ DEAD_IMPORTS = re.compile(
     r'net\.minecraft\.client\.renderer\.Tessellator|com\.mojang\.blaze3d\.vertex\.DefaultVertexFormat);\n', re.M)
 
 
-def fix(text):
+def fix(text, fonts=True):
     out = []
     for line in text.split('\n'):
         if DROP.match(line):
@@ -94,6 +94,8 @@ def fix(text):
         out.append(line)
     text = '\n'.join(out)
     for pattern, repl in RULES:
+        if not fonts and (pattern.startswith(FONT) or 'getStringWidth' in pattern or 'FONT_HEIGHT' in pattern):
+            continue
         text = re.sub(pattern, repl, text, flags=re.M)
     text = DEAD_IMPORTS.sub('', text)
     if 'GuiDraw.' in text and 'import buildcraft.lib.gui.GuiDraw;' not in text \
@@ -103,6 +105,9 @@ def fix(text):
 
 
 def main(paths):
+    # --no-font: leave drawString calls alone (code with its own font interface, like the guide's IFontRenderer)
+    fonts = '--no-font' not in paths
+    paths = [p for p in paths if p != '--no-font']
     changed = 0
     total = 0
     for root in paths:
@@ -113,7 +118,7 @@ def main(paths):
             total += 1
             with open(path, encoding='utf-8') as f:
                 text = f.read()
-            new = fix(text)
+            new = fix(text, fonts)
             if new != text:
                 with open(path, 'w', encoding='utf-8', newline='') as f:
                     f.write(new)

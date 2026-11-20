@@ -10,8 +10,6 @@ import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.item.ItemStack;
 
@@ -68,15 +66,11 @@ public class GuideSmelting extends GuidePartItem {
         if (current.page == index) {
             SMELTING_ICON.drawAt(x, y);
             // Render the item
-            GlStateManager.enableRescaleNormal();
-            RenderHelper.enableGUIStandardItemLighting();
 
             drawItemStack(input.get(), x + (int) IN_POS.x, y + (int) IN_POS.y);
             drawItemStack(output.get(), x + (int) OUT_POS.x, y + (int) OUT_POS.y);
             drawItemStack(furnace, x + (int) FURNACE_POS.x, y + (int) FURNACE_POS.y);
 
-            RenderHelper.disableStandardItemLighting();
-            GlStateManager.disableRescaleNormal();
         }
         current = current.nextLine(PIXEL_HEIGHT, height);
         return current;

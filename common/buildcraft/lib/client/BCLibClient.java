@@ -57,7 +57,12 @@ public class BCLibClient {
     public BCLibClient(IEventBus modBus) {
         DetachedRenderer.INSTANCE.addRenderer(RenderMatrixType.FROM_WORLD_ORIGIN, MarkerRenderer.INSTANCE);
         DetachedRenderer.INSTANCE.addRenderer(RenderMatrixType.FROM_WORLD_ORIGIN, DebugRenderHelper.INSTANCE);
-        // TODO(26.3 GUIs+guide batch): the guide page registry and the config change listener.
+        // The guide's page entries come from resource packs (assets/*/compat/buildcraft/guide)
+        buildcraft.lib.script.ReloadableRegistryManager resourceManager =
+            buildcraft.lib.script.ReloadableRegistryManager.RESOURCE_PACKS;
+        buildcraft.api.registry.BuildCraftRegistryManager.managerResourcePacks = resourceManager;
+        resourceManager.registerRegistry(buildcraft.lib.client.guide.GuidePageRegistry.INSTANCE);
+        // TODO(26.3): the config change listener (lib/client/reload) and the config screen.
         BCLibSprites.fmlPreInitClient();
 
         // Stacks in network messages are encoded with the client's registries
@@ -70,6 +75,7 @@ public class BCLibClient {
         };
 
         modBus.addListener(BCLibClient::clientSetup);
+        modBus.addListener(BCLibClient::addReloadListeners);
         modBus.addListener(BCLibClient::textureStitchPost);
         modBus.addListener(BCLibClient::modelBake);
         modBus.addListener(BCLibClient::registerFluidModels);
@@ -80,6 +86,14 @@ public class BCLibClient {
         MessageManager.setHandler(MessageMarker.class, MessageMarker.HANDLER, LogicalSide.CLIENT);
         MessageManager.setHandler(MessageObjectCacheResponse.class, MessageObjectCacheResponse.HANDLER, LogicalSide.CLIENT);
         MessageManager.setHandler(MessageDebugResponse.class, MessageDebugResponse.HANDLER, LogicalSide.CLIENT);
+        buildcraft.lib.gui.config.GuiConfigManager.loadFromConfigFile();
+    }
+
+    private static void addReloadListeners(net.neoforged.neoforge.client.event.AddClientReloadListenersEvent event) {
+        if (buildcraft.lib.BCLibItems.isGuideEnabled()) {
+            event.addListener(net.minecraft.resources.Identifier.fromNamespaceAndPath(BCLib.MODID, "guide"),
+                buildcraft.lib.client.guide.GuideManager.INSTANCE);
+        }
     }
 
     private static void modelBake(ModelEvent.BakingCompleted event) {

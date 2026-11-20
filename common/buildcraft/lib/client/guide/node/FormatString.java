@@ -68,7 +68,7 @@ public class FormatString {
                 if (format == ChatFormatting.RESET) {
                     lastColour = null;
                     lastMisc.clear();
-                } else if (format.isColor()) {
+                } else if (GuideFormatting.isColor(format)) {
                     lastColour = format;
                 } else {
                     lastMisc.add(format);

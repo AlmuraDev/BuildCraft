@@ -9,8 +9,6 @@ package buildcraft.lib.client.guide.parts.recipe;
 import java.util.Arrays;
 import java.util.Collections;
 
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 
 import buildcraft.lib.client.guide.GuiGuide;
 import buildcraft.lib.client.guide.parts.GuidePartItem;
@@ -76,8 +74,6 @@ public class GuideAssembly extends GuidePartItem {
         if (current.page == index) {
             INPUT_LIST.drawAt(x, y);
             // Render the item
-            GlStateManager.enableRescaleNormal();
-            RenderHelper.enableGUIStandardItemLighting();
             for (int i = 0; i < input.length; i++) {
                 GuiRectangle rect = ITEM_POSITION[i];
                 drawItemStack(input[i].get(), x + (int) rect.x, y + (int) rect.y);
@@ -89,8 +85,6 @@ public class GuideAssembly extends GuidePartItem {
                 gui.tooltips.add(Collections.singletonList(LocaleUtil.localizeMj(mjCost.get())));
             }
 
-            RenderHelper.disableStandardItemLighting();
-            GlStateManager.disableRescaleNormal();
         }
         current = current.nextLine(PIXEL_HEIGHT, height);
         return current;

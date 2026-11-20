@@ -90,7 +90,8 @@ public class BCLibClientProxy extends BCLibProxy {
 
     @Override
     public void openGuide(@Nullable String bookName) {
-        // TODO(26.3 GUIs+guide batch): open GuiGuide.
+        Minecraft.getInstance().gui.setScreen(bookName == null ? new buildcraft.lib.client.guide.GuiGuide()
+            : new buildcraft.lib.client.guide.GuiGuide(bookName));
     }
 
     @Override
