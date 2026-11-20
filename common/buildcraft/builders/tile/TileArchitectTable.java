@@ -73,6 +73,10 @@ import buildcraft.core.marker.volume.VolumeBox;
 import buildcraft.core.marker.volume.WorldSavedDataVolumeBoxes;
 
 public class TileArchitectTable extends TileBC_Neptune implements ITickable, IDebuggable {
+    public TileArchitectTable(BlockPos pos, BlockState state) {
+        super(pos, state);
+    }
+
     public static final IdAllocator IDS = TileBC_Neptune.IDS.makeChild("architect");
     @SuppressWarnings("WeakerAccess")
     public static final int NET_BOX = IDS.allocId("BOX");
@@ -123,7 +127,7 @@ public class TileArchitectTable extends TileBC_Neptune implements ITickable, IDe
         }
         WorldSavedDataVolumeBoxes volumeBoxes = WorldSavedDataVolumeBoxes.get(world);
         BlockState blockState = world.getBlockState(pos);
-        BlockPos offsetPos = pos.offset(blockState.getValue(BlockArchitectTable.PROP_FACING).getOpposite());
+        BlockPos offsetPos = pos.relative(blockState.getValue(BlockArchitectTable.PROP_FACING).getOpposite());
         VolumeBox volumeBox = volumeBoxes.getVolumeBoxAt(offsetPos);
         BlockEntity tile = world.getBlockEntity(offsetPos);
         if (volumeBox != null) {
@@ -141,7 +145,7 @@ public class TileArchitectTable extends TileBC_Neptune implements ITickable, IDe
                     )
                 )
             );
-            volumeBoxes.setChanged();
+            volumeBoxes.markDirtyAndSync();
             sendNetworkUpdate(NET_BOX);
         } else if (tile instanceof IAreaProvider) {
             IAreaProvider provider = (IAreaProvider) tile;
@@ -172,9 +176,7 @@ public class TileArchitectTable extends TileBC_Neptune implements ITickable, IDe
 
         if (!invSnapshotIn.getStackInSlot(0).isEmpty() && invSnapshotOut.getStackInSlot(0).isEmpty() && isValid) {
             if (!scanning) {
-                snapshotType = ItemSnapshot.EnumItemSnapshotType.getFromStack(
-                    invSnapshotIn.getStackInSlot(0)
-                ).snapshotType;
+                snapshotType = ItemSnapshot.getType(invSnapshotIn.getStackInSlot(0));
                 int size = box.size().getX() * box.size().getY() * box.size().getZ();
                 size /= snapshotType.maxPerTick;
                 deltaProgress.addDelta(0, size, 1);
@@ -275,7 +277,7 @@ public class TileArchitectTable extends TileBC_Neptune implements ITickable, IDe
         Snapshot snapshot = Snapshot.create(snapshotType);
         snapshot.size = box.size();
         snapshot.facing = facing;
-        snapshot.offset = box.min().subtract(pos.offset(facing.getOpposite()));
+        snapshot.offset = box.min().subtract(pos.relative(facing.getOpposite()));
         if (snapshot instanceof Template) {
             ((Template) snapshot).data = templateScannedBlocks;
         }
@@ -298,7 +300,7 @@ public class TileArchitectTable extends TileBC_Neptune implements ITickable, IDe
                 snapshotType,
                 new Header(
                     snapshot.key,
-                    getOwner().getId(),
+                    getOwner().id(),
                     new Date(),
                     name
                 )
@@ -309,7 +311,7 @@ public class TileArchitectTable extends TileBC_Neptune implements ITickable, IDe
         blueprintScannedEntities.clear();
         boxIterator = null;
         sendNetworkUpdate(NET_RENDER_DATA);
-        AdvancementUtil.unlockAdvancement(getOwner().getId(), ADVANCEMENT);
+        AdvancementUtil.unlockAdvancement(getOwner().id(), ADVANCEMENT);
     }
 
     @Override
@@ -385,16 +387,10 @@ public class TileArchitectTable extends TileBC_Neptune implements ITickable, IDe
 
     // Rendering
 
+    /** The box this tile's renderer draws in. */
     @Nonnull
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public AABB getRenderBoundingBox() {
+    public AABB getRenderBox() {
         return BoundingBoxUtil.makeFrom(pos, box);
     }
 
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public double getMaxRenderDistanceSquared() {
-        return Double.MAX_VALUE;
-    }
 }

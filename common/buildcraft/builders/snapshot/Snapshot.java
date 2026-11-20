@@ -133,17 +133,17 @@ public abstract class Snapshot {
     public CompoundTag serializeNBT() {
         CompoundTag nbt = new CompoundTag();
         nbt.put("key", key.serializeNBT());
-        nbt.put("size", NbtUtils.createPosTag(size));
+        nbt.put("size", NBTUtilBC.writeLegacyPosTag(size));
         nbt.put("facing", NBTUtilBC.writeEnum(facing));
-        nbt.put("offset", NbtUtils.createPosTag(offset));
+        nbt.put("offset", NBTUtilBC.writeLegacyPosTag(offset));
         return nbt;
     }
 
     public void deserializeNBT(CompoundTag nbt) throws InvalidInputDataException {
         key = new Key(nbt.getCompoundOrEmpty("key"));
-        size = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("size"));
+        size = NBTUtilBC.readLegacyPosTag(nbt.getCompoundOrEmpty("size"));
         facing = NBTUtilBC.readEnum(nbt.get("facing"), Direction.class);
-        offset = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("offset"));
+        offset = NBTUtilBC.readLegacyPosTag(nbt.getCompoundOrEmpty("offset"));
     }
 
     abstract public Snapshot copy();
@@ -256,7 +256,7 @@ public abstract class Snapshot {
         @SuppressWarnings("WeakerAccess")
         public Header(CompoundTag nbt) {
             key = new Key(nbt.getCompoundOrEmpty("key"));
-            owner = nbt.getUniqueId("owner");
+            owner = NBTUtilBC.getLegacyUniqueId(nbt, "owner");
             created = new Date(nbt.getLongOr("created", 0L));
             name = nbt.getStringOr("name", "");
         }
@@ -272,7 +272,7 @@ public abstract class Snapshot {
         public CompoundTag serializeNBT() {
             CompoundTag nbt = new CompoundTag();
             nbt.put("key", key.serializeNBT());
-            nbt.setUniqueId("owner", owner);
+            NBTUtilBC.putLegacyUniqueId(nbt, "owner", owner);
             nbt.putLong("created", created.getTime());
             nbt.putString("name", name);
             return nbt;
@@ -286,7 +286,7 @@ public abstract class Snapshot {
         }
 
         public Player getOwnerPlayer(Level world) {
-            return world.getPlayerEntityByUUID(owner);
+            return world.getPlayerByUUID(owner);
         }
 
         @Override
@@ -324,7 +324,7 @@ public abstract class Snapshot {
 
         protected BuildingInfo(BlockPos basePos, Rotation rotation) {
             this.basePos = basePos;
-            this.offsetPos = basePos.add(offset.rotate(rotation));
+            this.offsetPos = basePos.offset(offset.rotate(rotation));
             this.rotation = rotation;
             this.box.extendToEncompass(toWorld(BlockPos.ZERO));
             this.box.extendToEncompass(toWorld(size.subtract(VecUtil.POS_ONE)));
@@ -333,7 +333,7 @@ public abstract class Snapshot {
         public BlockPos toWorld(BlockPos blockPos) {
             return blockPos
                 .rotate(rotation)
-                .add(offsetPos);
+                .offset(offsetPos);
         }
 
         public BlockPos fromWorld(BlockPos blockPos) {

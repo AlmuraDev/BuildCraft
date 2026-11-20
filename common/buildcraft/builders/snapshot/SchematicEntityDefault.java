@@ -6,6 +6,9 @@
 
 package buildcraft.builders.snapshot;
 
+import buildcraft.lib.misc.WorldDataUtil;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.decoration.HangingEntity;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -20,8 +23,6 @@ import javax.annotation.Nonnull;
 import org.apache.commons.lang3.tuple.Pair;
 
 import net.minecraft.world.entity.Entity;
-import net.minecraft.entity.EntityHanging;
-import net.minecraft.entity.EntityList;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.CompoundTag;
@@ -50,12 +51,13 @@ public class SchematicEntityDefault implements ISchematicEntity {
     private Rotation entityRotation = Rotation.NONE;
 
     public static boolean predicate(SchematicEntityContext context) {
-        Identifier registryName = EntityList.getKey(context.entity);
-        return registryName != null &&
-            RulesLoader.READ_DOMAINS.contains(registryName.getResourceDomain()) &&
+        Identifier registryName = BuiltInRegistries.ENTITY_TYPE.getKey(context.entity.getType());
+        CompoundTag nbt = WorldDataUtil.saveEntity(context.entity);
+        return nbt != null &&
+            RulesLoader.READ_DOMAINS.contains(registryName.getNamespace()) &&
             RulesLoader.getRules(
-                EntityList.getKey(context.entity),
-                context.entity.serializeNBT()
+                registryName,
+                nbt
             )
                 .stream()
                 .anyMatch(rule -> rule.capture);
@@ -63,14 +65,17 @@ public class SchematicEntityDefault implements ISchematicEntity {
 
     @Override
     public void init(SchematicEntityContext context) {
-        entityNbt = context.entity.serializeNBT();
-        pos = context.entity.getPositionVector().subtract(new Vec3(context.basePos));
-        if (context.entity instanceof EntityHanging) {
-            EntityHanging entityHanging = (EntityHanging) context.entity;
-            hangingPos = entityHanging.getHangingPosition().subtract(context.basePos);
-            hangingFacing = entityHanging.getHorizontalFacing();
+        entityNbt = WorldDataUtil.saveEntity(context.entity);
+        if (entityNbt == null) {
+            entityNbt = new CompoundTag();
+        }
+        pos = context.entity.position().subtract(Vec3.atLowerCornerOf(context.basePos));
+        if (context.entity instanceof HangingEntity) {
+            HangingEntity entityHanging = (HangingEntity) context.entity;
+            hangingPos = entityHanging.getPos().subtract(context.basePos);
+            hangingFacing = entityHanging.getDirection();
         } else {
-            hangingPos = new BlockPos(pos);
+            hangingPos = BlockPos.containing(pos);
             hangingFacing = Direction.NORTH;
         }
     }
@@ -122,7 +127,7 @@ public class SchematicEntityDefault implements ISchematicEntity {
         schematicEntity.pos = RotationUtil.rotateVec3d(pos, rotation);
         schematicEntity.hangingPos = hangingPos.rotate(rotation);
         schematicEntity.hangingFacing = rotation.rotate(hangingFacing);
-        schematicEntity.entityRotation = entityRotation.add(rotation);
+        schematicEntity.entityRotation = entityRotation.getRotated(rotation);
         return schematicEntity;
     }
 
@@ -139,16 +144,16 @@ public class SchematicEntityDefault implements ISchematicEntity {
             .reduce(NBTUtilBC::merge)
             .map(CompoundTag.class::cast)
             .orElse(null);
-        Vec3 placePos = new Vec3(basePos).add(pos);
-        BlockPos placeHangingPos = basePos.add(hangingPos);
+        Vec3 placePos = Vec3.atLowerCornerOf(basePos).add(pos);
+        BlockPos placeHangingPos = basePos.offset(hangingPos);
         CompoundTag newEntityNbt = new CompoundTag();
         entityNbt.keySet().stream()
             .map(key -> Pair.of(key, entityNbt.get(key)))
             .forEach(kv -> newEntityNbt.put(kv.getKey(), kv.getValue()));
         newEntityNbt.put("Pos", NBTUtilBC.writeVec3d(placePos));
-        newEntityNbt.setUniqueId("UUID", UUID.randomUUID());
+        NBTUtilBC.putLegacyUniqueId(newEntityNbt, "UUID", UUID.randomUUID());
         boolean rotate = false;
-        if (Stream.of("TileX", "TileY", "TileZ", "Facing").allMatch(newEntityNbt::hasKey)) {
+        if (Stream.of("TileX", "TileY", "TileZ", "Facing").allMatch(newEntityNbt::contains)) {
             newEntityNbt.putInt("TileX", placeHangingPos.getX());
             newEntityNbt.putInt("TileY", placeHangingPos.getY());
             newEntityNbt.putInt("TileZ", placeHangingPos.getZ());
@@ -156,20 +161,20 @@ public class SchematicEntityDefault implements ISchematicEntity {
         } else {
             rotate = true;
         }
-        Entity entity = EntityList.createEntityFromNBT(
+        Entity entity = WorldDataUtil.createEntity(
+            world,
             replaceNbt != null
                 ? (CompoundTag) NBTUtilBC.merge(newEntityNbt, replaceNbt)
-                : newEntityNbt,
-            world
-        );
+                : newEntityNbt
+        ).orElse(null);
         if (entity != null) {
             if (rotate) {
-                entity.setLocationAndAngles(
+                entity.snapTo(
                     placePos.x,
                     placePos.y,
                     placePos.z,
-                    entity.rotationYaw + (entity.rotationYaw - entity.getRotatedYaw(entityRotation)),
-                    entity.rotationPitch
+                    entity.getYRot() + (entity.getYRot() - entity.rotate(entityRotation)),
+                    entity.getXRot()
                 );
             }
             world.addFreshEntity(entity);
@@ -187,7 +192,7 @@ public class SchematicEntityDefault implements ISchematicEntity {
         CompoundTag nbt = new CompoundTag();
         nbt.put("entityNbt", entityNbt);
         nbt.put("pos", NBTUtilBC.writeVec3d(pos));
-        nbt.put("hangingPos", NbtUtils.createPosTag(hangingPos));
+        nbt.put("hangingPos", NBTUtilBC.writeLegacyPosTag(hangingPos));
         nbt.put("hangingFacing", NBTUtilBC.writeEnum(hangingFacing));
         nbt.put("entityRotation", NBTUtilBC.writeEnum(entityRotation));
         return nbt;
@@ -197,7 +202,7 @@ public class SchematicEntityDefault implements ISchematicEntity {
     public void deserializeNBT(CompoundTag nbt) throws InvalidInputDataException {
         entityNbt = nbt.getCompoundOrEmpty("entityNbt");
         pos = NBTUtilBC.readVec3d(nbt.get("pos"));
-        hangingPos = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("hangingPos"));
+        hangingPos = NBTUtilBC.readLegacyPosTag(nbt.getCompoundOrEmpty("hangingPos"));
         hangingFacing = NBTUtilBC.readEnum(nbt.get("hangingFacing"), Direction.class);
         entityRotation = NBTUtilBC.readEnum(nbt.get("entityRotation"), Rotation.class);
     }

@@ -6,6 +6,9 @@
 
 package buildcraft.builders.snapshot;
 
+import buildcraft.lib.misc.NBTUtilBC;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.registries.BuiltInRegistries;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -33,27 +36,24 @@ public class ItemStackRef {
     }
 
     public ItemStack get(Tag nbt) {
+        // 26.3 items have no damage variants, so "meta" is ignored; the tag becomes the stack's custom data
         ItemStack itemStack = new ItemStack(
             Objects.requireNonNull(
-                Item.getByNameOrId(
+                BuiltInRegistries.ITEM.getValue(Identifier.parse(
                     item
                         .get(nbt)
                         .orElseThrow(NullPointerException::new)
-                        .getString()
-                )
+                        .value()
+                ))
             ),
             Optional.ofNullable(amount)
                 .flatMap(ref -> ref.get(nbt))
-                .map(IntTag::getInt)
-                .orElse(1),
-            Optional.ofNullable(meta)
-                .flatMap(ref -> ref.get(nbt))
-                .map(IntTag::getInt)
-                .orElse(0)
+                .map(IntTag::intValue)
+                .orElse(1)
         );
         Optional.ofNullable(tagCompound)
             .flatMap(ref -> ref.get(nbt))
-            .ifPresent(itemStack::setTagCompound);
+            .ifPresent(tag -> NBTUtilBC.setItemData(itemStack, tag));
         return itemStack;
     }
 }

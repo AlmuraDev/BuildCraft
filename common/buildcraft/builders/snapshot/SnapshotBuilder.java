@@ -6,6 +6,7 @@
 
 package buildcraft.builders.snapshot;
 
+import buildcraft.api.core.NbtStacks;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -63,7 +64,7 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
     protected final T tile;
     private final WorldEventListenerAdapter worldEventListener = new WorldEventListenerAdapter() {
         @Override
-        public void notifyBlockUpdate(@Nonnull Level world,
+        public void sendBlockUpdated(@Nonnull Level world,
                                       @Nonnull BlockPos pos,
                                       @Nonnull BlockState oldState,
                                       @Nonnull BlockState newState,
@@ -167,7 +168,7 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
     }
 
     public void updateSnapshot() {
-        tile.getWorldBC().profiler.startSection("init");
+        net.minecraft.util.profiling.Profiler.get().push("init");
         checkResults = new byte[
             getBuildingInfo().box.size().getX() *
                 getBuildingInfo().box.size().getY() *
@@ -204,7 +205,7 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
             )))
             .mapToInt(this::posToIndex)
             .toArray();
-        tile.getWorldBC().profiler.endSection();
+        net.minecraft.util.profiling.Profiler.get().pop();
     }
 
     public void resourcesChanged() {
@@ -276,17 +277,17 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
 
         boolean checkResultsChanged = false;
 
-        tile.getWorldBC().profiler.startSection("scan");
+        net.minecraft.util.profiling.Profiler.get().push("scan");
         for (int i = 0; i < CHECKS_PER_TICK; i++) {
             if (check(indexToPos(currentCheckIndex))) {
                 checkResultsChanged = true;
             }
             currentCheckIndex = (currentCheckIndex + 1) % checkOrder.length;
         }
-        tile.getWorldBC().profiler.endSection();
+        net.minecraft.util.profiling.Profiler.get().pop();
 
-        tile.getWorldBC().profiler.startSection("remove tasks");
-        tile.getWorldBC().profiler.startSection("break");
+        net.minecraft.util.profiling.Profiler.get().push("remove tasks");
+        net.minecraft.util.profiling.Profiler.get().push("break");
         for (Iterator<BreakTask> iterator = breakTasks.iterator(); iterator.hasNext(); ) {
             BreakTask breakTask = iterator.next();
             if (checkResults[posToIndex(breakTask.pos)] == CHECK_RESULT_CORRECT) {
@@ -294,8 +295,8 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
                 cancelBreakTask(breakTask);
             }
         }
-        tile.getWorldBC().profiler.endSection();
-        tile.getWorldBC().profiler.startSection("place");
+        net.minecraft.util.profiling.Profiler.get().pop();
+        net.minecraft.util.profiling.Profiler.get().push("place");
         for (Iterator<PlaceTask> iterator = placeTasks.iterator(); iterator.hasNext(); ) {
             PlaceTask placeTask = iterator.next();
             if (checkResults[posToIndex(placeTask.pos)] == CHECK_RESULT_CORRECT) {
@@ -303,13 +304,13 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
                 cancelPlaceTask(placeTask);
             }
         }
-        tile.getWorldBC().profiler.endSection();
-        tile.getWorldBC().profiler.endSection();
+        net.minecraft.util.profiling.Profiler.get().pop();
+        net.minecraft.util.profiling.Profiler.get().pop();
 
         boolean isDone = true;
 
-        tile.getWorldBC().profiler.startSection("add tasks");
-        tile.getWorldBC().profiler.startSection("break");
+        net.minecraft.util.profiling.Profiler.get().push("add tasks");
+        net.minecraft.util.profiling.Profiler.get().push("break");
         if (tile.canExcavate()) {
             Set<Integer> breakTasksIndexes = breakTasks.stream()
                 .map(breakTask -> posToIndex(breakTask.pos))
@@ -335,8 +336,8 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
         } else {
             leftToBreak = 0;
         }
-        tile.getWorldBC().profiler.endSection();
-        tile.getWorldBC().profiler.startSection("place");
+        net.minecraft.util.profiling.Profiler.get().pop();
+        net.minecraft.util.profiling.Profiler.get().push("place");
         {
             Set<Integer> placeTasksIndexes = placeTasks.stream()
                 .map(placeTask -> posToIndex(placeTask.pos))
@@ -373,10 +374,10 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
                     .forEach(placeTasks::add);
             }
         }
-        tile.getWorldBC().profiler.endSection();
-        tile.getWorldBC().profiler.endSection();
+        net.minecraft.util.profiling.Profiler.get().pop();
+        net.minecraft.util.profiling.Profiler.get().pop();
 
-        tile.getWorldBC().profiler.startSection("do tasks");
+        net.minecraft.util.profiling.Profiler.get().push("do tasks");
         long max = Math.min(
             (long) (
                 MAX_POWER_PER_TICK *
@@ -385,7 +386,7 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
             ),
             MAX_POWER_PER_TICK
         );
-        tile.getWorldBC().profiler.startSection("break");
+        net.minecraft.util.profiling.Profiler.get().push("break");
         if (!breakTasks.isEmpty()) {
             for (Iterator<BreakTask> iterator = breakTasks.iterator(); iterator.hasNext(); ) {
                 BreakTask breakTask = iterator.next();
@@ -401,8 +402,8 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
                     )
                 );
                 if (breakTask.power >= target) {
-                    tile.getWorldBC().profiler.startSection("work");
-                    tile.getWorldBC().sendBlockBreakProgress(
+                    net.minecraft.util.profiling.Profiler.get().push("work");
+                    tile.getWorldBC().destroyBlockProgress(
                         breakTask.pos.hashCode(),
                         breakTask.pos,
                         -1
@@ -413,7 +414,7 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
                         new ItemStack(Items.DIAMOND_PICKAXE),
                         tile.getOwner()
                     );
-                    tile.getWorldBC().profiler.endSection();
+                    net.minecraft.util.profiling.Profiler.get().pop();
                     if (!stacks.isPresent()) {
                         cancelBreakTask(breakTask);
                     }
@@ -422,18 +423,18 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
                     }
                     iterator.remove();
                 } else {
-                    tile.getWorldBC().profiler.startSection("work");
-                    tile.getWorldBC().sendBlockBreakProgress(
+                    net.minecraft.util.profiling.Profiler.get().push("work");
+                    tile.getWorldBC().destroyBlockProgress(
                         breakTask.pos.hashCode(),
                         breakTask.pos,
                         (int) ((breakTask.power * 9) / target)
                     );
-                    tile.getWorldBC().profiler.endSection();
+                    net.minecraft.util.profiling.Profiler.get().pop();
                 }
             }
         }
-        tile.getWorldBC().profiler.endSection();
-        tile.getWorldBC().profiler.startSection("place");
+        net.minecraft.util.profiling.Profiler.get().pop();
+        net.minecraft.util.profiling.Profiler.get().push("place");
         if (!placeTasks.isEmpty()) {
             for (Iterator<PlaceTask> iterator = placeTasks.iterator(); iterator.hasNext(); ) {
                 PlaceTask placeTask = iterator.next();
@@ -446,11 +447,11 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
                     )
                 );
                 if (placeTask.power >= target) {
-                    tile.getWorldBC().profiler.startSection("work");
+                    net.minecraft.util.profiling.Profiler.get().push("work");
                     if (!doPlaceTask(placeTask)) {
                         cancelPlaceTask(placeTask);
                     }
-                    tile.getWorldBC().profiler.endSection();
+                    net.minecraft.util.profiling.Profiler.get().pop();
                     if (check(placeTask.pos)) {
                         checkResultsChanged = true;
                     }
@@ -458,8 +459,8 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
                 }
             }
         }
-        tile.getWorldBC().profiler.endSection();
-        tile.getWorldBC().profiler.endSection();
+        net.minecraft.util.profiling.Profiler.get().pop();
+        net.minecraft.util.profiling.Profiler.get().pop();
 
         if (checkResultsChanged) {
             afterChecks();
@@ -561,7 +562,7 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
 
         @SuppressWarnings("WeakerAccess")
         public BreakTask(CompoundTag nbt) {
-            pos = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("pos"));
+            pos = NBTUtilBC.readLegacyPosTag(nbt.getCompoundOrEmpty("pos"));
             power = nbt.getLongOr("power", 0L);
         }
 
@@ -581,7 +582,7 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
 
         public CompoundTag writeToNBT() {
             CompoundTag nbt = new CompoundTag();
-            nbt.put("pos", NbtUtils.createPosTag(pos));
+            nbt.put("pos", NBTUtilBC.writeLegacyPosTag(pos));
             nbt.putLong("power", power);
             return nbt;
         }
@@ -602,29 +603,24 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
         @SuppressWarnings("WeakerAccess")
         public PlaceTask(PacketBufferBC buffer) {
             pos = MessageUtil.readBlockPos(buffer);
-            items = IntStream.range(0, buffer.readInt()).mapToObj(j -> {
-                try {
-                    return buffer.readItemStack();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }).collect(Collectors.toList());
+            items = IntStream.range(0, buffer.readInt()).mapToObj(j -> buffer.readItemStack())
+                .collect(Collectors.toList());
             power = buffer.readLong();
         }
 
         @SuppressWarnings("WeakerAccess")
         public PlaceTask(CompoundTag nbt) {
-            pos = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("pos"));
+            pos = NBTUtilBC.readLegacyPosTag(nbt.getCompoundOrEmpty("pos"));
             items = ImmutableList.copyOf(
                 NBTUtilBC.readCompoundList(nbt.get("items"))
-                    .map(ItemStack::new)
+                    .map(NbtStacks::readItemStack)
                     .collect(Collectors.toList())
             );
             power = nbt.getLongOr("power", 0L);
         }
 
         public long getTarget() {
-            return (long) (Math.sqrt(pos.distanceSq(tile.getBuilderPos())) * 10 * MjAPI.MJ);
+            return (long) (Math.sqrt(pos.distSqr(tile.getBuilderPos())) * 10 * MjAPI.MJ);
         }
 
         public void writePayload(PacketBufferBC buffer) {
@@ -636,8 +632,8 @@ public abstract class SnapshotBuilder<T extends ITileForSnapshotBuilder> impleme
 
         public CompoundTag writeToNBT() {
             CompoundTag nbt = new CompoundTag();
-            nbt.put("pos", NbtUtils.createPosTag(pos));
-            nbt.put("items", NBTUtilBC.writeCompoundList(items.stream().map(ItemStack::serializeNBT)));
+            nbt.put("pos", NBTUtilBC.writeLegacyPosTag(pos));
+            nbt.put("items", NBTUtilBC.writeCompoundList(items.stream().map(NbtStacks::writeItemStack)));
             nbt.putLong("power", power);
             return nbt;
         }

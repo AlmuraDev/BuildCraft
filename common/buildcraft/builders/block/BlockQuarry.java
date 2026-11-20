@@ -6,25 +6,28 @@
 
 package buildcraft.builders.block;
 
-import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.core.Direction;
-import net.minecraft.resources.Identifier;
-import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 
 import buildcraft.api.properties.BuildCraftProperties;
 
@@ -32,16 +35,15 @@ import buildcraft.lib.block.BlockBCTile_Neptune;
 import buildcraft.lib.block.IBlockWithFacing;
 import buildcraft.lib.misc.AdvancementUtil;
 import buildcraft.lib.misc.CapUtil;
-import buildcraft.lib.tile.TileBC_Neptune;
 
-import buildcraft.builders.BCBuildersBlocks;
-import buildcraft.builders.tile.TileQuarry;
-
+/** The quarry. The CONNECTED properties (sides with an inventory to push into) are real state properties now (1.12.2
+ * worked them out in getActualState), kept up to date by {@link #updateShape}. The frame is removed by the tile
+ * (TileQuarry.onRemove; 1.12.2 did it in breakBlock). */
 public class BlockQuarry extends BlockBCTile_Neptune implements IBlockWithFacing {
     private static final Identifier ADVANCEMENT = Identifier.parse("buildcraftbuilders:shaping_the_world");
 
-    public BlockQuarry(Material material, String id) {
-        super(material, id);
+    public BlockQuarry(BlockBehaviour.Properties properties, String id) {
+        super(properties.sound(SoundType.ANVIL), id);
     }
 
     @Override
@@ -52,26 +54,32 @@ public class BlockQuarry extends BlockBCTile_Neptune implements IBlockWithFacing
 
     private boolean isConnected(BlockGetter world, BlockPos pos, BlockState state, Direction side) {
         Direction facing = side;
-        if (Arrays.asList(Direction.Plane.HORIZONTAL).contains(facing)) {
-            facing = Direction.getHorizontal(
+        if (side.getAxis().isHorizontal()) {
+            facing = Direction.from2DDataValue(
                 side.get2DDataValue() + 2 + state.getValue(getFacingProperty()).get2DDataValue());
         }
-        BlockEntity tile = world.getBlockEntity(pos.offset(facing));
-        return tile != null && tile.hasCapability(CapUtil.CAP_ITEMS, facing.getOpposite());
+        BlockEntity tile = world.getBlockEntity(pos.relative(facing));
+        return tile != null && (CapUtil.getCapability(tile, CapUtil.CAP_ITEMS, facing.getOpposite()) != null);
     }
 
-    @Override
-    public BlockState getActualState(BlockState state, BlockGetter world, BlockPos pos) {
+    private BlockState withConnections(BlockState state, BlockGetter world, BlockPos pos) {
         for (Direction face : Direction.values()) {
-            state =
-                state.setValue(BuildCraftProperties.CONNECTED_MAP.get(face), isConnected(world, pos, state, face));
+            state = state.setValue(BuildCraftProperties.CONNECTED_MAP.get(face), isConnected(world, pos, state, face));
         }
         return state;
     }
 
     @Override
-    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
-        return new TileQuarry();
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        BlockState state = super.getStateForPlacement(context);
+        return state == null ? null : withConnections(state, context.getLevel(), context.getClickedPos());
+    }
+
+    @Override
+    protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess ticks, BlockPos pos,
+        Direction direction, BlockPos neighbourPos, BlockState neighbourState, RandomSource random) {
+        state = super.updateShape(state, world, ticks, pos, direction, neighbourPos, neighbourState, random);
+        return withConnections(state, world, pos);
     }
 
     @Override
@@ -80,27 +88,9 @@ public class BlockQuarry extends BlockBCTile_Neptune implements IBlockWithFacing
     }
 
     @Override
-    public void breakBlock(Level world, BlockPos pos, BlockState state) {
-        BlockEntity tile = world.getBlockEntity(pos);
-        if (tile instanceof TileQuarry) {
-            for (BlockPos blockPos : ((TileQuarry) tile).framePoses) {
-                if (world.getBlockState(blockPos).getBlock() == BCBuildersBlocks.frame) {
-                    world.removeBlock(blockPos, false);
-                }
-            }
-        }
-        super.breakBlock(world, pos, state);
-    }
-
-    @Override
-    public SoundType getSoundType(BlockState state, Level world, BlockPos pos, @Nullable Entity entity) {
-        return SoundType.ANVIL;
-    }
-
-    @Override
-    public void onBlockPlacedBy(Level world, BlockPos pos, BlockState state, LivingEntity placer,
+    public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer,
         ItemStack stack) {
-        super.onBlockPlacedBy(world, pos, state, placer, stack);
+        super.setPlacedBy(world, pos, state, placer, stack);
         if (placer instanceof Player) {
             AdvancementUtil.unlockAdvancement((Player) placer, ADVANCEMENT);
         }

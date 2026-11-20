@@ -1,41 +1,41 @@
-/* Copyright (c) 2016 SpaceToad and the BuildCraft team
- * 
+/*
+ * Copyright (c) 2017 SpaceToad and the BuildCraft team
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not
- * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+ * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/
+ */
+
 package buildcraft.builders.block;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 import java.util.List;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.properties.Property;
 
 import buildcraft.api.enums.EnumOptionalSnapshotType;
 import buildcraft.api.properties.BuildCraftProperties;
 
 import buildcraft.lib.block.BlockBCTile_Neptune;
 import buildcraft.lib.block.IBlockWithFacing;
-import buildcraft.lib.tile.TileBC_Neptune;
 
 import buildcraft.builders.BCBuildersGuis;
 import buildcraft.builders.tile.TileBuilder;
 
+/** The builder. SNAPSHOT_TYPE is a real state property now (1.12.2 read it from the tile in getActualState); the tile
+ * sets it whenever its snapshot changes. */
 public class BlockBuilder extends BlockBCTile_Neptune implements IBlockWithFacing {
     public static final Property<EnumOptionalSnapshotType> SNAPSHOT_TYPE = BuildCraftProperties.SNAPSHOT_TYPE;
 
-    public BlockBuilder(Material material, String id) {
-        super(material, id);
-        setDefaultState(getDefaultState().setValue(SNAPSHOT_TYPE, EnumOptionalSnapshotType.NONE));
+    public BlockBuilder(BlockBehaviour.Properties properties, String id) {
+        super(properties, id);
+        registerDefaultState(defaultBlockState().setValue(SNAPSHOT_TYPE, EnumOptionalSnapshotType.NONE));
     }
-
-    // BlockState
 
     @Override
     protected void addProperties(List<Property<?>> properties) {
@@ -44,31 +44,12 @@ public class BlockBuilder extends BlockBCTile_Neptune implements IBlockWithFacin
     }
 
     @Override
-    public BlockState getActualState(BlockState state, BlockGetter world, BlockPos pos) {
-        BlockEntity tile = world.getBlockEntity(pos);
-        if (tile instanceof TileBuilder) {
-            return state
-                    .setValue(
-                            SNAPSHOT_TYPE,
-                            EnumOptionalSnapshotType.fromNullable(((TileBuilder) tile).snapshotType)
-                    );
-        }
-        return state;
-    }
-
-    // Others
-
-    @Override
-    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
-        return new TileBuilder();
-    }
-
-    @Override
-    public boolean onBlockActivated(Level world, BlockPos pos, BlockState state, Player player, InteractionHand hand, Direction side, float hitX, float hitY, float hitZ) {
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player,
+        BlockHitResult hit) {
         if (!world.isClientSide()) {
             BCBuildersGuis.BUILDER.openGUI(player, pos);
         }
-        return true;
+        return InteractionResult.SUCCESS;
     }
 
     @Override

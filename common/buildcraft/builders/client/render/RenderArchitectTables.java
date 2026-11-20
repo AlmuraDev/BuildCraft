@@ -6,142 +6,76 @@
 
 package buildcraft.builders.client.render;
 
-import buildcraft.lib.debug.IDetachedRenderer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 import org.joml.Vector3f;
 
-import org.lwjgl.opengl.GL11;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.Minecraft;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.core.Direction;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.phys.AABB;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.model.ModelUtil;
-import buildcraft.lib.client.render.DetachedRenderer;
+import buildcraft.lib.client.render.WorldRenderContext;
+import buildcraft.lib.client.sprite.SpriteHolderRegistry;
+import buildcraft.lib.client.sprite.SpriteHolderRegistry.SpriteHolder;
+import buildcraft.lib.debug.IDetachedRenderer;
 
-import buildcraft.builders.BCBuildersConfig;
 import buildcraft.builders.client.ClientArchitectTables;
 
+/** The fading "scanned" overlay on blocks an architect table has just read. 1.12.2 clipped it to the scanned box
+ * with the stencil buffer; 26.3 has no stencil access here, so the overlay is only limited to blocks inside a box. */
 @OnlyIn(Dist.CLIENT)
 public enum RenderArchitectTables implements IDetachedRenderer {
     INSTANCE;
 
+    private static final SpriteHolder SCAN = SpriteHolderRegistry.getHolder("buildcraftbuilders:blocks/scan");
+
     @Override
     public void render(Player player, float partialTicks) {
+        PoseStack stack = WorldRenderContext.poseStack();
+        VertexConsumer buffer = WorldRenderContext.buffer(WorldRenderContext.TRANSLUCENT_BLOCK_ATLAS);
+        if (stack == null || buffer == null || ClientArchitectTables.SCANNED_BLOCKS.isEmpty()) {
+            return;
+        }
+        PoseStack.Pose pose = stack.last();
         List<AABB> boxes = new ArrayList<>(ClientArchitectTables.BOXES.keySet());
-        boxes.sort(
-            Comparator.<AABB>comparingDouble(bb ->
-                bb.getCenter().distanceTo(player.getPositionVector())
-            ).reversed()
-        );
         List<BlockPos> poses = new ArrayList<>(ClientArchitectTables.SCANNED_BLOCKS.keySet());
-        poses.sort(
-            Comparator.<BlockPos>comparingDouble(pos ->
-                new Vec3(pos).distanceTo(player.getPositionVector())
-            ).reversed()
-        );
+        Vec3 eye = player.position();
+        poses.sort(Comparator.<BlockPos>comparingDouble(pos -> Vec3.atLowerCornerOf(pos).distanceTo(eye)).reversed());
 
-        final boolean __STENCIL = BCBuildersConfig.enableStencil && Minecraft.getMinecraft().getFramebuffer().isStencilEnabled();
-
-        for (AABB bb : boxes) {
-            if (__STENCIL) {
-            GL11.glStencilMask(0xff);
-            GL11.glClearStencil(1);
-            GlStateManager.clear(GL11.GL_STENCIL_BUFFER_BIT);
-            GL11.glEnable(GL11.GL_STENCIL_TEST);
-
-            GL11.glStencilFunc(GL11.GL_ALWAYS, 1, 0xFF);
-            GL11.glStencilOp(GL11.GL_ZERO, GL11.GL_ZERO, GL11.GL_REPLACE);
-            GL11.glStencilMask(0xFF);
-            GL11.glDepthMask(false);
-            GL11.glColorMask(false, false, false, false);
-            }
-            BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-            if (__STENCIL) {
-            buffer.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION);
-            bb = bb.grow(0.01);
-            buffer.pos(bb.minX, bb.maxY, bb.minZ).endVertex();
-            buffer.pos(bb.maxX, bb.maxY, bb.minZ).endVertex();
-            buffer.pos(bb.maxX, bb.minY, bb.minZ).endVertex();
-            buffer.pos(bb.minX, bb.minY, bb.minZ).endVertex();
-            buffer.pos(bb.minX, bb.minY, bb.maxZ).endVertex();
-            buffer.pos(bb.maxX, bb.minY, bb.maxZ).endVertex();
-            buffer.pos(bb.maxX, bb.maxY, bb.maxZ).endVertex();
-            buffer.pos(bb.minX, bb.maxY, bb.maxZ).endVertex();
-            buffer.pos(bb.minX, bb.minY, bb.minZ).endVertex();
-            buffer.pos(bb.maxX, bb.minY, bb.minZ).endVertex();
-            buffer.pos(bb.maxX, bb.minY, bb.maxZ).endVertex();
-            buffer.pos(bb.minX, bb.minY, bb.maxZ).endVertex();
-            buffer.pos(bb.minX, bb.maxY, bb.maxZ).endVertex();
-            buffer.pos(bb.maxX, bb.maxY, bb.maxZ).endVertex();
-            buffer.pos(bb.maxX, bb.maxY, bb.minZ).endVertex();
-            buffer.pos(bb.minX, bb.maxY, bb.minZ).endVertex();
-            buffer.pos(bb.minX, bb.minY, bb.maxZ).endVertex();
-            buffer.pos(bb.minX, bb.maxY, bb.maxZ).endVertex();
-            buffer.pos(bb.minX, bb.maxY, bb.minZ).endVertex();
-            buffer.pos(bb.minX, bb.minY, bb.minZ).endVertex();
-            buffer.pos(bb.maxX, bb.minY, bb.minZ).endVertex();
-            buffer.pos(bb.maxX, bb.maxY, bb.minZ).endVertex();
-            buffer.pos(bb.maxX, bb.maxY, bb.maxZ).endVertex();
-            buffer.pos(bb.maxX, bb.minY, bb.maxZ).endVertex();
-            Tessellator.getInstance().draw();
-            GL11.glStencilMask(0x00);
-            GL11.glDepthMask(true);
-            GL11.glColorMask(true, true, true, true);
-            }
-            GlStateManager.disableDepth();
-            if (__STENCIL) {
-            GL11.glStencilFunc(GL11.GL_EQUAL, 1, 0xFF);
-            }
-            GlStateManager.enableBlend();
-            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-            Minecraft.getMinecraft().renderEngine.bindTexture(
-                Identifier.fromNamespaceAndPath("buildcraftbuilders", "textures/blocks/scan.png")
-            );
-            buffer.begin(GL11.GL_QUADS, DefaultVertexFormat.BLOCK);
-            for (BlockPos pos : poses) {
-                if (!bb.intersects(new AABB(pos))) {
-                    continue;
-                }
-                for (Direction face : Direction.values()) {
-                    ModelUtil.createFace(
-                        face,
-                        new Vector3f(pos.getX() + 0.5F, pos.getY() + 0.5F, pos.getZ() + 0.5F),
-                        new Vector3f(0.5F, 0.5F, 0.5F),
-                        new ModelUtil.UvFaceData(0, 0, 1, 1)
-                    )
-                        .lighti(15, 15)
-                        .colouri(
-                            255,
-                            255,
-                            255,
-                            ClientArchitectTables.SCANNED_BLOCKS.get(pos)
-                                * 50
-                                / ClientArchitectTables.START_SCANNED_BLOCK_VALUE
-                        )
-                        .render(buffer);
+        ModelUtil.UvFaceData uvs = new ModelUtil.UvFaceData(SCAN.getInterpU(0), SCAN.getInterpV(0), SCAN.getInterpU(1),
+            SCAN.getInterpV(1));
+        for (BlockPos pos : poses) {
+            AABB block = new AABB(pos);
+            boolean inBox = false;
+            for (AABB box : boxes) {
+                if (box.intersects(block)) {
+                    inBox = true;
+                    break;
                 }
             }
-            Tessellator.getInstance().draw();
-            GlStateManager.disableBlend();
-            GlStateManager.enableDepth();
-            if (__STENCIL) {
-            GL11.glDisable(GL11.GL_STENCIL_TEST);
+            if (!inBox) {
+                continue;
+            }
+            int alpha = ClientArchitectTables.SCANNED_BLOCKS.get(pos) * 50
+                / ClientArchitectTables.START_SCANNED_BLOCK_VALUE;
+            for (Direction face : Direction.values()) {
+                ModelUtil.createFace(face, new Vector3f(pos.getX() + 0.5F, pos.getY() + 0.5F, pos.getZ() + 0.5F),
+                    new Vector3f(0.505F, 0.505F, 0.505F), uvs)
+                    .lighti(15, 15)
+                    .colouri(255, 255, 255, alpha)
+                    .render(buffer, pose, OverlayTexture.NO_OVERLAY);
             }
         }
     }

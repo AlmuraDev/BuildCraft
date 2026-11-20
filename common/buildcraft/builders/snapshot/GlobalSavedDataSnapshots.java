@@ -29,7 +29,6 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import net.minecraft.world.level.Level;
 
-import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.neoforged.fml.LogicalSide;
 
 import buildcraft.lib.misc.data.SingleCache;
@@ -50,7 +49,7 @@ public class GlobalSavedDataSnapshots {
 
     private GlobalSavedDataSnapshots(LogicalSide side) {
         snapshotsFile = new File(
-            FMLCommonHandler.instance().getSavesDirectory().getParentFile(),
+            net.neoforged.fml.loading.FMLPaths.GAMEDIR.get().toFile(),
             "snapshots-" + side.name().toLowerCase(Locale.ROOT)
         );
         if (!snapshotsFile.exists()) {

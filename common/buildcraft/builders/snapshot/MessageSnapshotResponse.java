@@ -51,7 +51,7 @@ public class MessageSnapshotResponse implements IMessage {
         try {
 //            snapshot = Snapshot.readFromNBT(NbtSquisher.expand(buf.readBytes(buf.readInt()).array()));
 //            snapshot = Snapshot.readFromNBT(NbtIo.read(new ByteBufInputStream(buf), NBTSizeTracker.INFINITE));
-            snapshot = Snapshot.readFromNBT(NbtIo.readCompressed(new ByteBufInputStream(buf)));
+            snapshot = Snapshot.readFromNBT(NbtIo.readCompressed(new ByteBufInputStream(buf), net.minecraft.nbt.NbtAccounter.unlimitedHeap()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

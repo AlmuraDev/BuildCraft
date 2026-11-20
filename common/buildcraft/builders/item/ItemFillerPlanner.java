@@ -6,13 +6,14 @@
 
 package buildcraft.builders.item;
 
+import net.minecraft.world.item.Item;
 import buildcraft.builders.addon.AddonFillerPlanner;
 import buildcraft.core.marker.volume.Addon;
 import buildcraft.core.marker.volume.ItemAddon;
 
 public class ItemFillerPlanner extends ItemAddon {
-    public ItemFillerPlanner(String id) {
-        super(id);
+    public ItemFillerPlanner(Item.Properties properties, String id) {
+        super(properties, id);
     }
 
     @Override

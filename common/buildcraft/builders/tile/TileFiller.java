@@ -117,7 +117,8 @@ public class TileFiller extends TileBC_Neptune
     private BuildingInfo buildingInfo;
     public TemplateBuilder builder = new TemplateBuilder(this);
 
-    public TileFiller() {
+    public TileFiller(BlockPos pos, BlockState state) {
+        super(pos, state);
         caps.addProvider(new MjCapabilityHelper(new MjBatteryReceiver(battery)));
         caps.addCapabilityInstance(TilesAPI.CAP_CONTROLLABLE, this, EnumPipePart.VALUES);
     }
@@ -130,7 +131,7 @@ public class TileFiller extends TileBC_Neptune
         }
         BlockState blockState = world.getBlockState(pos);
         WorldSavedDataVolumeBoxes volumeBoxes = WorldSavedDataVolumeBoxes.get(world);
-        BlockPos offsetPos = pos.offset(blockState.getValue(BlockBCBase_Neptune.PROP_FACING).getOpposite());
+        BlockPos offsetPos = pos.relative(blockState.getValue(BlockBCBase_Neptune.PROP_FACING).getOpposite());
         VolumeBox volumeBox = volumeBoxes.getVolumeBoxAt(offsetPos);
         BlockEntity tile = world.getBlockEntity(offsetPos);
         if (volumeBox != null) {
@@ -152,7 +153,7 @@ public class TileFiller extends TileBC_Neptune
                         )
                     )
                 );
-                volumeBoxes.setChanged();
+                volumeBoxes.markDirtyAndSync();
                 addon.updateBuildingInfo();
                 markerBox = false;
             } else {
@@ -169,7 +170,7 @@ public class TileFiller extends TileBC_Neptune
                         )
                     )
                 );
-                volumeBoxes.setChanged();
+                volumeBoxes.markDirtyAndSync();
                 markerBox = false;
             }
         } else if (tile instanceof IAreaProvider) {
@@ -217,14 +218,14 @@ public class TileFiller extends TileBC_Neptune
     }
 
     @Override
-    public void validate() {
-        super.validate();
+    public void clearRemoved() {
+        super.clearRemoved();
         builder.validate();
     }
 
     @Override
-    public void invalidate() {
-        super.invalidate();
+    public void setRemoved() {
+        super.setRemoved();
         builder.invalidate();
     }
 
@@ -346,7 +347,7 @@ public class TileFiller extends TileBC_Neptune
         nbt.put("mode", NBTUtilBC.writeEnum(mode));
         nbt.put("box", box.writeToNBT());
         if (addon != null) {
-            nbt.setUniqueId("addonVolumeBoxId", addon.volumeBox.id);
+            NBTUtilBC.putLegacyUniqueId(nbt, "addonVolumeBoxId", addon.volumeBox.id);
             nbt.put("addonSlot", NBTUtilBC.writeEnum(addon.getSlot()));
         }
         nbt.putBoolean("markerBox", markerBox);
@@ -367,7 +368,7 @@ public class TileFiller extends TileBC_Neptune
         box.initialize(nbt.getCompoundOrEmpty("box"));
         if (nbt.contains("addonSlot")) {
             addon = (AddonFillerPlanner) WorldSavedDataVolumeBoxes.get(world)
-                .getVolumeBoxFromId(nbt.getUniqueId("addonVolumeBoxId"))
+                .getVolumeBoxFromId(NBTUtilBC.getLegacyUniqueId(nbt, "addonVolumeBoxId"))
                 .addons
                 .get(NBTUtilBC.readEnum(nbt.get("addonSlot"), EnumAddonSlot.class));
         }
@@ -381,24 +382,13 @@ public class TileFiller extends TileBC_Neptune
 
     // Rendering
 
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public boolean hasFastRenderer() {
-        return true;
-    }
 
+    /** The box this tile's renderer draws in. */
     @Nonnull
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public AABB getRenderBoundingBox() {
+    public AABB getRenderBox() {
         return BoundingBoxUtil.makeFrom(pos, addon != null ? addon.volumeBox.box : box);
     }
 
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public double getMaxRenderDistanceSquared() {
-        return Double.MAX_VALUE;
-    }
 
     @Override
     public void getDebugInfo(List<String> left, List<String> right, Direction side) {

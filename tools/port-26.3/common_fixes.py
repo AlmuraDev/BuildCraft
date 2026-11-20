@@ -47,6 +47,32 @@ RULES = [
     (r'\bpos\.offset\((direction|face|side|facing|dir|d)\)', r'pos.relative(\1)'),
     (r'\.getPipePos\(\)\.offset\((direction|face|side|facing|dir|d)\)', r'.getPipePos().relative(\1)'),
     (r'\bTextComponentTranslation\b', 'net.minecraft.network.chat.MutableComponent'),
+    # Profilers: 26.3 has one global profiler
+    (r'\b(?:\w+(?:\(\))?\.)*profiler\.startSection\(', 'net.minecraft.util.profiling.Profiler.get().push('),
+    (r'\b(?:\w+(?:\(\))?\.)*profiler\.endStartSection\(', 'net.minecraft.util.profiling.Profiler.get().popPush('),
+    (r'\b(?:\w+(?:\(\))?\.)*profiler\.endSection\(\)', 'net.minecraft.util.profiling.Profiler.get().pop()'),
+    # NBT: keep 1.12.2 layouts
+    (r'\bNbtUtils\.createPosTag\(', 'NBTUtilBC.writeLegacyPosTag('),
+    (r'\bNbtUtils::createPosTag\b', 'NBTUtilBC::writeLegacyPosTag'),
+    (r'\bNbtUtils\.getPosFromTag\(', 'NBTUtilBC.readLegacyPosTag('),
+    (r'\bNbtUtils::getPosFromTag\b', 'NBTUtilBC::readLegacyPosTag'),
+    (r'\bNbtUtils\.writeBlockState\(new CompoundTag\(\), ', 'NbtUtils.writeBlockState('),
+    (r'\bNbtUtils\.readBlockState\((?!net\.minecraft|BuiltInRegistries)',
+     'NbtUtils.readBlockState(net.minecraft.core.registries.BuiltInRegistries.BLOCK, '),
+    (r'\b(\w+)\.getUniqueId\("(\w+)"\)', r'NBTUtilBC.getLegacyUniqueId(\1, "\2")'),
+    (r'\b(\w+)\.setUniqueId\("(\w+)", ', r'NBTUtilBC.putLegacyUniqueId(\1, "\2", '),
+    # Registries
+    (r'\bBuiltInRegistries\.(BLOCK|ITEM)\.getNameForObject\(', r'BuiltInRegistries.\1.getKey('),
+    (r'\bBuiltInRegistries\.(BLOCK|ITEM)::getNameForObject\b', r'BuiltInRegistries.\1::getKey'),
+    (r'\bBuiltInRegistries\.(BLOCK|ITEM)\.getObject\(', r'BuiltInRegistries.\1.getValue('),
+    (r'\bBuiltInRegistries\.(BLOCK|ITEM)::getObject\b', r'BuiltInRegistries.\1::getValue'),
+    # Blocks / states
+    (r'\b[\w.]+?\.(?:getBlock\(\)\.)?hasTileEntity\(([\w.]+)\)', r'\1.hasBlockEntity()'),
+    (r'\.withRotation\(', '.rotate('),
+    (r'\b(fluid|fluidBelow|f)\.getViscosity\(\)', r'\1.getFluidType().getViscosity()'),
+    (r'\.getPlayerEntityByUUID\(', '.getPlayerByUUID('),
+    (r'\bplayer\.swingArm\((\w+)\)', r'player.swing(\1)'),
+    (r'\.sendStatusMessage\(([^;]*), true\);', r'.sendOverlayMessage(\1);'),
 ]
 
 

@@ -6,6 +6,7 @@
 
 package buildcraft.builders.snapshot;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -15,27 +16,15 @@ import java.util.stream.StreamSupport;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.item.ItemBlockSpecial;
 
 public class ItemBlocks {
     private static final List<Item> LIST = new ArrayList<>();
 
     static {
         StreamSupport.stream(BuiltInRegistries.ITEM.spliterator(), false)
-            .filter(item -> item instanceof BlockItem || item instanceof ItemBlockSpecial)
+            // 1.12.2 also listed beds, doors, skulls and signs, which weren't ItemBlocks then; on 26.3 they are
+            .filter(item -> item instanceof BlockItem)
             .forEach(ItemBlocks::add);
-        add(
-            Items.BED,
-            Items.OAK_DOOR,
-            Items.SPRUCE_DOOR,
-            Items.BIRCH_DOOR,
-            Items.JUNGLE_DOOR,
-            Items.ACACIA_DOOR,
-            Items.DARK_OAK_DOOR,
-            Items.IRON_DOOR,
-            Items.SKULL,
-            Items.SIGN
-        );
     }
 
     public static void add(Item... items) {

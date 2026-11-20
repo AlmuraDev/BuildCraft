@@ -320,6 +320,86 @@ def _add_silicon():
 _add_silicon()
 
 
+# ---- Builders ----
+# 1.12.2's Forge blockstates added the frame's connections, the builder's snapshot slot and the quarry's connected side
+# textures as submodels or texture overrides; they become multipart here (the quarry gets one model per face).
+HORIZONTAL_Y = {'north': 0, 'east': 90, 'south': 180, 'west': 270}
+QUARRY_FACE_TEXTURE = {'up': 'top', 'down': 'bottom', 'north': 'front', 'south': 'back', 'east': 'side',
+                       'west': 'side'}
+FRAME_CONNECTION = {'up': (270, 0), 'down': (90, 0), 'east': (0, 90), 'west': (180, 90), 'north': (0, 0),
+                    'south': (180, 0)}
+
+
+def _add_builders():
+    ns = 'buildcraftbuilders'
+    models = MODELS.setdefault(ns, {})
+    states = BLOCKSTATES.setdefault(ns, {})
+    items = ITEMS.setdefault(ns, {})
+    tex_root = os.path.join(ASSETS, ns, 'textures')
+
+    def facing_variants(block_model):
+        return {'variants': {'facing=' + f: _rot(block_model, 0, y) for f, y in HORIZONTAL_Y.items()}}
+
+    states['filler'] = facing_variants('buildcraftbuilders:block/filler/main')
+    states['library'] = facing_variants('buildcraftbuilders:block/library')
+    states['replacer'] = facing_variants('buildcraftbuilders:block/replacer')
+    states['architect'] = {'variants': {
+        'facing=%s,valid=%s' % (f, v): _rot('buildcraftbuilders:block/architect_' + ('on' if v == 'true' else 'off'),
+                                            0, y)
+        for f, y in HORIZONTAL_Y.items() for v in ('true', 'false')}}
+
+    parts = [{'when': {'facing': f}, 'apply': _rot('buildcraftbuilders:block/builder/main', 0, y)}
+             for f, y in HORIZONTAL_Y.items()]
+    for snapshot in ('none', 'blueprint', 'template'):
+        slot = 'empty' if snapshot == 'none' else snapshot
+        parts += [{'when': {'facing': f, 'snapshot_type': snapshot},
+                   'apply': _rot('buildcraftbuilders:block/builder/slot_' + slot, 0, y)}
+                  for f, y in HORIZONTAL_Y.items()]
+    states['builder'] = {'multipart': parts}
+
+    parts = [{'apply': {'model': 'buildcraftbuilders:block/frame/base'}}]
+    parts += [{'when': {'connected_' + f: 'true'}, 'apply': _rot('buildcraftbuilders:block/frame/connection', x, y)}
+              for f, (x, y) in FRAME_CONNECTION.items()]
+    states['frame'] = {'multipart': parts}
+
+    parts = []
+    for face, name in QUARRY_FACE_TEXTURE.items():
+        for conn in ('normal', 'connected'):
+            texture = 'blocks/quarry/%s/%s' % (conn, name)
+            if not os.path.exists(os.path.join(tex_root, texture + '.png')):
+                # 1.12.2 had no connected top texture (it showed the missing texture)
+                texture = 'blocks/quarry/normal/' + name
+            models['block/quarry/%s_%s' % (conn, face)] = _face_model(face, 'buildcraftbuilders:' + texture)
+        for f, y in HORIZONTAL_Y.items():
+            for conn in ('normal', 'connected'):
+                parts.append({'when': {'facing': f, 'connected_' + face: 'true' if conn == 'connected' else 'false'},
+                              'apply': _rot('buildcraftbuilders:block/quarry/%s_%s' % (conn, face), 0, y)})
+    states['quarry'] = {'multipart': parts}
+
+    for name in ('builder', 'filler', 'frame', 'quarry', 'replacer', 'filler_planner'):
+        items[name] = model('buildcraftbuilders:item/' + name)
+    items['architect'] = model('buildcraftbuilders:block/architect_off')
+    items['library'] = model('buildcraftbuilders:block/library')
+
+    def used(clean, dirty):
+        return {'type': 'minecraft:condition', 'property': 'minecraft:has_component',
+                'component': 'minecraft:custom_data', 'on_true': model(dirty), 'on_false': model(clean)}
+
+    items['schematic_single'] = used('buildcraftbuilders:item/schematic_single/clean',
+                                     'buildcraftbuilders:item/schematic_single/used')
+    # Which snapshot a stack is: the buildcraftbuilders:snapshot_type component (no component = blueprint)
+    items['snapshot'] = {
+        'type': 'minecraft:select', 'property': 'minecraft:component', 'component': 'buildcraftbuilders:snapshot_type',
+        'cases': [{'when': 'template', 'model': used('buildcraftbuilders:item/snapshot/template_clean',
+                                                     'buildcraftbuilders:item/snapshot/template_used')}],
+        'fallback': used('buildcraftbuilders:item/snapshot/blueprint_clean',
+                         'buildcraftbuilders:item/snapshot/blueprint_used'),
+    }
+
+
+_add_builders()
+
+
 def write_models_and_states():
     for ns, models in MODELS.items():
         for path, data in models.items():

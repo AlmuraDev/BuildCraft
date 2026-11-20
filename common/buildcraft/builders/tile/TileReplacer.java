@@ -8,6 +8,8 @@ package buildcraft.builders.tile;
 
 import java.util.Date;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.ItemStack;
 import buildcraft.lib.tile.ITickable;
 
@@ -31,27 +33,32 @@ import buildcraft.builders.snapshot.Snapshot;
 import buildcraft.builders.snapshot.Snapshot.Header;
 
 public class TileReplacer extends TileBC_Neptune implements ITickable {
+    public TileReplacer(BlockPos pos, BlockState state) {
+        super(pos, state);
+    }
+
     public static final IdAllocator IDS = TileBC_Neptune.IDS.makeChild("replacer");
 
     public final ItemHandlerSimple invSnapshot = itemManager.addInvHandler(
         "snapshot",
         1,
         (slot, stack) -> stack.getItem() instanceof ItemSnapshot &&
-            ItemSnapshot.EnumItemSnapshotType.getFromStack(stack) == ItemSnapshot.EnumItemSnapshotType.BLUEPRINT_USED,
+            ItemSnapshot.getType(stack) == buildcraft.api.enums.EnumSnapshotType.BLUEPRINT
+                && ((ItemSnapshot) stack.getItem()).getHeader(stack) != null,
         ItemHandlerManager.EnumAccess.NONE
     );
     public final ItemHandlerSimple invSchematicFrom = itemManager.addInvHandler(
         "schematicFrom",
         1,
         (slot, stack) -> stack.getItem() instanceof ItemSchematicSingle &&
-            stack.getItemDamage() == ItemSchematicSingle.DAMAGE_USED,
+            ItemSchematicSingle.isUsed(stack),
         ItemHandlerManager.EnumAccess.NONE
     );
     public final ItemHandlerSimple invSchematicTo = itemManager.addInvHandler(
         "schematicTo",
         1,
         (slot, stack) -> stack.getItem() instanceof ItemSchematicSingle &&
-            stack.getItemDamage() == ItemSchematicSingle.DAMAGE_USED,
+            ItemSchematicSingle.isUsed(stack),
         ItemHandlerManager.EnumAccess.NONE
     );
 
@@ -87,7 +94,7 @@ public class TileReplacer extends TileBC_Neptune implements ITickable {
                                 EnumSnapshotType.BLUEPRINT,
                                 new Header(
                                     blueprint.key,
-                                    getOwner().getId(),
+                                    getOwner().id(),
                                     new Date(),
                                     header.name
                                 )

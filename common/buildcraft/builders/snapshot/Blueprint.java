@@ -110,7 +110,7 @@ public class Blueprint extends Snapshot {
                 for (int x = 0; x < size.getX(); x++) {
                     data[posToIndex(x, y, z)] = serializedDataList == null
                         ? serializedDataIntArray[posToIndex(x, y, z)]
-                        : serializedDataList.getIntAt(posToIndex(x, y, z));
+                        : serializedDataList.getIntOr(posToIndex(x, y, z), 0);
                 }
             }
         }

@@ -1,5 +1,7 @@
 package buildcraft.builders;
 
+import net.minecraft.world.level.block.VineBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
@@ -8,10 +10,7 @@ import java.util.stream.StreamSupport;
 
 import javax.annotation.Nonnull;
 
-import net.minecraft.block.BlockBanner;
-import net.minecraft.block.BlockVine;
 import net.minecraft.world.item.DyeColor;
-import net.minecraft.item.ItemBanner;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
@@ -33,8 +32,9 @@ public class BCBuildersSchematics {
         registerSchematicFactory("default", 100, SchematicBlockDefault::predicate, SchematicBlockDefault::new);
         registerSchematicFactory("fluid", 200, SchematicBlockFluid::predicate, SchematicBlockFluid::new);
 
-        registerSchematicFactory("banner", 300, c -> c.block instanceof BlockBanner, BCBuildersSchematics::getBanner);
-        registerSchematicFactory("vine", 300, c -> c.block instanceof BlockVine, BCBuildersSchematics::getVine);
+        // 1.12.2 also had a "banner" schematic that required a banner with the placed one's patterns; 26.3 banners use
+        // the default schematic (a plain banner). TODO(26.3): keep the patterns (banner_patterns component).
+        registerSchematicFactory("vine", 300, c -> c.block instanceof VineBlock, BCBuildersSchematics::getVine);
 
         SchematicEntityFactoryRegistry.registerFactory("default", 100, SchematicEntityDefault::predicate,
             SchematicEntityDefault::new);
@@ -45,26 +45,15 @@ public class BCBuildersSchematics {
         SchematicBlockFactoryRegistry.registerFactory(name, priority, predicate, supplier);
     }
 
-    private static SchematicBlockDefault getBanner() {
-        return new SchematicBlockDefault() {
-            @Nonnull
-            @Override
-            public List<ItemStack> computeRequiredItems() {
-                return Collections.singletonList(ItemBanner.makeBanner(
-                    DyeColor.byDyeDamage(tileNbt.getInteger("Base")), tileNbt.getTagList("Patterns", 10)));
-            }
-        };
-    }
-
     private static SchematicBlockDefault getVine() {
         return new SchematicBlockDefault() {
             @Override
             public boolean isReadyToBuild(Level world, BlockPos blockPos) {
                 return super.isReadyToBuild(world, blockPos)
-                    && (world.getBlockState(blockPos.up()).getBlock() instanceof BlockVine
-                        || StreamSupport.stream(Direction.Plane.HORIZONTAL.spliterator(), false).map(blockPos::offset)
+                    && (world.getBlockState(blockPos.above()).getBlock() instanceof VineBlock
+                        || Direction.Plane.HORIZONTAL.stream().map(blockPos::relative)
                             .map(world::getBlockState)
-                            .anyMatch(state -> state.isFullCube() && state.getMaterial().blocksMovement()));
+                            .anyMatch(BlockState::isSolid));
             }
         };
     }

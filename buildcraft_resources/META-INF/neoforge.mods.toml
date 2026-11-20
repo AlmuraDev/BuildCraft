@@ -119,3 +119,20 @@ type = "optional"
 versionRange = "[${version}]"
 ordering = "AFTER"
 side = "BOTH"
+
+[[mods]]
+modId = "buildcraftbuilders"
+version = "${version}"
+displayName = "BuildCraft Builders"
+bannerFile = "assets/buildcraft/logo.png"
+credits = "Created by SpaceToad"
+authors = "SpaceToad, BuildCraft Team, AlmuraDev"
+displayURL = "https://www.mod-buildcraft.com/"
+description = '''Quarries, fillers, builders, architect tables and blueprints.'''
+
+[[dependencies.buildcraftbuilders]]
+modId = "buildcraftcore"
+type = "required"
+versionRange = "[${version}]"
+ordering = "AFTER"
+side = "BOTH"

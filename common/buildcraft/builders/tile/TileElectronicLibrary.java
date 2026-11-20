@@ -19,6 +19,8 @@ import com.google.common.primitives.Bytes;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.ItemStack;
 import buildcraft.lib.tile.ITickable;
 
@@ -47,6 +49,10 @@ import buildcraft.builders.snapshot.GlobalSavedDataSnapshots;
 import buildcraft.builders.snapshot.Snapshot;
 
 public class TileElectronicLibrary extends TileBC_Neptune implements ITickable {
+    public TileElectronicLibrary(BlockPos pos, BlockState state) {
+        super(pos, state);
+    }
+
     public static final IdAllocator IDS = TileBC_Neptune.IDS.makeChild("library");
     @SuppressWarnings("WeakerAccess")
     public static final int NET_DOWN = IDS.allocId("DOWN");
@@ -57,7 +63,7 @@ public class TileElectronicLibrary extends TileBC_Neptune implements ITickable {
         "downIn",
         1,
         (slot, stack) -> stack.getItem() instanceof ItemSnapshot &&
-            ItemSnapshot.EnumItemSnapshotType.getFromStack(stack).used,
+            (BCBuildersItems.snapshot.getHeader(stack) != null),
         StackInsertionFunction.getInsertionFunction(1),
         EnumAccess.INSERT,
         EnumPipePart.VALUES
@@ -227,7 +233,7 @@ public class TileElectronicLibrary extends TileBC_Neptune implements ITickable {
 
                             private void write(boolean last) throws IOException {
                                 MessageManager.sendToServer(createMessage(NET_UP, localBuffer -> {
-                                    localBuffer.writeUUID(ctx.getClientHandler().getGameProfile().getId());
+                                    localBuffer.writeUUID(ctx.player().getUUID());
                                     selected.writeToByteBuf(localBuffer);
                                     localBuffer.writeBoolean(last);
                                     localBuffer.writeByteArray(buf);

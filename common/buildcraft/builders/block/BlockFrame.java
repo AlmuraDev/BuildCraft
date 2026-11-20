@@ -6,39 +6,44 @@
 
 package buildcraft.builders.block;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
-import javax.annotation.Nullable;
-
-import net.minecraft.world.level.block.Block;
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.ItemStack;
-import buildcraft.api.core.BCRenderLayer;
-import net.minecraft.core.Direction;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import buildcraft.api.properties.BuildCraftProperties;
 
 import buildcraft.lib.block.BlockBCBase_Neptune;
-import buildcraft.lib.misc.RotationUtil;
 
+/** The quarry frame. It drops nothing (no loot table). The CONNECTED properties are real state properties now (1.12.2
+ * worked them out in getActualState), kept up to date by {@link #updateShape}. */
 public class BlockFrame extends BlockBCBase_Neptune {
     public static final Map<Direction, Property<Boolean>> CONNECTED_MAP = BuildCraftProperties.CONNECTED_MAP;
 
-    public static final AABB BASE_AABB = new AABB(4 / 16D, 4 / 16D, 4 / 16D, 12 / 16D, 12 / 16D, 12 / 16D);
-    public static final AABB CONNECTION_AABB = new AABB(4 / 16D, 0 / 16D, 4 / 16D, 12 / 16D, 4 / 16D, 12 / 16D);
+    private static final VoxelShape BASE = Block.box(4, 4, 4, 12, 12, 12);
+    private static final Map<Direction, VoxelShape> CONNECTIONS = Map.of(
+        Direction.DOWN, Block.box(4, 0, 4, 12, 4, 12),
+        Direction.UP, Block.box(4, 12, 4, 12, 16, 12),
+        Direction.NORTH, Block.box(4, 4, 0, 12, 12, 4),
+        Direction.SOUTH, Block.box(4, 4, 12, 12, 12, 16),
+        Direction.WEST, Block.box(0, 4, 4, 4, 12, 12),
+        Direction.EAST, Block.box(12, 4, 4, 16, 12, 12));
 
-    public BlockFrame(Material material, String id) {
-        super(material, id);
+    public BlockFrame(BlockBehaviour.Properties properties, String id) {
+        super(properties.noOcclusion().noLootTable(), id);
     }
 
     @Override
@@ -47,68 +52,45 @@ public class BlockFrame extends BlockBCBase_Neptune {
         properties.addAll(CONNECTED_MAP.values());
     }
 
-    @Override
-    public BlockState getActualState(BlockState state, BlockGetter world, BlockPos pos) {
-        for (Direction side : CONNECTED_MAP.keySet()) {
-            Block block = world.getBlockState(pos.offset(side)).getBlock();
-            state = state.setValue(CONNECTED_MAP.get(side), block instanceof BlockFrame || block instanceof BlockQuarry);
+    private static boolean connectsTo(BlockState neighbour) {
+        Block block = neighbour.getBlock();
+        return block instanceof BlockFrame || block instanceof BlockQuarry;
+    }
+
+    private BlockState withConnections(BlockState state, BlockGetter world, BlockPos pos) {
+        for (Direction side : Direction.values()) {
+            state = state.setValue(CONNECTED_MAP.get(side), connectsTo(world.getBlockState(pos.relative(side))));
         }
         return state;
     }
 
     @Override
-    public BCRenderLayer getBlockLayer() {
-        return BCRenderLayer.CUTOUT;
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        BlockState state = super.getStateForPlacement(context);
+        return state == null ? null : withConnections(state, context.getLevel(), context.getClickedPos());
     }
 
     @Override
-    public boolean isFullCube(BlockState state) {
-        return false;
+    protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess ticks, BlockPos pos,
+        Direction direction, BlockPos neighbourPos, BlockState neighbourState, RandomSource random) {
+        state = super.updateShape(state, world, ticks, pos, direction, neighbourPos, neighbourState, random);
+        return state.setValue(CONNECTED_MAP.get(direction), connectsTo(neighbourState));
     }
 
     @Override
-    public boolean isOpaqueCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    public boolean shouldSideBeRendered(BlockState state, BlockGetter world, BlockPos pos, Direction side) {
-        BlockState actualState = state.getActualState(world, pos);
-        Direction[] facings = CONNECTED_MAP.keySet().stream()
-                .filter(facing -> actualState.getValue(CONNECTED_MAP.get(facing)))
-                .toArray(Direction[]::new);
-        if (facings.length == 1) {
-            return side != facings[0];
-        } else if (facings.length == 2 && facings[0] == facings[1].getOpposite()) {
-            return side != facings[0] && side != facings[1];
-        }
-        return true;
-    }
-
-    @Override
-    public AABB getBoundingBox(BlockState state, BlockGetter world, BlockPos pos) {
-        BlockState actualState = state.getActualState(world, pos);
-        AtomicReference<AABB> box = new AtomicReference<>(BASE_AABB);
-        CONNECTED_MAP.forEach((side, property) -> {
-            if (actualState.getValue(property)) {
-                box.set(box.get().union(RotationUtil.rotateAABB(CONNECTION_AABB, side)));
+    protected VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        VoxelShape shape = BASE;
+        for (Direction side : Direction.values()) {
+            if (state.getValue(CONNECTED_MAP.get(side))) {
+                shape = Shapes.or(shape, CONNECTIONS.get(side));
             }
-        });
-        return box.get();
+        }
+        return shape;
     }
 
+    /** Straight runs of frame hide the faces that meet the next frame (1.12.2's shouldSideBeRendered). */
     @Override
-    public void addCollisionBoxToList(BlockState state, Level world, BlockPos pos, AABB entityBox, List<AABB> collidingBoxes, @Nullable Entity entity, boolean isPistonMoving) {
-        BlockState actualState = state.getActualState(world, pos);
-        addCollisionBoxToList(pos, entityBox, collidingBoxes, BASE_AABB);
-        CONNECTED_MAP.keySet().stream()
-                .filter(side -> actualState.getValue(CONNECTED_MAP.get(side)))
-                .map(side -> RotationUtil.rotateAABB(CONNECTION_AABB, side))
-                .forEach(box -> addCollisionBoxToList(pos, entityBox, collidingBoxes, box));
-    }
-
-    @Override
-    public List<ItemStack> getDrops(BlockGetter world, BlockPos pos, BlockState state, int fortune) {
-        return Collections.emptyList();
+    protected boolean skipRendering(BlockState state, BlockState neighbour, Direction side) {
+        return connectsTo(neighbour) && state.getValue(CONNECTED_MAP.get(side));
     }
 }

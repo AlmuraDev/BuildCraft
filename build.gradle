@@ -38,6 +38,7 @@ def portedPackages = [
         'buildcraft/energy/**',
         'buildcraft/factory/**',
         'buildcraft/silicon/**',
+        'buildcraft/builders/**',
 ]
 
 // Client rendering, models, the guide book and the GUI screens inside the ported packages. They are ported in the
@@ -88,7 +89,6 @@ def deferredSources = [
         'buildcraft/core/list/ContainerList.java',
         'buildcraft/core/list/GuiList.java',
         'buildcraft/core/list/ListTooltipHandler.java',
-        'buildcraft/core/marker/volume/AddonDefaultRenderer.java',
 ]
 
 // transport client and GUIs (render batch / GUIs batch)
@@ -107,6 +107,12 @@ deferredSources += [
         'buildcraft/silicon/client/model/plug/ModelLensItem.java',
         'buildcraft/silicon/client/model/plug/ModelFacadeItem.java',
         'buildcraft/silicon/client/FacadeItemColours.java',
+        'buildcraft/builders/gui/**',
+        'buildcraft/builders/container/**',
+        // blueprint previews draw a fake world (GUIs batch)
+        'buildcraft/builders/snapshot/FakeWorld.java',
+        'buildcraft/builders/snapshot/FakeChunkProvider.java',
+        'buildcraft/builders/client/render/HudSingleSchematic.java',
 ]
 
 def mainResourceDirs = ['buildcraft_resources', 'BuildCraft-Localization', 'BuildCraftGuide/guide_resources']

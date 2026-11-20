@@ -31,7 +31,6 @@ import buildcraft.builders.filler.FillerType;
 import buildcraft.builders.filler.FillerUtil;
 import buildcraft.builders.snapshot.Template;
 import buildcraft.core.marker.volume.Addon;
-import buildcraft.core.marker.volume.AddonDefaultRenderer;
 import buildcraft.core.marker.volume.IFastAddonRenderer;
 import buildcraft.core.marker.volume.ISingleAddon;
 
@@ -62,9 +61,10 @@ public class AddonFillerPlanner extends Addon implements ISingleAddon, IFillerSt
     }
 
     @Override
+    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     public IFastAddonRenderer<AddonFillerPlanner> getRenderer() {
-        return new AddonDefaultRenderer<AddonFillerPlanner>(BCBuildersSprites.FILLER_PLANNER.getSprite())
-            .then(new AddonRendererFillerPlanner());
+        return new buildcraft.core.marker.volume.AddonDefaultRenderer<AddonFillerPlanner>(
+            BCBuildersSprites.FILLER_PLANNER::getSprite).then(new AddonRendererFillerPlanner());
     }
 
     @Override

@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "p": "minecraft:paper",
+    "b": "#c:gems/lapis"
+  },
+  "pattern": [
+    "ppp",
+    "pbp",
+    "ppp"
+  ],
+  "result": {
+    "id": "buildcraftbuilders:snapshot",
+    "components": {
+      "buildcraftbuilders:snapshot_type": "blueprint"
+    }
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftbuilders:snapshot"
+    }
+  ]
+}

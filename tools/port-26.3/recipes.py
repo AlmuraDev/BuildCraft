@@ -111,6 +111,10 @@ def ingredient(value, warnings, where):
     if item == 'buildcraftsilicon:redstone_chipset':
         # 1.12.2's one chipset item with the type in its damage; 26.3 has one item per type
         return 'buildcraftsilicon:redstone_chipset_' + ['red', 'iron', 'gold', 'quartz', 'diamond'][data]
+    if item == 'buildcraftbuilders:snapshot':
+        # 0/1 template, 2/3 blueprint (the snapshot_type component)
+        return {'neoforge:ingredient_type': 'neoforge:components', 'items': item,
+                'components': {'buildcraftbuilders:snapshot_type': 'template' if data < 2 else 'blueprint'}}
     if item == 'minecraft:dye':
         return '#c:dyes/' + DYE_BY_DAMAGE[data]
     if item in COLOURED_VANILLA:
@@ -129,6 +133,9 @@ def result(value, warnings, where):
     if value['item'] in BLOCK_STATE_ITEMS and data is not None:
         prop, values = BLOCK_STATE_ITEMS[value['item']]
         out['components'] = {'minecraft:block_state': {prop: values[data]}}
+    elif value['item'] == 'buildcraftbuilders:snapshot' and data is not None:
+        # 1.12.2's snapshot damage: 0/1 template clean/used, 2/3 blueprint clean/used (recipes make clean ones)
+        out['components'] = {'buildcraftbuilders:snapshot_type': 'template' if data < 2 else 'blueprint'}
     elif data:
         warnings.append('%s: dropped result damage %d on %s' % (where, data, value['item']))
     return out
@@ -329,6 +336,10 @@ LOOT = {
         [(b, self_drop('buildcraftfactory:' + b)) for b in
          ['autoworkbench_item', 'mining_well', 'pump', 'flood_gate', 'tank', 'chute', 'distiller', 'heat_exchange']]
         + [('water_gel', water_gel_loot())]),
+    # The quarry frame drops nothing (1.12.2's BlockFrame.getDrops was empty), so it has no loot table
+    'buildcraftbuilders': dict(
+        (b, self_drop('buildcraftbuilders:' + b)) for b in
+        ['architect', 'builder', 'filler', 'library', 'replacer', 'quarry']),
     'buildcraftsilicon': dict(
         (b, self_drop('buildcraftsilicon:' + b)) for b in
         ['laser', 'assembly_table', 'advanced_crafting_table', 'integration_table', 'charging_table',

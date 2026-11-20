@@ -6,6 +6,7 @@
 
 package buildcraft.builders.snapshot;
 
+import net.neoforged.neoforgespi.language.IModInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -71,16 +72,13 @@ public class RulesLoader {
     public static void loadAll() {
         RULES.clear();
         READ_DOMAINS.clear();
-        for (ModContainer modContainer : ModList.get().getModList()) {
-            String domain = modContainer.getModId();
+        // All mods share the game layer, so their resources are found through this class loader
+        ClassLoader loader = RulesLoader.class.getClassLoader();
+        for (IModInfo modInfo : ModList.get().getMods()) {
+            String domain = modInfo.getModId();
             if (!READ_DOMAINS.contains(domain)) {
                 String base = "assets/" + domain + "/compat/buildcraft/builders/";
-                if (modContainer.getMod() == null) {
-                    continue;
-                }
-                InputStream inputStream = modContainer.getMod().getClass().getClassLoader().getResourceAsStream(
-                    base + "index.json"
-                );
+                InputStream inputStream = loader.getResourceAsStream(base + "index.json");
                 if (inputStream != null) {
                     GSON.<List<String>>fromJson(
                         new InputStreamReader(inputStream, StandardCharsets.UTF_8),
@@ -89,10 +87,7 @@ public class RulesLoader {
                     ).stream()
                         .map(name -> base + name + ".json")
                         .map(name -> {
-                            InputStream resourceAsStream = modContainer.getMod()
-                                .getClass()
-                                .getClassLoader()
-                                .getResourceAsStream(name);
+                            InputStream resourceAsStream = loader.getResourceAsStream(name);
                             if (resourceAsStream == null) {
                                 throw new RuntimeException(new IOException("Can't read " + name));
                             }
@@ -133,7 +128,7 @@ public class RulesLoader {
                         selector.matches(
                             base -> {
                                 boolean complex = base.contains("[");
-                                return Block.getBlockFromName(
+                                return SchematicBlockDefault.blockByName(
                                     complex
                                         ? base.substring(0, base.indexOf("["))
                                         : base
@@ -148,7 +143,7 @@ public class RulesLoader {
                                         )
                                             .map(nameValue -> nameValue.split("="))
                                             .allMatch(nameValue ->
-                                                blockState.getPropertyKeys().stream()
+                                                blockState.getProperties().stream()
                                                     .filter(property -> property.getName().equals(nameValue[0]))
                                                     .findFirst()
                                                     .map(property ->

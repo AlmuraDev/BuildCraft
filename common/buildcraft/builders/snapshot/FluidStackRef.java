@@ -6,6 +6,7 @@
 
 package buildcraft.builders.snapshot;
 
+import buildcraft.lib.misc.FluidUtilBC;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -14,7 +15,6 @@ import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.StringTag;
 
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
 import net.neoforged.neoforge.fluids.FluidStack;
 
 public class FluidStackRef {
@@ -29,17 +29,17 @@ public class FluidStackRef {
     public FluidStack get(Tag nbt) {
         return new FluidStack(
             Objects.requireNonNull(
-                FluidRegistry.getFluid(
+                FluidUtilBC.getFluidByName(
                     fluid
                         .get(nbt)
                         .orElseThrow(NullPointerException::new)
-                        .getString()
+                        .value()
                 )
             ),
             Optional.ofNullable(amount)
                 .flatMap(ref -> ref.get(nbt))
-                .map(IntTag::getInt)
-                .orElse(Fluid.BUCKET_VOLUME)
+                .map(IntTag::intValue)
+                .orElse(net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME)
         );
     }
 }

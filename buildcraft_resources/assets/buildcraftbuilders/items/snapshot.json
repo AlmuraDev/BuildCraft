@@ -1,0 +1,38 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:component",
+    "component": "buildcraftbuilders:snapshot_type",
+    "cases": [
+      {
+        "when": "template",
+        "model": {
+          "type": "minecraft:condition",
+          "property": "minecraft:has_component",
+          "component": "minecraft:custom_data",
+          "on_true": {
+            "type": "minecraft:model",
+            "model": "buildcraftbuilders:item/snapshot/template_used"
+          },
+          "on_false": {
+            "type": "minecraft:model",
+            "model": "buildcraftbuilders:item/snapshot/template_clean"
+          }
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:condition",
+      "property": "minecraft:has_component",
+      "component": "minecraft:custom_data",
+      "on_true": {
+        "type": "minecraft:model",
+        "model": "buildcraftbuilders:item/snapshot/blueprint_used"
+      },
+      "on_false": {
+        "type": "minecraft:model",
+        "model": "buildcraftbuilders:item/snapshot/blueprint_clean"
+      }
+    }
+  }
+}

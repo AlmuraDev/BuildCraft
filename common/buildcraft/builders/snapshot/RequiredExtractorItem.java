@@ -6,6 +6,7 @@
 
 package buildcraft.builders.snapshot;
 
+import buildcraft.api.core.NbtStacks;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +26,7 @@ public class RequiredExtractorItem extends RequiredExtractor {
     public List<ItemStack> extractItemsFromBlock(@Nonnull BlockState blockState, @Nullable CompoundTag tileNbt) {
         return Optional.ofNullable(path.get(tileNbt))
             .map(CompoundTag.class::cast)
-            .map(ItemStack::new)
+            .map(NbtStacks::readItemStack)
             .map(Collections::singletonList)
             .orElseGet(Collections::emptyList);
     }
@@ -35,7 +36,7 @@ public class RequiredExtractorItem extends RequiredExtractor {
     public List<ItemStack> extractItemsFromEntity(@Nonnull CompoundTag entityNbt) {
         return Optional.ofNullable(path.get(entityNbt))
             .map(CompoundTag.class::cast)
-            .map(ItemStack::new)
+            .map(NbtStacks::readItemStack)
             .map(Collections::singletonList)
             .orElseGet(Collections::emptyList);
     }

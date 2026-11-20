@@ -6,6 +6,8 @@
 
 package buildcraft.builders.snapshot;
 
+import buildcraft.lib.misc.NBTUtilBC;
+import buildcraft.api.core.NbtStacks;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,7 +32,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.neoforged.neoforge.transfer.fluid.FluidUtil;
 
 import buildcraft.api.schematics.ISchematicBlock;
 import buildcraft.api.schematics.ISchematicEntity;
@@ -100,7 +101,7 @@ public class BlueprintBuilder extends SnapshotBuilder<ITileForBlueprintBuilder> 
         return Stream.concat(
             requiredItems == null ? Stream.empty() : requiredItems.stream(),
             requiredFluids == null ? Stream.empty() : requiredFluids.stream()
-                .map(FluidUtil::getFilledBucket)
+                .map(fluidStack -> new ItemStack(fluidStack.getFluid().getBucket()))
         );
     }
 
@@ -139,14 +140,14 @@ public class BlueprintBuilder extends SnapshotBuilder<ITileForBlueprintBuilder> 
                             FluidUtilBC.mergeSameFluids(requiredFluids).stream()
                                 .map(fluidStack -> tile.getTankManager().drain(fluidStack, !simulate))
                                 .map(fluidStack -> {
-                                    ItemStack stack = FluidUtil.getFilledBucket(fluidStack);
-                                    if (!stack.hasTagCompound()) {
-                                        stack.setTagCompound(new CompoundTag());
+                                    ItemStack stack = new ItemStack(fluidStack.getFluid().getBucket());
+                                    if (!NBTUtilBC.hasItemData(stack)) {
+                                        NBTUtilBC.setItemData(stack, new CompoundTag());
                                     }
                                     // noinspection ConstantConditions
-                                    stack.getTagCompound().put(
+                                    NBTUtilBC.getItemData(stack).put(
                                         FLUID_STACK_KEY,
-                                        fluidStack.writeToNBT(new CompoundTag())
+                                        NbtStacks.writeFluidStack(fluidStack)
                                     );
                                     return stack;
                                 })
@@ -173,7 +174,7 @@ public class BlueprintBuilder extends SnapshotBuilder<ITileForBlueprintBuilder> 
     protected boolean isReadyToPlace(BlockPos blockPos) {
         // noinspection ConstantConditions
         return getSchematicBlock(blockPos).getRequiredBlockOffsets().stream()
-            .map(blockPos::add)
+            .map(blockPos::offset)
             .allMatch(pos -> getSchematicBlock(pos) == null || checkResults[posToIndex(pos)] == CHECK_RESULT_CORRECT) &&
             getSchematicBlock(blockPos).isReadyToBuild(tile.getWorldBC(), blockPos);
     }
@@ -201,16 +202,16 @@ public class BlueprintBuilder extends SnapshotBuilder<ITileForBlueprintBuilder> 
         super.cancelPlaceTask(placeTask);
         // noinspection ConstantConditions
         placeTask.items.stream()
-            .filter(stack -> !stack.hasTagCompound() || !stack.getTagCompound().contains(FLUID_STACK_KEY))
+            .filter(stack -> !NBTUtilBC.hasItemData(stack) || !NBTUtilBC.getItemData(stack).contains(FLUID_STACK_KEY))
             .forEach(stack -> tile.getInvResources().insert(stack, false, false));
         // noinspection ConstantConditions
         placeTask.items.stream()
-            .filter(stack -> stack.hasTagCompound() && stack.getTagCompound().contains(FLUID_STACK_KEY))
-            .map(stack -> Pair.of(stack.getCount(), stack.getTagCompound().getCompoundOrEmpty(FLUID_STACK_KEY)))
+            .filter(stack -> NBTUtilBC.hasItemData(stack) && NBTUtilBC.getItemData(stack).contains(FLUID_STACK_KEY))
+            .map(stack -> Pair.of(stack.getCount(), NBTUtilBC.getItemData(stack).getCompoundOrEmpty(FLUID_STACK_KEY)))
             .map(countNbt -> {
-                FluidStack fluidStack = FluidStack.loadFluidStackFromNBT(countNbt.getRight());
+                FluidStack fluidStack = NbtStacks.readFluidStack(countNbt.getRight());
                 if (fluidStack != null) {
-                    fluidStack.amount *= countNbt.getLeft();
+                    fluidStack.setAmount(fluidStack.getAmount() * countNbt.getLeft());
                 }
                 return fluidStack;
             })
@@ -238,25 +239,25 @@ public class BlueprintBuilder extends SnapshotBuilder<ITileForBlueprintBuilder> 
         if (tile.getWorldBC().isClientSide()) {
             return super.tick();
         }
-        tile.getWorldBC().profiler.startSection("entitiesWithinBox");
+        net.minecraft.util.profiling.Profiler.get().push("entitiesWithinBox");
         List<Entity> entitiesWithinBox = tile.getWorldBC().getEntitiesOfClass(
             Entity.class,
             getBuildingInfo().box.getBoundingBox(),
             Objects::nonNull
         );
-        tile.getWorldBC().profiler.endSection();
-        tile.getWorldBC().profiler.startSection("toSpawn");
+        net.minecraft.util.profiling.Profiler.get().pop();
+        net.minecraft.util.profiling.Profiler.get().push("toSpawn");
         List<ISchematicEntity> toSpawn = getBuildingInfo().entities.stream()
             .filter(schematicEntity ->
                 entitiesWithinBox.stream()
-                    .map(Entity::getPositionVector)
+                    .map(Entity::position)
                     .map(schematicEntity.getPos().add(new Vec3(getBuildingInfo().offsetPos))::distanceTo)
                     .noneMatch(distance -> distance < MAX_ENTITY_DISTANCE)
             )
             .collect(Collectors.toList());
-        tile.getWorldBC().profiler.endSection();
+        net.minecraft.util.profiling.Profiler.get().pop();
         // Compute needed stacks
-        tile.getWorldBC().profiler.startSection("remainingDisplayRequired");
+        net.minecraft.util.profiling.Profiler.get().push("remainingDisplayRequired");
         remainingDisplayRequired.clear();
         remainingDisplayRequired.addAll(StackUtil.mergeSameItems(
             Stream.concat(
@@ -270,16 +271,16 @@ public class BlueprintBuilder extends SnapshotBuilder<ITileForBlueprintBuilder> 
                     )
             ).collect(Collectors.toList())
         ));
-        tile.getWorldBC().profiler.endSection();
+        net.minecraft.util.profiling.Profiler.get().pop();
         // Kill not needed entities
-        tile.getWorldBC().profiler.startSection("toKill");
+        net.minecraft.util.profiling.Profiler.get().push("toKill");
         List<Entity> toKill = entitiesWithinBox.stream()
             .filter(entity ->
                 entity != null &&
                     getBuildingInfo().entities.stream()
                         .map(ISchematicEntity::getPos)
                         .map(new Vec3(getBuildingInfo().offsetPos)::add)
-                        .map(entity.getPositionVector()::distanceTo)
+                        .map(entity.position()::distanceTo)
                         .noneMatch(distance -> distance < MAX_ENTITY_DISTANCE) &&
                     SchematicEntityManager.getSchematicEntity(new SchematicEntityContext(
                         tile.getWorldBC(),
@@ -292,12 +293,12 @@ public class BlueprintBuilder extends SnapshotBuilder<ITileForBlueprintBuilder> 
             if (!tile.getBattery().isFull()) {
                 return false;
             } else {
-                tile.getWorldBC().profiler.startSection("kill");
-                toKill.forEach(Entity::setDead);
-                tile.getWorldBC().profiler.endSection();
+                net.minecraft.util.profiling.Profiler.get().push("kill");
+                toKill.forEach(Entity::discard);
+                net.minecraft.util.profiling.Profiler.get().pop();
             }
         }
-        tile.getWorldBC().profiler.endSection();
+        net.minecraft.util.profiling.Profiler.get().pop();
         // Call superclass method
         if (super.tick()) {
             // Spawn needed entities
@@ -305,7 +306,7 @@ public class BlueprintBuilder extends SnapshotBuilder<ITileForBlueprintBuilder> 
                 if (!tile.getBattery().isFull()) {
                     return false;
                 } else {
-                    tile.getWorldBC().profiler.startSection("spawn");
+                    net.minecraft.util.profiling.Profiler.get().push("spawn");
                     toSpawn.stream()
                         .filter(schematicEntity ->
                             tryExtractRequired(
@@ -324,7 +325,7 @@ public class BlueprintBuilder extends SnapshotBuilder<ITileForBlueprintBuilder> 
                                 false
                             )
                         );
-                    tile.getWorldBC().profiler.endSection();
+                    net.minecraft.util.profiling.Profiler.get().pop();
                 }
             }
             return true;
@@ -374,12 +375,7 @@ public class BlueprintBuilder extends SnapshotBuilder<ITileForBlueprintBuilder> 
         super.readFromByteBuf(buffer);
         remainingDisplayRequired.clear();
         IntStream.range(0, buffer.readInt()).mapToObj(i -> {
-            ItemStack stack;
-            try {
-                stack = buffer.readItemStack();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            ItemStack stack = buffer.readItemStack();
             stack.setCount(buffer.readInt());
             return stack;
         }).forEach(remainingDisplayRequired::add);

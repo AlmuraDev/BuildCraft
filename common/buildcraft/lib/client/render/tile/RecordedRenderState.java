@@ -26,6 +26,21 @@ public class RecordedRenderState extends BlockEntityRenderState {
     /** The pose to write vertices with (they are relative to the block; the real pose is applied when submitting). */
     public static final PoseStack.Pose IDENTITY = new PoseStack().last();
 
+    /** A pose that turns world coordinates into coordinates relative to the given block (for renderers that
+     * worked in world space in 1.12.2). */
+    public static PoseStack.Pose worldPose(net.minecraft.core.BlockPos pos) {
+        PoseStack stack = new PoseStack();
+        stack.translate(-pos.getX(), -pos.getY(), -pos.getZ());
+        return stack.last();
+    }
+
+    /** The packed block and sky light at a position (1.12.2's World.getCombinedLight, which is client-only). */
+    public static int light(net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
+        return net.minecraft.util.LightCoordsUtil.pack(
+            level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, pos),
+            level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos));
+    }
+
     public WorldRenderContext.Recording cutout = new WorldRenderContext.Recording();
     public WorldRenderContext.Recording translucent = new WorldRenderContext.Recording();
 

@@ -6,6 +6,7 @@
 
 package buildcraft.builders.snapshot;
 
+import net.minecraft.world.InteractionHand;
 import java.util.Collections;
 import java.util.List;
 
@@ -65,7 +66,7 @@ public class TemplateBuilder extends SnapshotBuilder<ITileForTemplateBuilder> {
             tile.getOwner(),
             tile.getBuilderPos()
         );
-        fakePlayer.setHeldItem(fakePlayer.getActiveHand(), placeTask.items.get(0));
+        fakePlayer.setItemInHand(InteractionHand.MAIN_HAND, placeTask.items.get(0));
         return TemplateApi.templateRegistry.handle(
             tile.getWorldBC(),
             placeTask.pos,

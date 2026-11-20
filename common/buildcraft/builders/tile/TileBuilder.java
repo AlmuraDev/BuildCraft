@@ -6,6 +6,7 @@
  */
 package buildcraft.builders.tile;
 
+import buildcraft.builders.block.BlockBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +18,7 @@ import javax.annotation.Nonnull;
 
 import com.google.common.collect.ImmutableList;
 
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -88,7 +90,7 @@ public class TileBuilder extends TileBC_Neptune
         itemManager
             .addInvHandler("snapshot", 1,
                 (slot, stack) -> stack.getItem() instanceof ItemSnapshot
-                    && ItemSnapshot.EnumItemSnapshotType.getFromStack(stack).used,
+                    && (BCBuildersItems.snapshot.getHeader(stack) != null),
                 EnumAccess.BOTH, EnumPipePart.VALUES);
     public final ItemHandlerSimple invResources =
         itemManager.addInvHandler("resources", 27, EnumAccess.BOTH, EnumPipePart.VALUES);
@@ -114,9 +116,10 @@ public class TileBuilder extends TileBC_Neptune
 
     private boolean isDone = false;
 
-    public TileBuilder() {
+    public TileBuilder(BlockPos pos, BlockState state) {
+        super(pos, state);
         for (int i = 1; i <= 4; i++) {
-            tankManager.add(new Tank("tank" + i, Fluid.BUCKET_VOLUME * 8, this) {
+            tankManager.add(new Tank("tank" + i, net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME * 8, this) {
                 @Override
                 protected void onContentsChanged() {
                     super.onContentsChanged();
@@ -160,15 +163,15 @@ public class TileBuilder extends TileBC_Neptune
     }
 
     @Override
-    public void validate() {
-        super.validate();
+    public void clearRemoved() {
+        super.clearRemoved();
         templateBuilder.validate();
         blueprintBuilder.validate();
     }
 
     @Override
-    public void invalidate() {
-        super.invalidate();
+    public void setRemoved() {
+        super.setRemoved();
         templateBuilder.invalidate();
         blueprintBuilder.invalidate();
     }
@@ -199,6 +202,22 @@ public class TileBuilder extends TileBC_Neptune
         if (currentBox == null) {
             currentBox = new Box();
         }
+        updateBlockSnapshotType();
+    }
+
+    /** Shows the snapshot type on the block (1.12.2's BlockBuilder.getActualState read it from the tile). */
+    private void updateBlockSnapshotType() {
+        if (world == null || world.isClientSide() || isRemoved()) {
+            return;
+        }
+        BlockState state = getBlockState();
+        if (!state.hasProperty(BlockBuilder.SNAPSHOT_TYPE)) {
+            return;
+        }
+        EnumOptionalSnapshotType wanted = EnumOptionalSnapshotType.fromNullable(snapshotType);
+        if (state.getValue(BlockBuilder.SNAPSHOT_TYPE) != wanted) {
+            world.setBlock(pos, state.setValue(BlockBuilder.SNAPSHOT_TYPE, wanted), net.minecraft.world.level.block.Block.UPDATE_ALL);
+        }
     }
 
     private void updateBasePoses() {
@@ -211,7 +230,7 @@ public class TileBuilder extends TileBC_Neptune
                 basePoses.addAll(PositionUtil.getAllOnPath(path.get(i - 1), path.get(i)));
             }
         } else {
-            basePoses.add(pos.offset(world.getBlockState(pos).getValue(BlockBCBase_Neptune.PROP_FACING).getOpposite()));
+            basePoses.add(pos.relative(world.getBlockState(pos).getValue(BlockBCBase_Neptune.PROP_FACING).getOpposite()));
         }
     }
 
@@ -223,7 +242,7 @@ public class TileBuilder extends TileBC_Neptune
     public void onPlacedBy(LivingEntity placer, ItemStack stack) {
         super.onPlacedBy(placer, stack);
         Direction facing = world.getBlockState(pos).getValue(BlockBCBase_Neptune.PROP_FACING);
-        BlockEntity inFront = world.getBlockEntity(pos.offset(facing.getOpposite()));
+        BlockEntity inFront = world.getBlockEntity(pos.relative(facing.getOpposite()));
         if (inFront instanceof IPathProvider) {
             IPathProvider provider = (IPathProvider) inFront;
             ImmutableList<BlockPos> copiedPath = ImmutableList.copyOf(provider.getPath());
@@ -237,10 +256,10 @@ public class TileBuilder extends TileBC_Neptune
 
     @Override
     public void update() {
-        world.profiler.startSection("main");
-        world.profiler.startSection("power");
+        net.minecraft.util.profiling.Profiler.get().push("main");
+        net.minecraft.util.profiling.Profiler.get().push("power");
         battery.tick(getWorld(), getPos());
-        world.profiler.endStartSection("builder");
+        net.minecraft.util.profiling.Profiler.get().popPush("builder");
         SnapshotBuilder<?> builder = getBuilder();
         if (builder != null) {
             isDone = builder.tick();
@@ -248,7 +267,7 @@ public class TileBuilder extends TileBC_Neptune
                 if (currentBasePosIndex < basePoses.size() - 1) {
                     currentBasePosIndex++;
                     if (currentBasePosIndex == basePoses.size() && currentBasePosIndex > 1)
-                        AdvancementUtil.unlockAdvancement(getOwner().getId(), ADVANCEMENT);
+                        AdvancementUtil.unlockAdvancement(getOwner().id(), ADVANCEMENT);
                     if (currentBasePosIndex >= basePoses.size()) {
                         currentBasePosIndex = basePoses.size() - 1;
                     }
@@ -256,10 +275,10 @@ public class TileBuilder extends TileBC_Neptune
                 }
             }
         }
-        world.profiler.endStartSection("net_update");
+        net.minecraft.util.profiling.Profiler.get().popPush("net_update");
         sendNetworkUpdate(NET_RENDER_DATA); // FIXME
-        world.profiler.endSection();
-        world.profiler.endSection();
+        net.minecraft.util.profiling.Profiler.get().pop();
+        net.minecraft.util.profiling.Profiler.get().pop();
     }
 
     // Networking
@@ -352,9 +371,9 @@ public class TileBuilder extends TileBC_Neptune
     public CompoundTag writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
         if (path != null) {
-            nbt.put("path", NBTUtilBC.writeCompoundList(path.stream().map(NbtUtils::createPosTag)));
+            nbt.put("path", NBTUtilBC.writeCompoundList(path.stream().map(NBTUtilBC::writeLegacyPosTag)));
         }
-        nbt.put("basePoses", NBTUtilBC.writeCompoundList(basePoses.stream().map(NbtUtils::createPosTag)));
+        nbt.put("basePoses", NBTUtilBC.writeCompoundList(basePoses.stream().map(NBTUtilBC::writeLegacyPosTag)));
         nbt.putBoolean("canExcavate", canExcavate);
         nbt.put("rotation", NBTUtilBC.writeEnum(rotation));
         Optional.ofNullable(getBuilder()).ifPresent(builder -> nbt.put("builder", builder.serializeNBT()));
@@ -366,9 +385,9 @@ public class TileBuilder extends TileBC_Neptune
         super.readFromNBT(nbt);
         if (nbt.contains("path")) {
             path =
-                NBTUtilBC.readCompoundList(nbt.get("path")).map(NbtUtils::getPosFromTag).collect(Collectors.toList());
+                NBTUtilBC.readCompoundList(nbt.get("path")).map(NBTUtilBC::readLegacyPosTag).collect(Collectors.toList());
         }
-        basePoses = NBTUtilBC.readCompoundList(nbt.get("basePoses")).map(NbtUtils::getPosFromTag)
+        basePoses = NBTUtilBC.readCompoundList(nbt.get("basePoses")).map(NBTUtilBC::readLegacyPosTag)
             .collect(Collectors.toList());
         canExcavate = nbt.getBooleanOr("canExcavate", false);
         rotation = NBTUtilBC.readEnum(nbt.get("rotation"), Rotation.class);
@@ -386,24 +405,13 @@ public class TileBuilder extends TileBC_Neptune
         return currentBox;
     }
 
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public boolean hasFastRenderer() {
-        return true;
-    }
 
+    /** The box this tile's renderer draws in. */
     @Nonnull
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public AABB getRenderBoundingBox() {
+    public AABB getRenderBox() {
         return BoundingBoxUtil.makeFrom(getPos(), getBox(), path);
     }
 
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public double getMaxRenderDistanceSquared() {
-        return Double.MAX_VALUE;
-    }
 
     @Override
     public void getDebugInfo(List<String> left, List<String> right, Direction side) {

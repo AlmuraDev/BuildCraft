@@ -1,79 +1,69 @@
 /* Copyright (c) 2016 SpaceToad and the BuildCraft team
- * 
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.builders;
 
 import java.util.function.Consumer;
 
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.LogicalSide;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 
-import buildcraft.lib.BCLib;
 import buildcraft.lib.registry.RegistryConfig;
 import buildcraft.lib.registry.TagManager;
 import buildcraft.lib.registry.TagManager.EnumTagType;
 import buildcraft.lib.registry.TagManager.TagEntry;
 
+import buildcraft.core.BCCore;
 import buildcraft.builders.snapshot.GlobalSavedDataSnapshots;
 import buildcraft.builders.snapshot.RulesLoader;
-import buildcraft.core.BCCore;
 
-//@formatter:off
-@Mod(
-    modid = BCBuilders.MODID,
-    name = "BuildCraft Builders",
-    version = BCLib.VERSION,
-    dependencies = "required-after:buildcraftcore@[" + BCLib.VERSION + "]"
-)
-//@formatter:on
+@Mod(BCBuilders.MODID)
 public class BCBuilders {
     public static final String MODID = "buildcraftbuilders";
 
-    @Mod.Instance(MODID)
     public static BCBuilders INSTANCE = null;
+    public static IEventBus MOD_BUS;
 
-    @Mod.EventHandler
-    public static void preInit(FMLPreInitializationEvent evt) {
+    public BCBuilders(IEventBus modBus, ModContainer container) {
+        INSTANCE = this;
+        MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
 
         BCBuildersConfig.preInit();
         BCBuildersRegistries.preInit();
-        BCBuildersItems.fmlPreInit();
-        BCBuildersBlocks.fmlPreInit();
+        BCBuildersItems.fmlPreInit(modBus);
+        BCBuildersBlocks.fmlPreInit(modBus);
         BCBuildersStatements.preInit();
         BCBuildersSchematics.preInit();
 
-        NetworkRegistry.INSTANCE.registerGuiHandler(INSTANCE, BCBuildersProxy.getProxy());
-
         BCBuildersProxy.getProxy().fmlPreInit();
 
-        NeoForge.EVENT_BUS.register(BCBuildersEventDist.INSTANCE);
+        NeoForge.EVENT_BUS.addListener((ServerStartingEvent event) -> GlobalSavedDataSnapshots.reInit(LogicalSide.SERVER));
+
+        modBus.addListener(BCBuilders::init);
+        modBus.addListener(BCBuilders::postInit);
     }
 
-    @Mod.EventHandler
-    public static void init(FMLInitializationEvent evt) {
-        BCBuildersProxy.getProxy().fmlInit();
-        BCBuildersRegistries.init();
-        BCBuildersRecipes.init();
-        BCBuildersBlocks.fmlInit();
+    private static void init(FMLCommonSetupEvent evt) {
+        evt.enqueueWork(() -> {
+            BCBuildersProxy.getProxy().fmlInit();
+            BCBuildersRegistries.init();
+            BCBuildersRecipes.init();
+        });
     }
 
-    @Mod.EventHandler
-    public static void postInit(FMLPostInitializationEvent evt) {
-        BCBuildersProxy.getProxy().fmlPostInit();
-        RulesLoader.loadAll();
-    }
-
-    @Mod.EventHandler
-    public static void onServerStarting(FMLServerStartingEvent event) {
-        GlobalSavedDataSnapshots.reInit(LogicalSide.SERVER);
+    private static void postInit(FMLLoadCompleteEvent evt) {
+        evt.enqueueWork(() -> {
+            BCBuildersProxy.getProxy().fmlPostInit();
+            RulesLoader.loadAll();
+        });
     }
 
     static {

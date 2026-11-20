@@ -1,5 +1,8 @@
 {
-    "variants": {
-        "normal": { "model": "buildcraftbuilders:buildToolBlock" }
+  "variants": {
+    "": {
+      "model": "buildcraftbuilders:block/buildToolBlock"
     }
+  },
+  "__converted_26_3": true
 }

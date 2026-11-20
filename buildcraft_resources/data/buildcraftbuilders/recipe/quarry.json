@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "p": "minecraft:diamond_pickaxe",
+    "i": "#c:gears/iron",
+    "g": "#c:gears/gold",
+    "d": "#c:gears/diamond",
+    "r": "#c:dusts/redstone"
+  },
+  "pattern": [
+    "iri",
+    "gig",
+    "dpd"
+  ],
+  "result": {
+    "id": "buildcraftbuilders:quarry"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftbuilders:quarry"
+    }
+  ]
+}

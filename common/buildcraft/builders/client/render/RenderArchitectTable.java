@@ -6,44 +6,59 @@
 
 package buildcraft.builders.client.render;
 
-import org.lwjgl.opengl.GL11;
+import javax.annotation.Nullable;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.laser.LaserBoxRenderer;
+import buildcraft.lib.client.render.tile.RecordedRenderState;
 
 import buildcraft.builders.tile.TileArchitectTable;
 import buildcraft.core.client.BuildCraftLaserManager;
 
-public class RenderArchitectTable extends TileEntitySpecialRenderer<TileArchitectTable> {
+/** The box an architect table is scanning, when it took it from markers. */
+@OnlyIn(Dist.CLIENT)
+public class RenderArchitectTable implements BlockEntityRenderer<TileArchitectTable, RecordedRenderState> {
     @Override
-    public void render(TileArchitectTable tile, double x, double y, double z, float partialTicks, int destroyStage,
-        float partial) {
-        if (!tile.markerBox) {
-            return;
-        }
-        Minecraft.getMinecraft().mcProfiler.startSection("bc");
-        Minecraft.getMinecraft().mcProfiler.startSection("architect_table");
-
-        GL11.glPushMatrix();
-        GL11.glTranslated(x - tile.getPos().getX(), y - tile.getPos().getY(), z - tile.getPos().getZ());
-        RenderHelper.disableStandardItemLighting();
-
-        Minecraft.getMinecraft().mcProfiler.startSection("box");
-        LaserBoxRenderer.renderLaserBoxStatic(tile.box, BuildCraftLaserManager.STRIPES_READ, true);
-        Minecraft.getMinecraft().mcProfiler.endSection();
-
-        RenderHelper.enableStandardItemLighting();
-        GL11.glPopMatrix();
-
-        Minecraft.getMinecraft().mcProfiler.endSection();
-        Minecraft.getMinecraft().mcProfiler.endSection();
+    public RecordedRenderState createRenderState() {
+        return new RecordedRenderState();
     }
 
     @Override
-    public boolean isGlobalRenderer(TileArchitectTable te) {
+    public void extractRenderState(TileArchitectTable tile, RecordedRenderState state, float partialTicks,
+        Vec3 cameraPosition, @Nullable ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(tile, state, partialTicks, cameraPosition, breakProgress);
+        state.reset();
+        if (tile.markerBox) {
+            LaserBoxRenderer.renderLaserBoxDynamic(tile.box, BuildCraftLaserManager.STRIPES_READ, state.translucent,
+                RecordedRenderState.worldPose(tile.getBlockPos()), true);
+        }
+        state.finish();
+    }
+
+    @Override
+    public void submit(RecordedRenderState state, PoseStack poseStack, SubmitNodeCollector collector,
+        CameraRenderState camera) {
+        state.submit(poseStack, collector);
+    }
+
+    @Override
+    public boolean shouldRenderOffScreen() {
         return true;
+    }
+
+    @Override
+    public AABB getRenderBoundingBox(TileArchitectTable tile) {
+        return AABB.INFINITE;
     }
 }

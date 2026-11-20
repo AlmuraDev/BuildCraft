@@ -6,48 +6,62 @@
 
 package buildcraft.builders.client.render;
 
-import net.minecraft.client.Minecraft;
-import com.mojang.blaze3d.vertex.BufferBuilder;
+import javax.annotation.Nullable;
 
-import net.minecraftforge.client.model.animation.FastTESR;
-import net.neoforged.fml.LogicalSide;
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.laser.LaserBoxRenderer;
+import buildcraft.lib.client.render.tile.RecordedRenderState;
 
 import buildcraft.builders.tile.TileFiller;
 import buildcraft.core.client.BuildCraftLaserManager;
 
+/** The filler's robot and, when it took its area from markers, its box (1.12.2's FastTESR). */
 @OnlyIn(Dist.CLIENT)
-public class RenderFiller extends FastTESR<TileFiller> {
-
+public class RenderFiller implements BlockEntityRenderer<TileFiller, BuilderRenderState> {
     @Override
-    public void renderTileEntityFast(TileFiller tile, double x, double y, double z, float partialTicks,
-        int destroyStage, float partial, BufferBuilder bb) {
-        Minecraft.getMinecraft().mcProfiler.startSection("bc");
-        Minecraft.getMinecraft().mcProfiler.startSection("filler");
-
-        Minecraft.getMinecraft().mcProfiler.startSection("main");
-        if (tile.getBuilder() != null) {
-            RenderSnapshotBuilder.render(tile.getBuilder(), tile.getWorld(), tile.getPos(), x, y, z, partialTicks, bb);
-        }
-        Minecraft.getMinecraft().mcProfiler.endSection();
-
-        Minecraft.getMinecraft().mcProfiler.startSection("box");
-        if (tile.markerBox) {
-            bb.setTranslation(x - tile.getPos().getX(), y - tile.getPos().getY(), z - tile.getPos().getZ());
-            LaserBoxRenderer.renderLaserBoxDynamic(tile.box, BuildCraftLaserManager.STRIPES_WRITE, bb, true);
-            bb.setTranslation(0, 0, 0);
-        }
-        Minecraft.getMinecraft().mcProfiler.endSection();
-
-        Minecraft.getMinecraft().mcProfiler.endSection();
-        Minecraft.getMinecraft().mcProfiler.endSection();
+    public BuilderRenderState createRenderState() {
+        return new BuilderRenderState();
     }
 
     @Override
-    public boolean isGlobalRenderer(TileFiller te) {
+    public void extractRenderState(TileFiller tile, BuilderRenderState state, float partialTicks,
+        Vec3 cameraPosition, @Nullable ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(tile, state, partialTicks, cameraPosition, breakProgress);
+        state.reset();
+        if (tile.getBuilder() != null && tile.getLevel() != null) {
+            RenderSnapshotBuilder.extract(tile.getBuilder(), tile.getLevel(), tile.getBlockPos(), partialTicks, state);
+        }
+        if (tile.markerBox) {
+            LaserBoxRenderer.renderLaserBoxDynamic(tile.box, BuildCraftLaserManager.STRIPES_WRITE, state.translucent,
+                RecordedRenderState.worldPose(tile.getBlockPos()), true);
+        }
+        state.finish();
+    }
+
+    @Override
+    public void submit(BuilderRenderState state, PoseStack poseStack, SubmitNodeCollector collector,
+        CameraRenderState camera) {
+        state.submit(poseStack, collector);
+    }
+
+    @Override
+    public boolean shouldRenderOffScreen() {
         return true;
+    }
+
+    @Override
+    public AABB getRenderBoundingBox(TileFiller tile) {
+        return AABB.INFINITE;
     }
 }

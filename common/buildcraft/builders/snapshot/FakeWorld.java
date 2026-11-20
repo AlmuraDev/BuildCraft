@@ -77,7 +77,7 @@ public class FakeWorld extends Level {
         for (int z = 0; z < snapshot.size.getZ(); z++) {
             for (int y = 0; y < snapshot.size.getY(); y++) {
                 for (int x = 0; x < snapshot.size.getX(); x++) {
-                    BlockPos pos = new BlockPos(x, y, z).add(BLUEPRINT_OFFSET);
+                    BlockPos pos = new BlockPos(x, y, z).offset(BLUEPRINT_OFFSET);
                     if (snapshot instanceof Blueprint) {
                         ISchematicBlock schematicBlock = ((Blueprint) snapshot).palette
                             .get(((Blueprint) snapshot).data[snapshot.posToIndex(x, y, z)]);
