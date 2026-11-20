@@ -400,6 +400,18 @@ def _add_builders():
 _add_builders()
 
 
+# ---- Robotics ----
+# Only the zone planner exists (1.12.2's requester and zone plan blockstates have no block).
+def _add_robotics():
+    ns = 'buildcraftrobotics'
+    BLOCKSTATES.setdefault(ns, {})['zone_planner'] = {'variants': {
+        'facing=' + f: _rot('buildcraftrobotics:block/zone_planner', 0, y) for f, y in HORIZONTAL_Y.items()}}
+    ITEMS.setdefault(ns, {})['zone_planner'] = model('buildcraftrobotics:item/zone_planner')
+
+
+_add_robotics()
+
+
 def write_models_and_states():
     for ns, models in MODELS.items():
         for path, data in models.items():

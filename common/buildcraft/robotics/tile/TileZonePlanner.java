@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-import net.minecraft.client.Minecraft;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
@@ -27,6 +27,7 @@ import buildcraft.api.tiles.IDebuggable;
 
 import buildcraft.lib.delta.DeltaInt;
 import buildcraft.lib.delta.DeltaManager.EnumNetworkVisibility;
+import buildcraft.lib.misc.NBTUtilBC;
 import buildcraft.lib.misc.StackUtil;
 import buildcraft.lib.misc.data.IdAllocator;
 import buildcraft.lib.net.MessageManager;
@@ -61,9 +62,7 @@ public class TileZonePlanner extends TileBC_Neptune implements ITickable, IDebug
         "inputMapLocation",
         1,
         (slot, stack) -> stack.getItem() instanceof ItemMapLocation &&
-            Optional.ofNullable(stack.getTagCompound())
-                .map(tagCompound -> tagCompound.contains("chunkMapping"))
-                .orElse(false) &&
+            NBTUtilBC.getItemData(stack).contains("chunkMapping") &&
             stack.getCount() == 1,
         EnumAccess.NONE
     );
@@ -95,19 +94,11 @@ public class TileZonePlanner extends TileBC_Neptune implements ITickable, IDebug
     public final DeltaInt deltaProgressOutput = deltaManager.addDelta("progressOutput", EnumNetworkVisibility.GUI_ONLY);
     public ZonePlan[] layers = new ZonePlan[16];
 
-    public TileZonePlanner() {
+    public TileZonePlanner(BlockPos pos, BlockState state) {
+        super(pos, state);
         for (int i = 0; i < layers.length; i++) {
             layers[i] = new ZonePlan();
         }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public int getLevel() {
-        BlockPos blockPos = Minecraft.getMinecraft().player.getPosition();
-        while (!Minecraft.getMinecraft().world.getBlockState(blockPos).isSideSolid(Minecraft.getMinecraft().world, blockPos, Direction.DOWN) && blockPos.getY() < 255) {
-            blockPos = new BlockPos(blockPos.getX(), blockPos.getY() + 1, blockPos.getZ());
-        }
-        return (int) Math.floor((double) blockPos.getY() / ZonePlannerMapChunkKey.LEVEL_HEIGHT);
     }
 
     @Override
@@ -136,7 +127,7 @@ public class TileZonePlanner extends TileBC_Neptune implements ITickable, IDebug
             if (id == NET_PLAN_CHANGE) {
                 int index = buffer.readUnsignedShort();
                 layers[index].readFromByteBuf(buffer);
-                markDirty();
+                setChanged();
                 sendNetworkUpdate(NET_RENDER_DATA);
             }
         }
@@ -186,9 +177,11 @@ public class TileZonePlanner extends TileBC_Neptune implements ITickable, IDebug
 
         {
             // noinspection ConstantConditions
-            if (!invInputPaintbrush.getStackInSlot(0).isEmpty() && invInputPaintbrush.getStackInSlot(0).getItem() instanceof ItemPaintbrush_BC8 && !invInputMapLocation.getStackInSlot(0).isEmpty()
-                && invInputMapLocation.getStackInSlot(0).getItem() instanceof ItemMapLocation && invInputMapLocation.getStackInSlot(0).getTagCompound() != null && invInputMapLocation.getStackInSlot(0)
-                    .getTagCompound().contains("chunkMapping") && invInputResult.getStackInSlot(0).isEmpty()) {
+            ItemStack inPaintbrush = invInputPaintbrush.getStackInSlot(0);
+            ItemStack inMap = invInputMapLocation.getStackInSlot(0);
+            if (inPaintbrush.getItem() instanceof ItemPaintbrush_BC8 && inMap.getItem() instanceof ItemMapLocation
+                && NBTUtilBC.getItemData(inMap).contains("chunkMapping") && invInputResult.getStackInSlot(0).isEmpty()
+                && BCCoreItems.paintbrush.getBrushFromStack(inPaintbrush).colour != null) {
                 if (progressInput == 0) {
                     deltaProgressInput.addDelta(0, 200, 1);
                     deltaProgressInput.addDelta(200, 205, -1);
@@ -200,8 +193,9 @@ public class TileZonePlanner extends TileBC_Neptune implements ITickable, IDebug
                 }
 
                 ZonePlan zonePlan = new ZonePlan();
-                zonePlan.readFromNBT(invInputMapLocation.getStackInSlot(0).getTagCompound());
-                layers[BCCoreItems.paintbrush.getBrushFromStack(invInputPaintbrush.getStackInSlot(0)).colour.getMetadata()] = zonePlan.getWithOffset(-pos.getX(), -pos.getZ());
+                zonePlan.readFromNBT(NBTUtilBC.getItemData(inMap));
+                layers[BCCoreItems.paintbrush.getBrushFromStack(inPaintbrush).colour.getId()] =
+                    zonePlan.getWithOffset(-worldPosition.getX(), -worldPosition.getZ());
                 invInputMapLocation.setStackInSlot(0, StackUtil.EMPTY);
                 invInputResult.setStackInSlot(0, new ItemStack(BCCoreItems.mapLocation));
                 this.setChanged();
@@ -213,8 +207,11 @@ public class TileZonePlanner extends TileBC_Neptune implements ITickable, IDebug
             }
         }
         {
-            if (!invOutputPaintbrush.getStackInSlot(0).isEmpty() && invOutputPaintbrush.getStackInSlot(0).getItem() instanceof ItemPaintbrush_BC8 && !invOutputMapLocation.getStackInSlot(0).isEmpty()
-                && invOutputMapLocation.getStackInSlot(0).getItem() instanceof ItemMapLocation && invOutputResult.getStackInSlot(0).isEmpty()) {
+            ItemStack outPaintbrush = invOutputPaintbrush.getStackInSlot(0);
+            ItemStack outMap = invOutputMapLocation.getStackInSlot(0);
+            if (outPaintbrush.getItem() instanceof ItemPaintbrush_BC8 && outMap.getItem() instanceof ItemMapLocation
+                && invOutputResult.getStackInSlot(0).isEmpty()
+                && BCCoreItems.paintbrush.getBrushFromStack(outPaintbrush).colour != null) {
                 if (progressOutput == 0) {
                     deltaProgressOutput.addDelta(0, 200, 1);
                     deltaProgressOutput.addDelta(200, 205, -1);
@@ -225,8 +222,9 @@ public class TileZonePlanner extends TileBC_Neptune implements ITickable, IDebug
                     return;
                 }
 
-                ItemMapLocation.setZone(invOutputMapLocation.getStackInSlot(0), layers[BCCoreItems.paintbrush.getBrushFromStack(invOutputPaintbrush.getStackInSlot(0)).colour.getMetadata()]
-                    .getWithOffset(pos.getX(), pos.getZ()));
+                ZonePlan plan = layers[BCCoreItems.paintbrush.getBrushFromStack(outPaintbrush).colour.getId()]
+                    .getWithOffset(worldPosition.getX(), worldPosition.getZ());
+                ItemMapLocation.setZone(outMap, plan::writeToNBT);
                 invOutputResult.setStackInSlot(0, invOutputMapLocation.getStackInSlot(0));
                 invOutputMapLocation.setStackInSlot(0, StackUtil.EMPTY);
                 progressOutput = 0;

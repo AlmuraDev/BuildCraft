@@ -8,13 +8,12 @@ package buildcraft.robotics;
 
 import java.util.function.Consumer;
 
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 
-import buildcraft.lib.BCLib;
 import buildcraft.lib.registry.RegistryConfig;
 import buildcraft.lib.registry.TagManager;
 import buildcraft.lib.registry.TagManager.EnumTagType;
@@ -22,46 +21,34 @@ import buildcraft.lib.registry.TagManager.TagEntry;
 
 import buildcraft.core.BCCore;
 
-//@formatter:off
-@Mod(
-    modid = BCRobotics.MODID,
-    name = "BuildCraft Robotics",
-    version = BCLib.VERSION,
-    dependencies = "required-after:buildcraftcore@[" + BCLib.VERSION + "]"
-)
-//@formatter:on
+@Mod(BCRobotics.MODID)
 public class BCRobotics {
     public static final String MODID = "buildcraftrobotics";
 
-    @Mod.Instance(MODID)
     public static BCRobotics INSTANCE = null;
+    public static IEventBus MOD_BUS;
 
-    @Mod.EventHandler
-    public static void preInit(FMLPreInitializationEvent evt) {
+    public BCRobotics(IEventBus modBus, ModContainer container) {
+        INSTANCE = this;
+        MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
-
-        BCRoboticsBlocks.preInit();
-
+        BCRoboticsBlocks.fmlPreInit(modBus);
         BCRoboticsProxy.getProxy().fmlPreInit();
 
-        NetworkRegistry.INSTANCE.registerGuiHandler(INSTANCE, BCRoboticsProxy.getProxy());
+        modBus.addListener(BCRobotics::init);
+        modBus.addListener(BCRobotics::postInit);
     }
 
-    @Mod.EventHandler
-    public static void init(FMLInitializationEvent evt) {
-        BCRoboticsProxy.getProxy().fmlInit();
-        BCRoboticsRecipes.init();
+    private static void init(FMLCommonSetupEvent evt) {
+        evt.enqueueWork(() -> BCRoboticsProxy.getProxy().fmlInit());
     }
 
-    @Mod.EventHandler
-    public static void postInit(FMLPostInitializationEvent evt) {
-        BCRoboticsProxy.getProxy().fmlPostInit();
+    private static void postInit(FMLLoadCompleteEvent evt) {
+        evt.enqueueWork(() -> BCRoboticsProxy.getProxy().fmlPostInit());
     }
 
     static {
         startBatch();
-
-        // Items
 
         // Item Blocks
         registerTag("item.block.zone_planner").reg("zone_planner").locale("zonePlannerBlock").model("zone_planner");

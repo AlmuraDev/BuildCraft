@@ -8,21 +8,25 @@ package buildcraft.robotics.zone;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 
+/** The map colour and height of the top block (below the key's height band) of every column in a chunk. */
 public class ZonePlannerMapChunk {
     private final MapColourData[][] data = new MapColourData[16][16];
 
     public ZonePlannerMapChunk(Level world, ZonePlannerMapChunkKey key) {
-        LevelChunk chunk = world.getChunkFromChunkCoords(key.chunkPos.x, key.chunkPos.z);
+        LevelChunk chunk = world.getChunk(key.chunkPos.x(), key.chunkPos.z());
+        int top = Math.min(key.level * ZonePlannerMapChunkKey.LEVEL_HEIGHT, world.getMaxY());
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                // Scan down from the max height value of a chunk until we find a block
-                for (int y = key.level * ZonePlannerMapChunkKey.LEVEL_HEIGHT; y > 0; y--) {
-                    int colour = chunk.getBlockState(x, y, z).getMapColor(world, new BlockPos(x, y, z)).colorValue;
+                // Scan down from the top of the band until we find a block
+                for (int y = top; y > world.getMinY(); y--) {
+                    pos.set(key.chunkPos.getMinBlockX() + x, y, key.chunkPos.getMinBlockZ() + z);
+                    int colour = chunk.getBlockState(pos).getMapColor(world, pos).col;
                     if (colour != 0) {
                         data[x][z] = new MapColourData(y, colour);
                         break;
@@ -35,8 +39,9 @@ public class ZonePlannerMapChunk {
     public ZonePlannerMapChunk(FriendlyByteBuf buffer) {
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
-                int posY = buffer.readInt();
-                if (posY > 0) {
+                boolean present = buffer.readBoolean();
+                if (present) {
+                    int posY = buffer.readInt();
                     int colour = buffer.readInt();
                     data[x][z] = new MapColourData(posY, colour);
                 }
@@ -48,9 +53,8 @@ public class ZonePlannerMapChunk {
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 MapColourData colour = data[x][z];
-                if (colour == null) {
-                    buffer.writeInt(-1);
-                } else {
+                buffer.writeBoolean(colour != null);
+                if (colour != null) {
                     buffer.writeInt(colour.posY);
                     buffer.writeInt(colour.colour);
                 }

@@ -6,51 +6,57 @@
 
 package buildcraft.robotics.zone;
 
-import java.util.Arrays;
+import java.util.Objects;
 
 import io.netty.buffer.ByteBuf;
 
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 
+/** One chunk column of the zone planner map, for one dimension and one height band ("level", 32 blocks each). 1.12.2
+ * keyed dimensions by number; 26.3 uses the dimension's key. */
 public class ZonePlannerMapChunkKey {
     public static final int LEVEL_HEIGHT = 32;
 
     public final ChunkPos chunkPos;
-    public final int dimensionalId;
+    public final ResourceKey<Level> dimension;
     public final int level;
     private final int hash;
 
-    public ZonePlannerMapChunkKey(ChunkPos chunkPos, int dimensionalId, int level) {
+    public ZonePlannerMapChunkKey(ChunkPos chunkPos, ResourceKey<Level> dimension, int level) {
         this.chunkPos = chunkPos;
-        this.dimensionalId = dimensionalId;
+        this.dimension = dimension;
         this.level = level;
-        hash = Arrays.hashCode(new int[] { chunkPos.x, chunkPos.z, dimensionalId, level });
+        hash = Objects.hash(chunkPos.x(), chunkPos.z(), dimension, level);
     }
 
     public ZonePlannerMapChunkKey(ByteBuf buf) {
-        chunkPos = ChunkPos.containing(buf.readInt(), buf.readInt());
-        dimensionalId = buf.readInt();
-        level = buf.readInt();
-        hash = Arrays.hashCode(new int[] { chunkPos.x, chunkPos.z, dimensionalId, level });
+        FriendlyByteBuf buffer = new FriendlyByteBuf(buf);
+        chunkPos = new ChunkPos(buffer.readInt(), buffer.readInt());
+        dimension = ResourceKey.create(Registries.DIMENSION, Identifier.parse(buffer.readUtf()));
+        level = buffer.readInt();
+        hash = Objects.hash(chunkPos.x(), chunkPos.z(), dimension, level);
     }
 
     public void toBytes(ByteBuf buf) {
-        buf.writeInt(chunkPos.x);
-        buf.writeInt(chunkPos.z);
-        buf.writeInt(dimensionalId);
-        buf.writeInt(level);
+        FriendlyByteBuf buffer = new FriendlyByteBuf(buf);
+        buffer.writeInt(chunkPos.x());
+        buffer.writeInt(chunkPos.z());
+        buffer.writeUtf(dimension.identifier().toString());
+        buffer.writeInt(level);
     }
 
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if (o == null) return false;
-        if (o.getClass() != getClass()) return false;
+        if (o == null || o.getClass() != getClass()) return false;
         ZonePlannerMapChunkKey other = (ZonePlannerMapChunkKey) o;
-        if (dimensionalId != other.dimensionalId) return false;
-        if (level != other.level) return false;
-        return chunkPos.x == other.chunkPos.x && chunkPos.z == other.chunkPos.z;
-
+        return level == other.level && dimension.equals(other.dimension) && chunkPos.x() == other.chunkPos.x()
+            && chunkPos.z() == other.chunkPos.z();
     }
 
     @Override

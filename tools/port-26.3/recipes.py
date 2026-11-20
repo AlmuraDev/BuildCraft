@@ -340,6 +340,9 @@ LOOT = {
     'buildcraftbuilders': dict(
         (b, self_drop('buildcraftbuilders:' + b)) for b in
         ['architect', 'builder', 'filler', 'library', 'replacer', 'quarry']),
+    'buildcraftrobotics': {
+        'zone_planner': self_drop('buildcraftrobotics:zone_planner'),
+    },
     'buildcraftsilicon': dict(
         (b, self_drop('buildcraftsilicon:' + b)) for b in
         ['laser', 'assembly_table', 'advanced_crafting_table', 'integration_table', 'charging_table',

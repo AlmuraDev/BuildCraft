@@ -6,37 +6,30 @@
 
 package buildcraft.robotics.block;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 
 import buildcraft.lib.block.BlockBCTile_Neptune;
 import buildcraft.lib.block.IBlockWithFacing;
-import buildcraft.lib.tile.TileBC_Neptune;
 
 import buildcraft.robotics.RoboticsGuis;
-import buildcraft.robotics.tile.TileZonePlanner;
 
 public class BlockZonePlanner extends BlockBCTile_Neptune implements IBlockWithFacing {
-    public BlockZonePlanner(Material material, String id) {
-        super(material, id);
+    public BlockZonePlanner(BlockBehaviour.Properties properties, String id) {
+        super(properties, id);
     }
 
     @Override
-    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
-        return new TileZonePlanner();
-    }
-
-    @Override
-    public boolean onBlockActivated(Level world, BlockPos pos, BlockState state, Player player, InteractionHand hand,
-        Direction side, float hitX, float hitY, float hitZ) {
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player,
+        BlockHitResult hit) {
         if (!world.isClientSide()) {
             RoboticsGuis.ZONE_PLANTER.openGUI(player, pos);
         }
-        return true;
+        return InteractionResult.SUCCESS;
     }
 }

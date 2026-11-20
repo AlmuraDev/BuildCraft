@@ -39,6 +39,7 @@ def portedPackages = [
         'buildcraft/factory/**',
         'buildcraft/silicon/**',
         'buildcraft/builders/**',
+        'buildcraft/robotics/**',
 ]
 
 // Client rendering, models, the guide book and the GUI screens inside the ported packages. They are ported in the
@@ -113,6 +114,9 @@ deferredSources += [
         'buildcraft/builders/snapshot/FakeWorld.java',
         'buildcraft/builders/snapshot/FakeChunkProvider.java',
         'buildcraft/builders/client/render/HudSingleSchematic.java',
+        'buildcraft/robotics/gui/**',
+        'buildcraft/robotics/container/**',
+        'buildcraft/robotics/zone/ZonePlannerMapRenderer.java',
 ]
 
 def mainResourceDirs = ['buildcraft_resources', 'BuildCraft-Localization', 'BuildCraftGuide/guide_resources']

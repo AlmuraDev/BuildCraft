@@ -77,7 +77,7 @@ public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
     }
 
     private ItemStack getCurrentStack() {
-        return mc.player.inventory.getItemStack();
+        return mc.player.getInventory().getItemStack();
     }
 
     private ItemStack getPaintbrush() {

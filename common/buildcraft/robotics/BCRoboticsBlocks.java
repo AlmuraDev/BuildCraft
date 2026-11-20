@@ -6,7 +6,7 @@
 
 package buildcraft.robotics;
 
-import net.minecraft.block.material.Material;
+import net.neoforged.bus.api.IEventBus;
 
 import buildcraft.lib.registry.RegistrationHelper;
 
@@ -14,13 +14,11 @@ import buildcraft.robotics.block.BlockZonePlanner;
 import buildcraft.robotics.tile.TileZonePlanner;
 
 public class BCRoboticsBlocks {
-    private static final RegistrationHelper HELPER = new RegistrationHelper();
-
     public static BlockZonePlanner zonePlanner;
 
-    public static void preInit() {
-        zonePlanner = HELPER.addBlockAndItem(new BlockZonePlanner(Material.IRON, "block.zone_planner"));
-
-        HELPER.registerTile(TileZonePlanner.class, "tile.zone_planner");
+    public static void fmlPreInit(IEventBus modBus) {
+        RegistrationHelper helper = new RegistrationHelper(BCRobotics.MODID, modBus);
+        helper.addBlockAndItem("block.zone_planner", BlockZonePlanner::new, b -> zonePlanner = b);
+        helper.registerTile("tile.zone_planner", TileZonePlanner::new, () -> zonePlanner);
     }
 }

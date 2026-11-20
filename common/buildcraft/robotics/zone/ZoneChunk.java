@@ -10,7 +10,6 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Random;
 
-import javax.vecmath.Point2i;
 
 import com.google.common.collect.ImmutableList;
 

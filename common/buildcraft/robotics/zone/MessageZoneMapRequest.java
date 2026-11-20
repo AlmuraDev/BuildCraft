@@ -34,17 +34,14 @@ public class MessageZoneMapRequest implements IMessage {
         key.toBytes(buf);
     }
 
+    /** Answers with the map chunk, read from the asking player's own dimension (1.12.2 did the same). */
     public static final IMessageHandler<MessageZoneMapRequest, IMessage> HANDLER = (message, ctx) -> {
-        MessageUtil.sendReturnMessage(
-                ctx,
-                new MessageZoneMapResponse(
-                        message.key,
-                        ZonePlannerMapDataServer.INSTANCE.getChunk(
-                                ctx.player().level(),
-                                message.key
-                        )
-                )
-        );
+        net.minecraft.world.level.Level world = ctx.player().level();
+        if (!world.dimension().equals(message.key.dimension)) {
+            return null;
+        }
+        MessageUtil.sendReturnMessage(ctx,
+            new MessageZoneMapResponse(message.key, ZonePlannerMapDataServer.INSTANCE.getChunk(world, message.key)));
         return null;
     };
 }
