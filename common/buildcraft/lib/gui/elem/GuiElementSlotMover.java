@@ -22,11 +22,11 @@ public class GuiElementSlotMover extends GuiElementSimple {
     @Override
     public void drawBackground(float partialTicks) {
         if (visible.evaluate()) {
-            toMove.xPos = 1 + (int) Math.round(getX());
-            toMove.yPos = 1 + (int) Math.round(getY());
+            toMove.x = 1 + (int) Math.round(getX());
+            toMove.y = 1 + (int) Math.round(getY());
         } else {
-            toMove.xPos = -10000;
-            toMove.yPos = -10000;
+            toMove.x = -10000;
+            toMove.y = -10000;
         }
     }
 }

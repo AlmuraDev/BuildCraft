@@ -6,6 +6,8 @@
 
 package buildcraft.factory.client;
 
+import buildcraft.factory.BCFactory;
+import buildcraft.factory.BCFactoryGuis;
 import buildcraft.factory.BCFactoryModels;
 import buildcraft.factory.BCFactoryProxy;
 
@@ -16,5 +18,15 @@ public class BCFactoryClientProxy extends BCFactoryProxy {
     public void fmlPreInit() {
         super.fmlPreInit();
         BCFactoryModels.fmlPreInit();
+        BCFactory.MOD_BUS.addListener(BCFactoryClientProxy::registerScreens);
+    }
+
+    private static void registerScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+        buildcraft.lib.client.BCMenuScreens.register(event, BCFactoryGuis.autoWorkbenchItems,
+            buildcraft.factory.gui.GuiAutoCraftItems::new);
+        buildcraft.lib.client.BCMenuScreens.register(event, BCFactoryGuis.chute, buildcraft.factory.gui.GuiChute::new);
+        buildcraft.lib.client.BCMenuScreens.register(event, BCFactoryGuis.tank, buildcraft.factory.gui.GuiTank::new);
+        buildcraft.lib.client.BCMenuScreens.register(event, BCFactoryGuis.distiller,
+            buildcraft.factory.gui.GuiDistiller::new);
     }
 }

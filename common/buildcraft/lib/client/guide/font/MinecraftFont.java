@@ -8,11 +8,11 @@ package buildcraft.lib.client.guide.font;
 
 import java.util.List;
 
-import org.lwjgl.opengl.GL11;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.GlStateManager;
+
+import buildcraft.lib.gui.GuiDraw;
+import buildcraft.lib.misc.GuiUtil;
 
 /** Implements a font that delegates to Minecraft's own {@link Font} */
 public enum MinecraftFont implements IFontRenderer {
@@ -24,7 +24,7 @@ public enum MinecraftFont implements IFontRenderer {
 
     @Override
     public int getStringWidth(String text) {
-        return getFontRenderer().getStringWidth(text);
+        return getFontRenderer().width(text);
     }
 
     @Override
@@ -34,26 +34,25 @@ public enum MinecraftFont implements IFontRenderer {
 
     @Override
     public int getMaxFontHeight() {
-        return getFontRenderer().FONT_HEIGHT;
+        return getFontRenderer().lineHeight;
     }
 
     @Override
     public int drawString(String text, int x, int y, int colour, boolean shadow, boolean centered, float scale) {
         boolean _scale = scale != 1;
         if (_scale) {
-            GlStateManager.pushMatrix();
-            GL11.glScaled(scale, scale, 1);
+            GuiDraw.pushPose();
+            GuiDraw.scale(scale, scale);
             x = (int) (x / scale);
             y = (int) (y / scale);
         }
         if (centered) {
             x -= getStringWidth(text) / 2;
         }
-        int v = getFontRenderer().drawString(text, x, y, colour, shadow);
-        v -= x;
-        GlStateManager.color(1f, 1f, 1f);
+        GuiDraw.text(getFontRenderer(), text, x, y, colour, shadow);
+        int v = getStringWidth(text);
         if (_scale) {
-            GlStateManager.popMatrix();
+            GuiDraw.popPose();
             v = (int) (v * scale);
         }
         return v;
@@ -61,6 +60,6 @@ public enum MinecraftFont implements IFontRenderer {
 
     @Override
     public List<String> wrapString(String text, int maxWidth, boolean shadow, float scale) {
-        return getFontRenderer().listFormattedStringToWidth(text, (int) (maxWidth / scale));
+        return GuiUtil.wrap(getFontRenderer(), text, (int) (maxWidth / scale));
     }
 }

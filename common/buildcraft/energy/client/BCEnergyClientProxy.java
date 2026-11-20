@@ -6,6 +6,8 @@
 
 package buildcraft.energy.client;
 
+import buildcraft.energy.BCEnergy;
+import buildcraft.energy.BCEnergyGuis;
 import buildcraft.energy.BCEnergyModels;
 import buildcraft.energy.BCEnergyProxy;
 
@@ -16,5 +18,17 @@ public class BCEnergyClientProxy extends BCEnergyProxy {
     public void fmlPreInit() {
         super.fmlPreInit();
         BCEnergyModels.fmlPreInit();
+        BCEnergy.MOD_BUS.addListener(BCEnergyClientProxy::registerScreens);
+    }
+
+    private static void registerScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+        buildcraft.lib.client.BCMenuScreens.register(event, BCEnergyGuis.engineStone,
+            buildcraft.energy.client.gui.GuiEngineStone_BC8::new);
+        buildcraft.lib.client.BCMenuScreens.register(event, BCEnergyGuis.engineIron,
+            buildcraft.energy.client.gui.GuiEngineIron_BC8::new);
+        buildcraft.lib.client.BCMenuScreens.register(event, BCEnergyGuis.engineRf,
+            buildcraft.energy.client.gui.GuiEngineRF::new);
+        buildcraft.lib.client.BCMenuScreens.register(event, BCEnergyGuis.dynamoMj,
+            buildcraft.energy.client.gui.GuiDynamoMJ::new);
     }
 }

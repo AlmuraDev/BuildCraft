@@ -1,5 +1,7 @@
 package buildcraft.builders.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import java.io.IOException;
 import java.util.Optional;
 
@@ -31,8 +33,8 @@ public class ContainerFillerPlanner extends ContainerBC_Neptune implements ICont
         (statement, paramIndex) -> onStatementChange()
     );
 
-    public ContainerFillerPlanner(Player player) {
-        super(player);
+    public ContainerFillerPlanner(MenuType<?> type, int containerId, Player player) {
+        super(type, containerId, player);
         Pair<VolumeBox, EnumAddonSlot> selectingVolumeBoxAndSlot = EnumAddonSlot.getSelectingVolumeBoxAndSlot(
             player,
             BCCoreProxy.getProxy().getVolumeBoxes(player.level())
@@ -73,7 +75,7 @@ public class ContainerFillerPlanner extends ContainerBC_Neptune implements ICont
     public void valuesChanged() {
         addon.updateBuildingInfo();
         if (!player.level().isClientSide()) {
-            WorldSavedDataVolumeBoxes.get(getPlayer().world).setChanged();
+            WorldSavedDataVolumeBoxes.get(getPlayer().level()).markDirtyAndSync();
         }
     }
 
@@ -85,7 +87,7 @@ public class ContainerFillerPlanner extends ContainerBC_Neptune implements ICont
 
     @SuppressWarnings("NullableProblems")
     @Override
-    public boolean canInteractWith(Player player) {
+    public boolean stillValid(Player player) {
         return true;
     }
 }

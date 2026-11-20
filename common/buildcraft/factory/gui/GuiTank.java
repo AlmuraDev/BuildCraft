@@ -6,6 +6,8 @@
 
 package buildcraft.factory.gui;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import net.minecraft.resources.Identifier;
 
 import buildcraft.lib.gui.GuiBC8;
@@ -37,13 +39,13 @@ public class GuiTank extends GuiBC8<ContainerTank> {
     @Override
     protected void drawForegroundLayer() {
         String str = LocaleUtil.localize("tile.tankBlock.name");
-        int strWidth = fontRenderer.getStringWidth(str);
+        int strWidth = fontRenderer.width(str);
         double titleX = mainGui.rootElement.getCenterX() - strWidth / 2;
         double titleY = mainGui.rootElement.getY() + 6;
-        fontRenderer.drawString(str, (int) titleX, (int) titleY, 0x404040);
+        GuiDraw.text(fontRenderer, str, (int) titleX, (int) titleY, 0x404040, false);
 
         double invX = mainGui.rootElement.getX() + 8;
         double invY = mainGui.rootElement.getY() + SIZE_Y - 96;
-        fontRenderer.drawString(LocaleUtil.localize("gui.inventory"), (int) invX, (int) invY, 0x404040);
+        GuiDraw.text(fontRenderer, LocaleUtil.localize("gui.inventory"), (int) invX, (int) invY, 0x404040, false);
     }
 }

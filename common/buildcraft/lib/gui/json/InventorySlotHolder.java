@@ -8,7 +8,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.inventory.Slot;
 
 import buildcraft.api.transfer.IItemHandler;
-import net.minecraftforge.items.SlotItemHandler;
+import buildcraft.lib.gui.slot.SlotBase;
 
 public class InventorySlotHolder {
 
@@ -16,8 +16,8 @@ public class InventorySlotHolder {
 
     public InventorySlotHolder(AbstractContainerMenu container, Container inventory) {
         List<Slot> list = new ArrayList<>();
-        for (Slot s : container.inventorySlots) {
-            if (s.inventory == inventory) {
+        for (Slot s : container.slots) {
+            if (s.container == inventory) {
                 list.add(s);
             }
         }
@@ -26,8 +26,8 @@ public class InventorySlotHolder {
 
     public InventorySlotHolder(AbstractContainerMenu container, IItemHandler inventory) {
         List<Slot> list = new ArrayList<>();
-        for (Slot s : container.inventorySlots) {
-            if (s instanceof SlotItemHandler && ((SlotItemHandler) s).getItemHandler() == inventory) {
+        for (Slot s : container.slots) {
+            if (s instanceof SlotBase && ((SlotBase) s).getItemHandler() == inventory) {
                 list.add(s);
             }
         }

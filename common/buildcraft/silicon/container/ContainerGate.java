@@ -6,6 +6,8 @@
 
 package buildcraft.silicon.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -50,8 +52,8 @@ public class ContainerGate extends ContainerPipe {
     public final GateContext<TriggerWrapper> possibleTriggersContext;
     public final GateContext<ActionWrapper> possibleActionsContext;
 
-    public ContainerGate(Player player, GateLogic logic) {
-        super(player, logic.getPipeHolder());
+    public ContainerGate(MenuType<?> type, int containerId, Player player, GateLogic logic) {
+        super(type, containerId, player, logic.getPipeHolder());
         this.gate = logic;
         gate.getPipeHolder().onPlayerOpen(player);
 
@@ -84,8 +86,8 @@ public class ContainerGate extends ContainerPipe {
     }
 
     @Override
-    public void onContainerClosed(Player player) {
-        super.onContainerClosed(player);
+    public void removed(Player player) {
+        super.removed(player);
         gate.getPipeHolder().onPlayerClose(player);
     }
 

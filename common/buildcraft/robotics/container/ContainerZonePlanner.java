@@ -4,6 +4,8 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.robotics.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import net.minecraft.world.entity.player.Player;
 
 import buildcraft.lib.gui.ContainerBCTile;
@@ -13,20 +15,20 @@ import buildcraft.lib.gui.slot.SlotOutput;
 import buildcraft.robotics.tile.TileZonePlanner;
 
 public class ContainerZonePlanner extends ContainerBCTile<TileZonePlanner> {
-    public ContainerZonePlanner(Player player, TileZonePlanner tile) {
-        super(player, tile);
+    public ContainerZonePlanner(MenuType<?> type, int containerId, Player player, TileZonePlanner tile) {
+        super(type, containerId, player, tile);
         addFullPlayerInventory(88, 146);
 
         for (int x = 0; x < 4; x++) {
             for (int y = 0; y < 4; y++) {
-                addSlotToContainer(new SlotBase(tile.invPaintbrushes, x * 4 + y, 8 + x * 18, 146 + y * 18));
+                addSlot(new SlotBase(tile.invPaintbrushes, x * 4 + y, 8 + x * 18, 146 + y * 18));
             }
         }
-        addSlotToContainer(new SlotBase(tile.invInputPaintbrush, 0, 8, 125));
-        addSlotToContainer(new SlotBase(tile.invInputMapLocation, 0, 26, 125));
-        addSlotToContainer(new SlotOutput(tile.invInputResult, 0, 74, 125));
-        addSlotToContainer(new SlotBase(tile.invOutputPaintbrush, 0, 233, 9));
-        addSlotToContainer(new SlotBase(tile.invOutputMapLocation, 0, 233, 27));
-        addSlotToContainer(new SlotOutput(tile.invOutputResult, 0, 233, 75));
+        addSlot(new SlotBase(tile.invInputPaintbrush, 0, 8, 125));
+        addSlot(new SlotBase(tile.invInputMapLocation, 0, 26, 125));
+        addSlot(new SlotOutput(tile.invInputResult, 0, 74, 125));
+        addSlot(new SlotBase(tile.invOutputPaintbrush, 0, 233, 9));
+        addSlot(new SlotBase(tile.invOutputMapLocation, 0, 233, 27));
+        addSlot(new SlotOutput(tile.invOutputResult, 0, 233, 75));
     }
 }

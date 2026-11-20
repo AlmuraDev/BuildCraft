@@ -4,6 +4,8 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.silicon.gui;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.resources.Identifier;
 
@@ -46,7 +48,7 @@ public class GuiIntegrationTable extends GuiBC8<ContainerIntegrationTable> {
 
     @Override
     protected void drawForegroundLayer() {
-        String title = I18n.format("tile.integrationTableBlock.name");
-        fontRenderer.drawString(title, guiLeft + (xSize - fontRenderer.getStringWidth(title)) / 2, guiTop + 10, 0x404040);
+        String title = I18n.get("tile.integrationTableBlock.name");
+        GuiDraw.text(fontRenderer, title, guiLeft + (xSize - fontRenderer.width(title)) / 2, guiTop + 10, 0x404040, false);
     }
 }

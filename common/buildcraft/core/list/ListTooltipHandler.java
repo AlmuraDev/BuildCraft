@@ -22,13 +22,13 @@ public enum ListTooltipHandler {
 
     @SubscribeEvent
     public void itemTooltipEvent(ItemTooltipEvent event) {
-        final Player player = event.getEntityPlayer();
+        final Player player = event.getEntity();
         final ItemStack stack = event.getItemStack();
         if (!stack.isEmpty() && player != null && player.containerMenu instanceof ContainerList) {
             ItemStack list = player.getMainHandItem();
             if (!list.isEmpty() && list.getItem() instanceof IList) {
                 if (((IList) list.getItem()).matches(list, stack)) {
-                    event.getToolTip().add(ChatFormatting.GREEN + LocaleUtil.localize("tip.list.matches"));
+                    event.getToolTip().add(net.minecraft.network.chat.Component.literal(ChatFormatting.GREEN + LocaleUtil.localize("tip.list.matches")));
                 }
             }
         }

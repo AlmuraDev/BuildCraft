@@ -22,13 +22,16 @@ import buildcraft.robotics.client.render.RenderZonePlanner;
 import buildcraft.robotics.zone.MessageZoneMapResponse;
 
 /** Robotics' client proxy, created by name from {@link BCRoboticsProxy} so the server never loads it.
- * TODO(26.3 GUIs batch): the zone planner GUI (GuiZonePlanner and its map renderer). */
+ */
 public class BCRoboticsClientProxy extends BCRoboticsProxy {
     @Override
     public void fmlPreInit() {
         super.fmlPreInit();
         MessageManager.setHandler(MessageZoneMapResponse.class, MessageZoneMapResponse.HANDLER, LogicalSide.CLIENT);
         BCRobotics.MOD_BUS.addListener(BCRoboticsClientProxy::registerRenderers);
+        BCRobotics.MOD_BUS.addListener((net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) ->
+            buildcraft.lib.client.BCMenuScreens.register(event, buildcraft.robotics.RoboticsGuis.zonePlanner,
+                buildcraft.robotics.gui.GuiZonePlanner::new));
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

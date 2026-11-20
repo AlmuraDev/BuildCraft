@@ -6,6 +6,8 @@
 
 package buildcraft.factory.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import net.minecraft.world.entity.player.Player;
 
 import buildcraft.lib.gui.ContainerBCTile;
@@ -14,13 +16,13 @@ import buildcraft.lib.gui.slot.SlotBase;
 import buildcraft.factory.tile.TileChute;
 
 public class ContainerChute extends ContainerBCTile<TileChute> {
-    public ContainerChute(Player player, TileChute tile) {
-        super(player, tile);
+    public ContainerChute(MenuType<?> type, int containerId, Player player, TileChute tile) {
+        super(type, containerId, player, tile);
         addFullPlayerInventory(71);
 
-        addSlotToContainer(new SlotBase(tile.inv, 0, 62, 18));
-        addSlotToContainer(new SlotBase(tile.inv, 1, 80, 18));
-        addSlotToContainer(new SlotBase(tile.inv, 2, 98, 18));
-        addSlotToContainer(new SlotBase(tile.inv, 3, 80, 36));
+        addSlot(new SlotBase(tile.inv, 0, 62, 18));
+        addSlot(new SlotBase(tile.inv, 1, 80, 18));
+        addSlot(new SlotBase(tile.inv, 2, 98, 18));
+        addSlot(new SlotBase(tile.inv, 3, 80, 36));
     }
 }

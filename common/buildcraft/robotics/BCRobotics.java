@@ -33,6 +33,7 @@ public class BCRobotics {
         MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
         BCRoboticsBlocks.fmlPreInit(modBus);
+        RoboticsGuis.fmlPreInit(modBus);
         BCRoboticsProxy.getProxy().fmlPreInit();
 
         modBus.addListener(BCRobotics::init);

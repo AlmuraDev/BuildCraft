@@ -6,7 +6,7 @@ package buildcraft.builders.gui;
 
 import java.io.IOException;
 
-import net.minecraft.client.gui.GuiTextField;
+import buildcraft.lib.gui.GuiTextFieldBC;
 import net.minecraft.resources.Identifier;
 
 import buildcraft.lib.gui.GuiBC8;
@@ -22,7 +22,7 @@ public class GuiArchitectTable extends GuiBC8<ContainerArchitectTable> {
     private static final GuiIcon ICON_PROGRESS = new GuiIcon(TEXTURE_BASE, 0, 166, 24, 17);
     private static final GuiRectangle RECT_PROGRESS = new GuiRectangle(159, 34, 24, 17);
 
-    private GuiTextField nameField;
+    private GuiTextFieldBC nameField;
 
     public GuiArchitectTable(ContainerArchitectTable container) {
         super(container);
@@ -31,9 +31,9 @@ public class GuiArchitectTable extends GuiBC8<ContainerArchitectTable> {
     }
 
     @Override
-    public void initGui() {
-        super.initGui();
-        nameField = new GuiTextField(0, fontRenderer, guiLeft + 90, guiTop + 62, 156, 12);
+    protected void init() {
+        super.init();
+        nameField = new GuiTextFieldBC(0, fontRenderer, guiLeft + 90, guiTop + 62, 156, 12);
         nameField.setText(container.tile.name);
         nameField.setFocused(true);
     }
@@ -55,12 +55,12 @@ public class GuiArchitectTable extends GuiBC8<ContainerArchitectTable> {
     }
 
     @Override
-    public void updateScreen() {
+    protected void containerTick() {
         nameField.updateCursorCounter();
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+    protected void keyTyped(char typedChar, int keyCode) {
         boolean typed = false;
         if (nameField.isFocused()) {
             typed = nameField.textboxKeyTyped(typedChar, keyCode);
@@ -72,7 +72,7 @@ public class GuiArchitectTable extends GuiBC8<ContainerArchitectTable> {
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         nameField.mouseClicked(mouseX, mouseY, mouseButton);
     }

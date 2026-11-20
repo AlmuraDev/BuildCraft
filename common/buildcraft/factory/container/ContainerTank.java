@@ -6,6 +6,8 @@
 
 package buildcraft.factory.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -18,8 +20,8 @@ import buildcraft.factory.tile.TileTank;
 public class ContainerTank extends ContainerBCTile<TileTank> {
     public final WidgetFluidTank widgetTank;
 
-    public ContainerTank(Player player, TileTank tank) {
-        super(player, tank);
+    public ContainerTank(MenuType<?> type, int containerId, Player player, TileTank tank) {
+        super(type, containerId, player, tank);
 
         addFullPlayerInventory(99);
 
@@ -27,22 +29,22 @@ public class ContainerTank extends ContainerBCTile<TileTank> {
     }
 
     @Override
-    public ItemStack transferStackInSlot(Player player, int index) {
+    public ItemStack quickMoveStack(Player player, int index) {
         // The only slots are player slots -- try to interact with the tank
 
         if (!player.level().isClientSide()) {
-            Slot slot = inventorySlots.get(index);
-            ItemStack stack = slot.getStack();
+            Slot slot = slots.get(index);
+            ItemStack stack = slot.getItem();
             ItemStack original = stack.copy();
             stack = tile.tank.transferStackToTank(this, stack);
             tile.balanceTankFluids();
-            if (!ItemStack.areItemStacksEqual(stack, original)) {
-                slot.putStack(stack);
-                detectAndSendChanges();
+            if (!ItemStack.matches(stack, original)) {
+                slot.set(stack);
+                broadcastChanges();
                 return ItemStack.EMPTY;
             }
         }
 
-        return super.transferStackInSlot(player, index);
+        return super.quickMoveStack(player, index);
     }
 }

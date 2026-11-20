@@ -4,11 +4,8 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.transport.gui;
 
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.GlStateManager.DestFactor;
-import net.minecraft.client.renderer.GlStateManager.SourceFactor;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.texture.TextureMap;
+import buildcraft.lib.gui.GuiDraw;
+
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.resources.Identifier;
@@ -33,44 +30,36 @@ public class GuiFilteredBuffer extends GuiBC8<ContainerFilteredBuffer_BC8> {
     @Override
     protected void drawBackgroundLayer(float partialTicks) {
         ICON_GUI.drawAt(mainGui.rootElement);
-        RenderHelper.enableGUIStandardItemLighting();
         for (int i = 0; i < 9; i++) {
             ItemStack stack = container.tile.invFilter.getStackInSlot(i);
             double currentX = mainGui.rootElement.getX() + 8 + i * 18;
             double currentY = mainGui.rootElement.getY() + 61;
             // GL11.glEnable(GL11.GL_BLEND);
             // GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-            // GL11.glColor4f(1, 1, 1, 0.5F);
+            // GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), (float) ( 0.5F));
             if (!stack.isEmpty()) {
-                this.itemRender.renderItemAndEffectIntoGUI(this.mc.player, stack, (int) currentX, (int) currentY);
+                GuiDraw.item(stack, (int) currentX, (int) currentY);
             } else {
-                this.mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-                this.drawTexturedModalRect((int) currentX, (int) currentY, BCTransportSprites.NOTHING_FILTERED_BUFFER_SLOT.getSprite(), 16, 16);
+                GuiIcon.drawAt(BCTransportSprites.NOTHING_FILTERED_BUFFER_SLOT, currentX, currentY, 16, 16);
             }
-            // GL11.glColor4f(1, 1, 1, 1);
+            // GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), (float) ( 1));
             // GL11.glDisable(GL11.GL_BLEND);
         }
-        RenderHelper.disableStandardItemLighting();
-        // GL11.glPushMatrix();
+        // GuiDraw.pushPose();
         // GL11.glTranslatef(0, 0, 100);
-        GlStateManager.disableDepth();
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA);
-        GlStateManager.color(1, 1, 1, 0.7f);
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), (float) ( 0.7f));
         ICON_GUI.drawAt(mainGui.rootElement);
 
-        GlStateManager.color(1, 1, 1, 1);
-        GlStateManager.disableBlend();
-        GlStateManager.enableDepth();
-        // GL11.glPopMatrix();
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), (float) ( 1));
+        // GuiDraw.popPose();
     }
 
     @Override
     protected void drawForegroundLayer() {
         int x = guiLeft;
         int y = guiTop;
-        String title = I18n.format("tile.filteredBufferBlock.name");
-        int xPos = (xSize - fontRenderer.getStringWidth(title)) / 2;
-        fontRenderer.drawString(title, x + xPos, y + 10, 0x404040);
+        String title = I18n.get("tile.filteredBufferBlock.name");
+        int xPos = (xSize - fontRenderer.width(title)) / 2;
+        GuiDraw.text(fontRenderer, title, x + xPos, y + 10, 0x404040, false);
     }
 }

@@ -6,6 +6,8 @@
 
 package buildcraft.lib.gui.elem;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.IntSupplier;
@@ -69,13 +71,13 @@ public class GuiElementText extends GuiElementSimple {
     @Override
     public double getWidth() {
         Font fr = Minecraft.getInstance().font;
-        return fr.getStringWidth(text.get());
+        return fr.width(text.get());
     }
 
     @Override
     public double getHeight() {
         Font fr = Minecraft.getInstance().font;
-        return fr.FONT_HEIGHT;
+        return fr.lineHeight;
     }
 
     @Override
@@ -104,11 +106,11 @@ public class GuiElementText extends GuiElementSimple {
         // }
         // if (centered) {
         // String str = text.get();
-        // int width = fr.getStringWidth(str);
+        // int width = fr.width(str);
         // double x = getX() - width / 2;
-        // fr.drawString(str, (float) x, (float) getY(), colour.getAsInt(), dropShadow);
+        // GuiDraw.text(fr, str, (float) x, (float) getY(), colour.getAsInt(), dropShadow);
         // } else {
-        // fr.drawString(text.get(), (float) getX(), (float) getY(), colour.getAsInt(), dropShadow);
+        // GuiDraw.text(fr, text.get(), (float) getX(), (float) getY(), colour.getAsInt(), dropShadow);
         // }
         // RenderUtil.setGLColorFromInt(-1);
     }

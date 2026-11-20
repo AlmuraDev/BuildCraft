@@ -6,6 +6,8 @@
 
 package buildcraft.builders.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import java.io.IOException;
 
 import net.minecraft.world.entity.player.Player;
@@ -31,14 +33,14 @@ public class ContainerFiller extends ContainerBCTile<TileFiller> implements ICon
         (statement, paramIndex) -> onStatementChange()
     );
 
-    public ContainerFiller(Player player, TileFiller tile) {
-        super(player, tile);
+    public ContainerFiller(MenuType<?> type, int containerId, Player player, TileFiller tile) {
+        super(type, containerId, player, tile);
 
         addFullPlayerInventory(153);
 
         for (int sy = 0; sy < 3; sy++) {
             for (int sx = 0; sx < 9; sx++) {
-                addSlotToContainer(new SlotBase(tile.invResources, sx + sy * 9, sx * 18 + 8, sy * 18 + 40));
+                addSlot(new SlotBase(tile.invResources, sx + sy * 9, sx * 18 + 8, sy * 18 + 40));
             }
         }
 
@@ -79,7 +81,7 @@ public class ContainerFiller extends ContainerBCTile<TileFiller> implements ICon
         if (tile.addon != null) {
             tile.addon.updateBuildingInfo();
             if (!player.level().isClientSide()) {
-                WorldSavedDataVolumeBoxes.get(getPlayer().world).setChanged();
+                WorldSavedDataVolumeBoxes.get(getPlayer().level()).markDirtyAndSync();
             }
         }
         if (!player.level().isClientSide()) {

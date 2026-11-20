@@ -12,6 +12,8 @@ import buildcraft.api.transport.pipe.PipeApiClient;
 
 import buildcraft.lib.net.MessageManager;
 
+import buildcraft.transport.BCTransport;
+import buildcraft.transport.BCTransportGuis;
 import buildcraft.transport.BCTransportModels;
 import buildcraft.transport.BCTransportProxy;
 import buildcraft.transport.BCTransportSprites;
@@ -27,6 +29,7 @@ public class BCTransportClientProxy extends BCTransportProxy {
     public void fmlPreInit() {
         super.fmlPreInit();
         BCTransportSprites.fmlPreInit();
+        BCTransport.MOD_BUS.addListener(BCTransportClientProxy::registerScreens);
         BCTransportModels.fmlPreInit();
         PipeApiClient.registry = PipeRegistryClient.INSTANCE;
         PipeWireRenderer.init();
@@ -46,5 +49,16 @@ public class BCTransportClientProxy extends BCTransportProxy {
     public void fmlPostInit() {
         super.fmlPostInit();
         BCTransportModels.fmlPostInit();
+    }
+
+    private static void registerScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+        buildcraft.lib.client.BCMenuScreens.register(event, BCTransportGuis.filteredBuffer,
+            buildcraft.transport.gui.GuiFilteredBuffer::new);
+        buildcraft.lib.client.BCMenuScreens.register(event, BCTransportGuis.pipeDiamond,
+            buildcraft.transport.gui.GuiDiamondPipe::new);
+        buildcraft.lib.client.BCMenuScreens.register(event, BCTransportGuis.pipeDiamondWood,
+            buildcraft.transport.gui.GuiDiamondWoodPipe::new);
+        buildcraft.lib.client.BCMenuScreens.register(event, BCTransportGuis.pipeEmzuli,
+            buildcraft.transport.gui.GuiEmzuliPipe_BC8::new);
     }
 }

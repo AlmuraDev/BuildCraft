@@ -1,5 +1,7 @@
 package buildcraft.lib.client.sprite;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import java.util.function.Supplier;
 
 import net.minecraft.client.Minecraft;
@@ -24,7 +26,7 @@ public class SpriteChanging implements ISprite {
 
     @Override
     public void bindTexture() {
-        Minecraft.getInstance().renderEngine.bindTexture(Identifier.parse(location.get()));
+        buildcraft.lib.gui.GuiDraw.bind(Identifier.parse(location.get()));
     }
 
     @Override

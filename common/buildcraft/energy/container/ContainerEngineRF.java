@@ -6,6 +6,8 @@
 
 package buildcraft.energy.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import net.minecraft.world.entity.player.Player;
 
 import buildcraft.lib.gui.ContainerBCTile;
@@ -15,12 +17,12 @@ import buildcraft.energy.tile.TileEngineRF;
 
 public class ContainerEngineRF extends ContainerBCTile<TileEngineRF> {
 
-    public ContainerEngineRF(Player player, TileEngineRF engine) {
-        super(player, engine);
+    public ContainerEngineRF(MenuType<?> type, int containerId, Player player, TileEngineRF engine) {
+        super(type, containerId, player, engine);
 
         addFullPlayerInventory(95);
         for (int slot = 0; slot < 4; slot++) {
-            addSlotToContainer(new SlotBase(engine.invUpgrades, slot, 62 + 18 * slot, 44));
+            addSlot(new SlotBase(engine.invUpgrades, slot, 62 + 18 * slot, 44));
         }
     }
 }

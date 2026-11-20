@@ -119,7 +119,7 @@ public class GuiElementStatement<S extends IStatement> extends GuiElementSimple
             return;
         }
         if (ref.canInteract && button == 0) {
-            if (Screen.isShiftKeyDown()) {
+            if (net.minecraft.client.Minecraft.getInstance().hasShiftDown()) {
                 set(null);
                 return;
             }

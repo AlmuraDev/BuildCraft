@@ -6,6 +6,8 @@
 
 package buildcraft.transport.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import java.io.IOException;
 import java.util.EnumMap;
 
@@ -32,18 +34,18 @@ public class ContainerEmzuliPipe_BC8 extends ContainerPipe {
     public final EnumMap<SlotIndex, PaintWidget> paintWidgets = new EnumMap<>(SlotIndex.class);
     private final ItemHandlerSimple filterInv;
 
-    public ContainerEmzuliPipe_BC8(Player player, PipeBehaviourEmzuli behaviour) {
-        super(player, behaviour.pipe.getHolder());
+    public ContainerEmzuliPipe_BC8(MenuType<?> type, int containerId, Player player, PipeBehaviourEmzuli behaviour) {
+        super(type, containerId, player, behaviour.pipe.getHolder());
         this.behaviour = behaviour;
         this.filterInv = behaviour.invFilters;
         behaviour.pipe.getHolder().onPlayerOpen(player);
 
         addFullPlayerInventory(84);
 
-        addSlotToContainer(new SlotPhantom(filterInv, 0, 25, 21));
-        addSlotToContainer(new SlotPhantom(filterInv, 1, 25, 49));
-        addSlotToContainer(new SlotPhantom(filterInv, 2, 134, 21));
-        addSlotToContainer(new SlotPhantom(filterInv, 3, 134, 49));
+        addSlot(new SlotPhantom(filterInv, 0, 25, 21));
+        addSlot(new SlotPhantom(filterInv, 1, 25, 49));
+        addSlot(new SlotPhantom(filterInv, 2, 134, 21));
+        addSlot(new SlotPhantom(filterInv, 3, 134, 49));
 
         for (SlotIndex index : SlotIndex.VALUES) {
             createPaintWidget(index);
@@ -57,8 +59,8 @@ public class ContainerEmzuliPipe_BC8 extends ContainerPipe {
     }
 
     @Override
-    public void onContainerClosed(Player player) {
-        super.onContainerClosed(player);
+    public void removed(Player player) {
+        super.removed(player);
         behaviour.pipe.getHolder().onPlayerClose(player);
     }
 

@@ -6,9 +6,8 @@
 
 package buildcraft.factory.gui;
 
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.GlStateManager.DestFactor;
-import net.minecraft.client.renderer.GlStateManager.SourceFactor;
+import buildcraft.lib.gui.GuiDraw;
+
 import net.minecraft.resources.Identifier;
 
 import net.neoforged.neoforge.fluids.FluidStack;
@@ -119,8 +118,6 @@ public class GuiDistiller extends GuiBC8<ContainerDistiller> {
             int liquidColour = currentLiquid != null ? FluidRenderer.getAverageFluidColour(currentLiquid.getFluid()) : -1;
             int gasColour = currentGas != null ? FluidRenderer.getAverageFluidColour(currentGas.getFluid()) : -1;
 
-            GlStateManager.enableBlend();
-            GlStateManager.blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA);
             for (int i = 0; i < 10; i++) {
                 distance = drawAnimation(inputColour, gasColour, liquidColour);
 
@@ -149,12 +146,12 @@ public class GuiDistiller extends GuiBC8<ContainerDistiller> {
                 ICON_OFF_VALID_INPUT.drawAt(RECT_OFF_VALID_INPUT.offset(mainGui.rootElement));
             }
 
-            boolean gasBlocking = currentGas != null && currentGas.amount >= container.tile.tankGasOut.getCapacity();
+            boolean gasBlocking = currentGas != null && currentGas.getAmount() >= container.tile.tankGasOut.getCapacity();
 
             if (!gasBlocking) {
-                if (currentGas == null || currentGas.amount <= 0) {
+                if (currentGas == null || currentGas.getAmount() <= 0) {
                     gasBlocking = false;
-                } else if (recipe != null && !recipe.outGas().isFluidEqual(currentGas)) {
+                } else if (recipe != null && !net.neoforged.neoforge.fluids.FluidStack.isSameFluidSameComponents(recipe.outGas(), currentGas)) {
                     gasBlocking = true;
                 }
             }
@@ -163,12 +160,12 @@ public class GuiDistiller extends GuiBC8<ContainerDistiller> {
                 ICON_OFF_OUTPUT_GAS.drawAt(RECT_OFF_OUTPUT_GAS.offset(mainGui.rootElement));
             }
 
-            boolean liquidBlocking = currentLiquid != null && currentLiquid.amount >= container.tile.tankLiquidOut.getCapacity();
+            boolean liquidBlocking = currentLiquid != null && currentLiquid.getAmount() >= container.tile.tankLiquidOut.getCapacity();
 
             if (!liquidBlocking) {
-                if (currentLiquid == null || currentLiquid.amount <= 0) {
+                if (currentLiquid == null || currentLiquid.getAmount() <= 0) {
                     gasBlocking = false;
-                } else if (recipe != null && !recipe.outLiquid().isFluidEqual(currentLiquid)) {
+                } else if (recipe != null && !net.neoforged.neoforge.fluids.FluidStack.isSameFluidSameComponents(recipe.outLiquid(), currentLiquid)) {
                     liquidBlocking = true;
                 }
             }
@@ -258,7 +255,7 @@ public class GuiDistiller extends GuiBC8<ContainerDistiller> {
             MathUtil.interp(v1, y0, y1), //
             u0, v0, u1, v1
         );
-        GlStateManager.color(1, 1, 1, 1);
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), (float) ( 1));
     }
 
     @Override
@@ -266,10 +263,10 @@ public class GuiDistiller extends GuiBC8<ContainerDistiller> {
         String str = LocaleUtil.localize("tile.distiller.name");
         double titleX = mainGui.rootElement.getX() + 6;
         double titleY = mainGui.rootElement.getY() + 6;
-        fontRenderer.drawString(str, (int) titleX, (int) titleY, 0x404040);
+        GuiDraw.text(fontRenderer, str, (int) titleX, (int) titleY, 0x404040, false);
 
         double invX = mainGui.rootElement.getX() + 8;
         double invY = mainGui.rootElement.getY() + SIZE_Y - 96;
-        fontRenderer.drawString(LocaleUtil.localize("gui.inventory"), (int) invX, (int) invY, 0x404040);
+        GuiDraw.text(fontRenderer, LocaleUtil.localize("gui.inventory"), (int) invX, (int) invY, 0x404040, false);
     }
 }

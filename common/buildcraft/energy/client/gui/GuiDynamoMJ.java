@@ -6,12 +6,12 @@
 
 package buildcraft.energy.client.gui;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.resources.Identifier;
@@ -62,7 +62,7 @@ public class GuiDynamoMJ extends GuiBC8<ContainerDynamoMJ> {
                     List<String> lines = new ArrayList<>();
                     lines.add(LocaleUtil.localize("buildcraft.gui.rf_engine.upgrade_types"));
                     for (Map.Entry<Item, Long> entry : TileEngineRF.RF_UPGRADE.entrySet()) {
-                        String itemName = entry.getKey().getItemStackDisplayName(new ItemStack(entry.getKey()));
+                        String itemName = (new ItemStack(entry.getKey())).getHoverName().getString();
                         long mj = entry.getValue();
                         int rf = (int) (mj / BCLibConfig.mjRfConversion.mjPerRf);
                         lines.add(itemName + " = +" + LocaleUtil.localizeRfFlow(rf));
@@ -101,32 +101,30 @@ public class GuiDynamoMJ extends GuiBC8<ContainerDynamoMJ> {
     protected void drawBackgroundLayer(float partialTicks) {
         ICON_GUI.drawAt(mainGui.rootElement);
         double rfHeight = 60.0 * container.tile.getCurrentRF() / TileEngineRF.MAX_RF;
-        double scale = new ScaledResolution(mc).getScaleFactor();
+        double scale = mc.getWindow().getGuiScale();
         rfHeight = (Math.round(rfHeight * scale)) / scale;
         ICON_RF.drawCutInside(new GuiRectangle(139, 18 + 60 - rfHeight, 6, rfHeight).offset(mainGui.rootElement));
 
         int x = getGuiLeft();
         int y = getGuiTop();
-        itemRender.renderItemAndEffectIntoGUI(new ItemStack(BCCoreItems.gearIron), x + 60, y + 22);
-        itemRender.renderItemAndEffectIntoGUI(new ItemStack(BCCoreItems.gearGold), x + 83, y + 22);
+        GuiDraw.item(new ItemStack(BCCoreItems.gearIron), x + 60, y + 22);
+        GuiDraw.item(new ItemStack(BCCoreItems.gearGold), x + 83, y + 22);
 
-        GlStateManager.disableDepth();
-        GlStateManager.color(1, 1, 1, 0.65f);
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), (float) ( 0.65f));
         ICON_OVERLAY.drawAt(mainGui.rootElement.offset(39, 18));
-        GlStateManager.color(1, 1, 1, 1f);
-        GlStateManager.enableDepth();
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), (float) ( 1f));
     }
 
     @Override
     protected void drawForegroundLayer() {
         String str = LocaleUtil.localize("tile.mjDynamo.name");
-        int strWidth = fontRenderer.getStringWidth(str);
+        int strWidth = fontRenderer.width(str);
         double titleX = mainGui.rootElement.getCenterX() - strWidth / 2;
         double titleY = mainGui.rootElement.getY() + 6;
-        fontRenderer.drawString(str, (int) titleX, (int) titleY, 0x404040);
+        GuiDraw.text(fontRenderer, str, (int) titleX, (int) titleY, 0x404040, false);
 
         double invX = mainGui.rootElement.getX() + 8;
         double invY = mainGui.rootElement.getY() + SIZE_Y - 96;
-        fontRenderer.drawString(LocaleUtil.localize("gui.inventory"), (int) invX, (int) invY, 0x404040);
+        GuiDraw.text(fontRenderer, LocaleUtil.localize("gui.inventory"), (int) invX, (int) invY, 0x404040, false);
     }
 }

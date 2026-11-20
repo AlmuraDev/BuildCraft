@@ -6,18 +6,12 @@
 
 package buildcraft.lib.client.sprite;
 
-import org.lwjgl.opengl.GL11;
-
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-
-import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.api.core.render.ISprite;
 
+import buildcraft.lib.gui.GuiDraw;
 import buildcraft.lib.gui.pos.IGuiArea;
 
 /** Defines and draws a 9-sliced sprite. */
@@ -62,10 +56,6 @@ public class SpriteNineSliced {
 
     public void draw(double x, double y, double width, double height) {
         sprite.bindTexture();
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder vb = tess.getBuffer();
-        vb.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_TEX);
-        vb.setTranslation(x, y, 0);
 
         double sx = xScale;
         double sy = yScale;
@@ -75,38 +65,11 @@ public class SpriteNineSliced {
         double[] ua = { 0, xMin, xMax, 1 };
         double[] va = { 0, yMin, yMax, 1 };
 
-        quad(vb, xa, ya, ua, va, 0, 0);
-        quad(vb, xa, ya, ua, va, 0, 1);
-        quad(vb, xa, ya, ua, va, 0, 2);
-
-        quad(vb, xa, ya, ua, va, 1, 0);
-        quad(vb, xa, ya, ua, va, 1, 1);
-        quad(vb, xa, ya, ua, va, 1, 2);
-
-        quad(vb, xa, ya, ua, va, 2, 0);
-        quad(vb, xa, ya, ua, va, 2, 1);
-        quad(vb, xa, ya, ua, va, 2, 2);
-
-        tess.draw();
-        vb.setTranslation(0, 0, 0);
-    }
-
-    private void quad(BufferBuilder vb, double[] x, double[] y, double[] u, double[] v, int xIndex, int yIndex) {
-        int xis = xIndex;
-        int xIB = xIndex + 1;
-
-        int yis = yIndex;
-        int yIB = yIndex + 1;
-
-        vertex(vb, x[xis], y[yis], u[xis], v[yis]);
-        vertex(vb, x[xis], y[yIB], u[xis], v[yIB]);
-        vertex(vb, x[xIB], y[yIB], u[xIB], v[yIB]);
-        vertex(vb, x[xIB], y[yis], u[xIB], v[yis]);
-    }
-
-    private void vertex(BufferBuilder vb, double x, double y, double texU, double texV) {
-        vb.pos(x, y, 0);
-        vb.tex(sprite.getInterpU(texU), sprite.getInterpV(texV));
-        vb.endVertex();
+        for (int xi = 0; xi < 3; xi++) {
+            for (int yi = 0; yi < 3; yi++) {
+                GuiDraw.quad(x + xa[xi], y + ya[yi], x + xa[xi + 1], y + ya[yi + 1], sprite.getInterpU(ua[xi]),
+                    sprite.getInterpV(va[yi]), sprite.getInterpU(ua[xi + 1]), sprite.getInterpV(va[yi + 1]));
+            }
+        }
     }
 }

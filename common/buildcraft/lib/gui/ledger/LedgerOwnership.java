@@ -36,12 +36,15 @@ public class LedgerOwnership extends Ledger_Neptune {
 
     @Override
     protected void drawIcon(double x, double y) {
-        ISprite sprite = SpriteUtil.getFaceSprite(tile.getOwner());
-        GuiIcon.draw(sprite, x, y, x + 16, y + 16);
-        sprite = SpriteUtil.getFaceOverlaySprite(tile.getOwner());
-        if (sprite != null) {
-            GuiIcon.draw(sprite, x - 0.5, y - 0.5, x + 17, y + 17);
+        net.minecraft.world.entity.player.PlayerSkin skin = SpriteUtil.getSkin(tile.getOwner());
+        net.minecraft.client.gui.GuiGraphicsExtractor graphics = buildcraft.lib.gui.GuiDraw.graphics();
+        if (skin == null || graphics == null) {
+            GuiIcon.draw(buildcraft.lib.BCLibSprites.HELP, x, y, x + 16, y + 16);
+            return;
         }
+        // The face with its hat layer (1.12.2 drew the two layers as sprites)
+        net.minecraft.client.gui.components.PlayerFaceExtractor.extractRenderState(graphics, skin, (int) x, (int) y,
+            16);
     }
 
     private String getOwnerName() {
@@ -49,6 +52,6 @@ public class LedgerOwnership extends Ledger_Neptune {
         if (owner == null) {
             return "no-one";
         }
-        return owner.getName();
+        return owner.name();
     }
 }

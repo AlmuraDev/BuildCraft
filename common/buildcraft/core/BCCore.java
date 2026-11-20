@@ -71,6 +71,7 @@ public class BCCore {
                 MODID, modBus);
         conditions.register("engine_enabled", () -> buildcraft.core.recipe.EngineEnabledCondition.CODEC);
 
+        BCCoreGuis.fmlPreInit(modBus);
         BCCoreProxy.getProxy().fmlPreInit();
 
         NeoForge.EVENT_BUS.register(BCCoreEventDist.INSTANCE);

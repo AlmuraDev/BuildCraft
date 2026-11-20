@@ -90,7 +90,7 @@ public class GuiElectronicLibrary extends GuiBC8<ContainerElectronicLibrary> {
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
         AtomicBoolean found = new AtomicBoolean(false);
         iterateSnapshots((i, rect, key) -> {
             if (rect.contains(mainGui.mouse)) {

@@ -6,15 +6,10 @@ import java.util.List;
 
 import gnu.trove.set.hash.TIntHashSet;
 
-import org.lwjgl.opengl.GL11;
-
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.resources.Identifier;
 
 import buildcraft.lib.BCLibSprites;
@@ -52,6 +47,7 @@ import buildcraft.lib.misc.GuiUtil;
  * For both {@link #drawBackgroundLayer(float, int, int, Runnable)} and {@link #drawElementForegrounds(Runnable)} the
  * {@link Runnable} passed will only be called once, and it's call time will differ based on the
  * {@link #currentMenu}. */
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 public class BuildCraftGui {
 
     /** Used to control if this gui should show debugging lines, and other oddities that help development. */
@@ -110,8 +106,8 @@ public class BuildCraftGui {
 
     /** Creates a new {@link BuildCraftGui} that takes it's {@link #rootElement} from the {@link AbstractContainerScreen}'s
      * size. */
-    public static IGuiArea createWindowedArea(AbstractContainerScreen gui) {
-        return IGuiArea.create(gui::getGuiLeft, gui::getGuiTop, gui::getXSize, gui::getYSize);
+    public static IGuiArea createWindowedArea(AbstractContainerScreen<?> gui) {
+        return IGuiArea.create(gui::getLeftPos, gui::getTopPos, gui::getImageWidth, gui::getImageHeight);
     }
 
     /** @return The current partial ticks value. */
@@ -173,21 +169,20 @@ public class BuildCraftGui {
 
     public void drawBackgroundLayer(float partialTicks, int mouseX, int mouseY, Runnable menuBackgroundRenderer) {
         // FIX FOR MC-121719 // https://bugs.mojang.com/browse/MC-121719
-        partialTicks = mc.getDeltaTracker();
+        partialTicks = mc.getDeltaTracker().getGameTimeDeltaPartialTick(false);
         // END FIX
 
-        RenderHelper.disableStandardItemLighting();
         this.lastPartialTicks = partialTicks;
         mouse.setMousePosition(mouseX, mouseY);
         if (currentMenu == null || !currentMenu.shouldFullyOverride()) {
             menuBackgroundRenderer.run();
         }
 
-        GlStateManager.color(1, 1, 1, 1);
+        GuiDraw.resetColour();
         if (isDebuggingShown.evaluate()) {
             SPRITE_DEBUG.drawAt(0, 0);
             if (isDebuggingEnabled.evaluate()) {
-                Gui.drawRect(0, 0, 16, 16, 0x33_FF_FF_FF);
+                GuiDraw.fill(0, 0, 16, 16, 0x33_FF_FF_FF);
 
                 if (rootElement != screenElement) {
                     // draw the outer resizing edges
@@ -201,11 +196,11 @@ public class BuildCraftGui {
                     sx--;
                     sy--;
 
-                    Gui.drawRect(sx, sy, ex + 1, sy + 1, -1);
-                    Gui.drawRect(sx, ey, ex + 1, ey + 1, -1);
+                    GuiDraw.fill(sx, sy, ex + 1, sy + 1, -1);
+                    GuiDraw.fill(sx, ey, ex + 1, ey + 1, -1);
 
-                    Gui.drawRect(sx, sy, sx + 1, ey + 1, -1);
-                    Gui.drawRect(ex, sy, ex + 1, ey + 1, -1);
+                    GuiDraw.fill(sx, sy, sx + 1, ey + 1, -1);
+                    GuiDraw.fill(ex, sy, ex + 1, ey + 1, -1);
                 }
             }
         }
@@ -220,17 +215,17 @@ public class BuildCraftGui {
     }
 
     public void preDrawForeground() {
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(-rootElement.getX(), -rootElement.getY(), 0);
+        GuiDraw.pushPose();
+        GuiDraw.translate(-rootElement.getX(), -rootElement.getY());
     }
 
     public void postDrawForeground() {
-        GlStateManager.popMatrix();
+        GuiDraw.popPose();
     }
 
     /** @param menuBackgroundRenderer Will be called to draw the background if the current menu returns true from
      *            {@link IMenuElement#shouldFullyOverride()}. This will draw above all of the normal elements.
-     *            {@link GL11#GL_DEPTH_TEST} will have been disabled for this. */
+     *            It is drawn on a layer above everything before it. */
     public void drawElementForegrounds(Runnable menuBackgroundRenderer) {
 
         for (IGuiElement element : shownElements) {
@@ -242,14 +237,14 @@ public class BuildCraftGui {
         IMenuElement m = currentMenu;
         if (m != null) {
             if (m.shouldFullyOverride() && menuBackgroundRenderer != null) {
-                GlStateManager.disableDepth();
+                GuiDraw.nextLayer();
                 menuBackgroundRenderer.run();
-                GlStateManager.enableDepth();
             }
             m.drawBackground(lastPartialTicks);
             m.drawForeground(lastPartialTicks);
         }
 
+        GuiDraw.nextLayer();
         GuiUtil.drawVerticallyAppending(mouse, getAllTooltips(), this::drawTooltip);
 
         if (isDebuggingEnabled.evaluate()) {
@@ -271,21 +266,21 @@ public class BuildCraftGui {
                 float[] hsb = Color.RGBtoHSB(colour & 0xFF, (colour >> 8) & 0xFF, (colour >> 16) & 0xFF, null);
                 int colourDark = Color.HSBtoRGB(hsb[0], hsb[1], Math.max(hsb[2] - 0.25f, 0)) | 0xFF_00_00_00;
 
-                Gui.drawRect(sx, sy, ex + 1, sy + 1, colour);
-                Gui.drawRect(sx, ey, ex + 1, ey + 1, colour);
+                GuiDraw.fill(sx, sy, ex + 1, sy + 1, colour);
+                GuiDraw.fill(sx, ey, ex + 1, ey + 1, colour);
 
-                Gui.drawRect(sx, sy, sx + 1, ey + 1, colour);
-                Gui.drawRect(ex, sy, ex + 1, ey + 1, colour);
+                GuiDraw.fill(sx, sy, sx + 1, ey + 1, colour);
+                GuiDraw.fill(ex, sy, ex + 1, ey + 1, colour);
 
-                Gui.drawRect(sx - 1, sy - 1, ex + 2, sy, colourDark);
-                Gui.drawRect(sx - 1, ey + 1, ex + 2, ey + 2, colourDark);
+                GuiDraw.fill(sx - 1, sy - 1, ex + 2, sy, colourDark);
+                GuiDraw.fill(sx - 1, ey + 1, ex + 2, ey + 2, colourDark);
 
-                Gui.drawRect(sx - 1, sy - 1, sx, ey + 2, colourDark);
-                Gui.drawRect(ex + 1, sy - 1, ex + 2, ey + 2, colourDark);
+                GuiDraw.fill(sx - 1, sy - 1, sx, ey + 2, colourDark);
+                GuiDraw.fill(ex + 1, sy - 1, ex + 2, ey + 2, colourDark);
 
-                fr.drawStringWithShadow(name, x, y, -1);
+                GuiDraw.text(fr, name, x, y, -1, true);
 
-                int w = fr.getStringWidth(name) + 3;
+                int w = fr.width(name) + 3;
 
                 int mx = ((sx + 3) >> 2) << 2;
                 for (int x2 = mx; x2 < ex; x2 += 4) {
@@ -297,11 +292,11 @@ public class BuildCraftGui {
 
                 GuiUtil.drawHorizontalLine(x + w, mx, y + 4, colour);
                 GuiUtil.drawVerticalLine(mx, y + 4, sy, colour);
-                y += fr.FONT_HEIGHT + 2;
+                y += fr.lineHeight + 2;
 
                 for (String line : info) {
-                    fr.drawStringWithShadow(line, x + 7, y, -1);
-                    y += fr.FONT_HEIGHT + 2;
+                    GuiDraw.text(fr, line, x + 7, y, -1, true);
+                    y += fr.lineHeight + 2;
                 }
                 info.clear();
             }

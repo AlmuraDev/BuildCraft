@@ -6,6 +6,8 @@
 
 package buildcraft.lib.client.sprite;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -122,7 +124,8 @@ public class SpriteHolderRegistry {
 
         @Override
         public void bindTexture() {
-            // 26.3 draws through render pipelines that name their textures; nothing is bound globally any more.
+            // GUI drawing (GuiDraw) keeps the 1.12.2 "bound texture"; world rendering names its atlas itself.
+            buildcraft.lib.gui.GuiDraw.bindBlockAtlas();
         }
 
         @Override

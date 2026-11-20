@@ -4,6 +4,8 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.silicon.gui;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -82,13 +84,14 @@ public class GuiAssemblyTable extends GuiBC8<ContainerAssemblyTable> {
 
     @Override
     protected void drawForegroundLayer() {
-        String title = I18n.format("tile.assemblyTableBlock.name");
-        fontRenderer.drawString(title, guiLeft + (xSize - fontRenderer.getStringWidth(title)) / 2, guiTop + 15, 0x404040);
+        String title = I18n.get("tile.assemblyTableBlock.name");
+        GuiDraw.text(fontRenderer, title, guiLeft + (xSize - fontRenderer.width(title)) / 2, guiTop + 15, 0x404040, false);
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
-        super.mouseClicked(mouseX, mouseY, mouseButton);
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean doubleClick) {
+        boolean handled = super.mouseClicked(event, doubleClick);
+        int mouseX = (int) event.x(), mouseY = (int) event.y(), mouseButton = event.button();
         if (mouseButton == 0) {
             for (int i = 0; i < container.tile.recipesStates.size(); i++) {
                 TileAssemblyTable.AssemblyInstruction instruction = new ArrayList<>(container.tile.recipesStates.keySet()).get(i);
@@ -103,5 +106,6 @@ public class GuiAssemblyTable extends GuiBC8<ContainerAssemblyTable> {
                 }
             }
         }
+        return handled;
     }
 }

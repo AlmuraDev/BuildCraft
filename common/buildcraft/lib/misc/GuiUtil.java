@@ -6,68 +6,61 @@
 
 package buildcraft.lib.misc;
 
-import buildcraft.api.core.NbtStacks;
-import net.minecraft.core.registries.BuiltInRegistries;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-import org.lwjgl.opengl.GL11;
-
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.Gui;
-import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.RenderItem;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.TooltipFlag.TooltipFlags;
-import net.minecraft.world.item.Item;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Style;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.util.Mth;
-import net.minecraft.ChatFormatting;
+import net.minecraft.world.item.TooltipFlag;
 
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.fluids.FluidStack;
-import net.minecraftforge.fml.client.config.GuiUtils;
 
-import buildcraft.api.core.BCLog;
 import buildcraft.api.core.render.ISprite;
 
 import buildcraft.lib.client.guide.font.IFontRenderer;
 import buildcraft.lib.client.render.fluid.FluidRenderer;
+import buildcraft.lib.client.render.fluid.FluidSpriteType;
 import buildcraft.lib.client.sprite.SpriteNineSliced;
 import buildcraft.lib.client.sprite.SubSprite;
 import buildcraft.lib.expression.api.IConstantNode;
 import buildcraft.lib.fluid.Tank;
+import buildcraft.lib.gui.GuiDraw;
 import buildcraft.lib.gui.elem.ToolTip;
 import buildcraft.lib.gui.pos.GuiRectangle;
 import buildcraft.lib.gui.pos.IGuiArea;
 import buildcraft.lib.gui.pos.IGuiPosition;
 
+/** GUI helpers. Everything draws through {@link GuiDraw}, so it only works inside a BuildCraft screen's render. */
+@OnlyIn(Dist.CLIENT)
 public class GuiUtil {
 
     public static final IGuiArea AREA_WHOLE_SCREEN;
-    private static final Deque<GuiRectangle> scissorRegions = new ArrayDeque<>();
 
     static {
         AREA_WHOLE_SCREEN = IGuiArea.create(() -> 0, () -> 0, GuiUtil::getScreenWidth, GuiUtil::getScreenHeight);
     }
 
-    /** @return The relative screen width. (Relative - changes with both the window size and the game setting "gui
-     *         scale".) */
+    /** @return The relative screen width (changes with both the window size and the "gui scale" setting). */
     public static int getScreenWidth() {
-        return Minecraft.getInstance().screen.width;
+        return Minecraft.getInstance().getWindow().getGuiScaledWidth();
     }
 
-    /** @return The relative screen height. (Relative - changes with both the window size and the game setting "gui
-     *         scale".) */
+    /** @return The relative screen height (changes with both the window size and the "gui scale" setting). */
     public static int getScreenHeight() {
-        return Minecraft.getInstance().screen.height;
+        return Minecraft.getInstance().getWindow().getGuiScaledHeight();
     }
 
     public static IGuiArea moveRectangleToCentre(GuiRectangle area) {
@@ -116,12 +109,7 @@ public class GuiUtil {
     }
 
     public static void drawItemStackAt(ItemStack stack, int x, int y) {
-        RenderHelper.enableGUIStandardItemLighting();
-        Minecraft mc = Minecraft.getInstance();
-        RenderItem itemRender = mc.getRenderItem();
-        itemRender.renderItemAndEffectIntoGUI(mc.player, stack, x, y);
-        itemRender.renderItemOverlayIntoGUI(mc.font, stack, x, y, null);
-        RenderHelper.disableStandardItemLighting();
+        GuiDraw.item(stack, x, y);
     }
 
     @FunctionalInterface
@@ -129,142 +117,113 @@ public class GuiUtil {
         double draw(D drawable, double x, double y);
     }
 
-    /** Straight copy of {@link GuiUtils#drawHoveringText(List, int, int, int, int, int, Font)}, except that we
-     * return the height of the box that was drawn. Draws a tooltip box on the screen with text in it. Automatically
-     * positions the box relative to the mouse to match Mojang's implementation. Automatically wraps text when there is
-     * not enough space on the screen to display the text without wrapping. Can have a maximum width set to avoid
-     * creating very wide tooltips.
+    /** A copy of Forge 1.12.2's GuiUtils.drawHoveringText, except that it returns the height of the box that was
+     * drawn. Positions the box relative to the mouse like vanilla does, and wraps text that doesn't fit on screen.
      *
-     * @param textLines the lines of text to be drawn in a hovering tooltip box.
-     * @param mouseX the mouse X position
-     * @param mouseY the mouse Y position
-     * @param screenWidth the available screen width for the tooltip to drawn in
-     * @param screenHeight the available screen height for the tooltip to drawn in
-     * @param maxTextWidth the maximum width of the text in the tooltip box. Set to a negative number to have no max
-     *            width.
-     * @param font the font for drawing the text in the tooltip box */
+     * @param maxTextWidth the maximum width of the text in the tooltip box, or a negative number for no maximum.
+     * @return the height of the box drawn, plus 5 (0 if nothing was drawn) */
     public static int drawHoveringText(List<String> textLines, final int mouseX, final int mouseY,
         final int screenWidth, final int screenHeight, final int maxTextWidth, Font font) {
-        if (!textLines.isEmpty()) {
-            GlStateManager.disableRescaleNormal();
-            RenderHelper.disableStandardItemLighting();
-            GlStateManager.disableLighting();
-            GlStateManager.disableDepth();
-            int tooltipTextWidth = 0;
+        if (textLines.isEmpty()) {
+            return 0;
+        }
+        int tooltipTextWidth = 0;
+        for (String textLine : textLines) {
+            tooltipTextWidth = Math.max(tooltipTextWidth, font.width(textLine));
+        }
 
-            for (String textLine : textLines) {
-                int textLineWidth = font.getStringWidth(textLine);
-
-                if (textLineWidth > tooltipTextWidth) {
-                    tooltipTextWidth = textLineWidth;
+        boolean needsWrap = false;
+        int titleLinesCount = 1;
+        int tooltipX = mouseX + 12;
+        if (tooltipX + tooltipTextWidth + 4 > screenWidth) {
+            tooltipX = mouseX - 16 - tooltipTextWidth;
+            if (tooltipX < 4) {
+                if (mouseX > screenWidth / 2) {
+                    tooltipTextWidth = mouseX - 12 - 8;
+                } else {
+                    tooltipTextWidth = screenWidth - 16 - mouseX;
                 }
-            }
-
-            boolean needsWrap = false;
-
-            int titleLinesCount = 1;
-            int tooltipX = mouseX + 12;
-            if (tooltipX + tooltipTextWidth + 4 > screenWidth) {
-                tooltipX = mouseX - 16 - tooltipTextWidth;
-                if (tooltipX < 4) // if the tooltip doesn't fit on the screen
-                {
-                    if (mouseX > screenWidth / 2) {
-                        tooltipTextWidth = mouseX - 12 - 8;
-                    } else {
-                        tooltipTextWidth = screenWidth - 16 - mouseX;
-                    }
-                    needsWrap = true;
-                }
-            }
-
-            if (maxTextWidth > 0 && tooltipTextWidth > maxTextWidth) {
-                tooltipTextWidth = maxTextWidth;
                 needsWrap = true;
             }
-
-            if (needsWrap) {
-                int wrappedTooltipWidth = 0;
-                List<String> wrappedTextLines = new ArrayList<>();
-                for (int i = 0; i < textLines.size(); i++) {
-                    String textLine = textLines.get(i);
-                    List<String> wrappedLine = font.listFormattedStringToWidth(textLine, tooltipTextWidth);
-                    if (i == 0) {
-                        titleLinesCount = wrappedLine.size();
-                    }
-
-                    for (String line : wrappedLine) {
-                        int lineWidth = font.getStringWidth(line);
-                        if (lineWidth > wrappedTooltipWidth) {
-                            wrappedTooltipWidth = lineWidth;
-                        }
-                        wrappedTextLines.add(line);
-                    }
-                }
-                tooltipTextWidth = wrappedTooltipWidth;
-                textLines = wrappedTextLines;
-
-                if (mouseX > screenWidth / 2) {
-                    tooltipX = mouseX - 16 - tooltipTextWidth;
-                } else {
-                    tooltipX = mouseX + 12;
-                }
-            }
-
-            int tooltipY = mouseY - 12;
-            int tooltipHeight = 8;
-
-            if (textLines.size() > 1) {
-                tooltipHeight += (textLines.size() - 1) * 10;
-                if (textLines.size() > titleLinesCount) {
-                    tooltipHeight += 2; // gap between title lines and next lines
-                }
-            }
-
-            if (tooltipY + tooltipHeight + 6 > screenHeight) {
-                tooltipY = screenHeight - tooltipHeight - 6;
-            }
-
-            final int zLevel = 300;
-            final int backgroundColor = 0xF0100010;
-            GuiUtils.drawGradientRect(zLevel, tooltipX - 3, tooltipY - 4, tooltipX + tooltipTextWidth + 3, tooltipY - 3,
-                backgroundColor, backgroundColor);
-            GuiUtils.drawGradientRect(zLevel, tooltipX - 3, tooltipY + tooltipHeight + 3,
-                tooltipX + tooltipTextWidth + 3, tooltipY + tooltipHeight + 4, backgroundColor, backgroundColor);
-            GuiUtils.drawGradientRect(zLevel, tooltipX - 3, tooltipY - 3, tooltipX + tooltipTextWidth + 3,
-                tooltipY + tooltipHeight + 3, backgroundColor, backgroundColor);
-            GuiUtils.drawGradientRect(zLevel, tooltipX - 4, tooltipY - 3, tooltipX - 3, tooltipY + tooltipHeight + 3,
-                backgroundColor, backgroundColor);
-            GuiUtils.drawGradientRect(zLevel, tooltipX + tooltipTextWidth + 3, tooltipY - 3,
-                tooltipX + tooltipTextWidth + 4, tooltipY + tooltipHeight + 3, backgroundColor, backgroundColor);
-            final int borderColorStart = 0x505000FF;
-            final int borderColorEnd = (borderColorStart & 0xFEFEFE) >> 1 | borderColorStart & 0xFF000000;
-            GuiUtils.drawGradientRect(zLevel, tooltipX - 3, tooltipY - 3 + 1, tooltipX - 3 + 1,
-                tooltipY + tooltipHeight + 3 - 1, borderColorStart, borderColorEnd);
-            GuiUtils.drawGradientRect(zLevel, tooltipX + tooltipTextWidth + 2, tooltipY - 3 + 1,
-                tooltipX + tooltipTextWidth + 3, tooltipY + tooltipHeight + 3 - 1, borderColorStart, borderColorEnd);
-            GuiUtils.drawGradientRect(zLevel, tooltipX - 3, tooltipY - 3, tooltipX + tooltipTextWidth + 3,
-                tooltipY - 3 + 1, borderColorStart, borderColorStart);
-            GuiUtils.drawGradientRect(zLevel, tooltipX - 3, tooltipY + tooltipHeight + 2,
-                tooltipX + tooltipTextWidth + 3, tooltipY + tooltipHeight + 3, borderColorEnd, borderColorEnd);
-
-            for (int lineNumber = 0; lineNumber < textLines.size(); ++lineNumber) {
-                String line = textLines.get(lineNumber);
-                font.drawStringWithShadow(line, tooltipX, tooltipY, -1);
-
-                if (lineNumber + 1 == titleLinesCount) {
-                    tooltipY += 2;
-                }
-
-                tooltipY += 10;
-            }
-
-            GlStateManager.enableLighting();
-            GlStateManager.enableDepth();
-            RenderHelper.enableStandardItemLighting();
-            GlStateManager.enableRescaleNormal();
-            return tooltipHeight + 5;
         }
-        return 0;
+
+        if (maxTextWidth > 0 && tooltipTextWidth > maxTextWidth) {
+            tooltipTextWidth = maxTextWidth;
+            needsWrap = true;
+        }
+
+        if (needsWrap) {
+            int wrappedTooltipWidth = 0;
+            List<String> wrappedTextLines = new ArrayList<>();
+            for (int i = 0; i < textLines.size(); i++) {
+                List<String> wrappedLine = wrap(font, textLines.get(i), tooltipTextWidth);
+                if (i == 0) {
+                    titleLinesCount = wrappedLine.size();
+                }
+                for (String line : wrappedLine) {
+                    wrappedTooltipWidth = Math.max(wrappedTooltipWidth, font.width(line));
+                    wrappedTextLines.add(line);
+                }
+            }
+            tooltipTextWidth = wrappedTooltipWidth;
+            textLines = wrappedTextLines;
+
+            if (mouseX > screenWidth / 2) {
+                tooltipX = mouseX - 16 - tooltipTextWidth;
+            } else {
+                tooltipX = mouseX + 12;
+            }
+        }
+
+        int tooltipY = mouseY - 12;
+        int tooltipHeight = 8;
+
+        if (textLines.size() > 1) {
+            tooltipHeight += (textLines.size() - 1) * 10;
+            if (textLines.size() > titleLinesCount) {
+                tooltipHeight += 2; // gap between title lines and next lines
+            }
+        }
+
+        if (tooltipY + tooltipHeight + 6 > screenHeight) {
+            tooltipY = screenHeight - tooltipHeight - 6;
+        }
+
+        final int backgroundColor = 0xF0100010;
+        int x0 = tooltipX - 3, x1 = tooltipX + tooltipTextWidth + 3;
+        int y0 = tooltipY - 3, y1 = tooltipY + tooltipHeight + 3;
+        GuiDraw.gradient(x0, y0 - 1, x1, y0, backgroundColor, backgroundColor);
+        GuiDraw.gradient(x0, y1, x1, y1 + 1, backgroundColor, backgroundColor);
+        GuiDraw.gradient(x0, y0, x1, y1, backgroundColor, backgroundColor);
+        GuiDraw.gradient(x0 - 1, y0, x0, y1, backgroundColor, backgroundColor);
+        GuiDraw.gradient(x1, y0, x1 + 1, y1, backgroundColor, backgroundColor);
+        final int borderColorStart = 0x505000FF;
+        final int borderColorEnd = (borderColorStart & 0xFEFEFE) >> 1 | borderColorStart & 0xFF000000;
+        GuiDraw.gradient(x0, y0 + 1, x0 + 1, y1 - 1, borderColorStart, borderColorEnd);
+        GuiDraw.gradient(x1 - 1, y0 + 1, x1, y1 - 1, borderColorStart, borderColorEnd);
+        GuiDraw.gradient(x0, y0, x1, y0 + 1, borderColorStart, borderColorStart);
+        GuiDraw.gradient(x0, y1 - 1, x1, y1, borderColorEnd, borderColorEnd);
+
+        for (int lineNumber = 0; lineNumber < textLines.size(); ++lineNumber) {
+            GuiDraw.text(font, textLines.get(lineNumber), tooltipX, tooltipY, -1, true);
+            if (lineNumber + 1 == titleLinesCount) {
+                tooltipY += 2;
+            }
+            tooltipY += 10;
+        }
+        return tooltipHeight + 5;
+    }
+
+    /** Wraps a line to the given width. Formatting codes only carry over within the first piece. */
+    public static List<String> wrap(Font font, String text, int width) {
+        List<String> out = new ArrayList<>();
+        for (FormattedText part : font.getSplitter().splitLines(text, width, Style.EMPTY)) {
+            out.add(part.getString());
+        }
+        if (out.isEmpty()) {
+            out.add("");
+        }
+        return out;
     }
 
     public static void drawHorizontalLine(int startX, int endX, int y, int color) {
@@ -273,7 +232,7 @@ public class GuiUtil {
             startX = endX;
             endX = i;
         }
-        Gui.drawRect(startX, y, endX + 1, y + 1, color);
+        GuiDraw.fill(startX, y, endX + 1, y + 1, color);
     }
 
     public static void drawVerticalLine(int x, int startY, int endY, int color) {
@@ -282,7 +241,7 @@ public class GuiUtil {
             startY = endY;
             endY = i;
         }
-        Gui.drawRect(x, startY + 1, x + 1, endY, color);
+        GuiDraw.fill(x, startY + 1, x + 1, endY, color);
     }
 
     public static void drawRect(IGuiArea area, int colour) {
@@ -290,19 +249,14 @@ public class GuiUtil {
         int yMin = (int) area.getY();
         int xMax = (int) area.getEndX();
         int yMax = (int) area.getEndY();
-        Gui.drawRect(xMin, yMin, xMax, yMax, colour);
+        GuiDraw.fill(xMin, yMin, xMax, yMax, colour);
     }
 
+    /** 1.12.2's Gui.drawTexturedModalRect, on the bound texture (256x256). */
     public static void drawTexturedModalRect(double posX, double posY, double textureX, double textureY, double width,
         double height) {
-        int x = Mth.floor(posX);
-        int y = Mth.floor(posY);
-        int u = Mth.floor(textureX);
-        int v = Mth.floor(textureY);
-        int w = Mth.floor(width);
-        int h = Mth.floor(height);
-        Gui gui = Minecraft.getInstance().screen;
-        gui.drawTexturedModalRect(x, y, u, v, w, h);
+        GuiDraw.texturedRect(Math.floor(posX), Math.floor(posY), Math.floor(textureX), Math.floor(textureY),
+            Math.floor(width), Math.floor(height));
     }
 
     public static void drawFluid(IGuiArea position, Tank tank) {
@@ -315,7 +269,7 @@ public class GuiUtil {
     }
 
     public static void drawFluid(IGuiArea position, FluidStack fluid, int amount, int capacity) {
-        if (fluid == null || amount <= 0) return;
+        if (fluid == null || fluid.isEmpty() || amount <= 0) return;
 
         double height = amount * position.getHeight() / capacity;
 
@@ -324,7 +278,7 @@ public class GuiUtil {
         double endX = startX + position.getWidth();
         double endY;
 
-        if (fluid.getFluid().isGaseous(fluid)) {
+        if (fluid.getFluidType().isLighterThanAir()) {
             startY = position.getY() + height;
             endY = position.getY();
         } else {
@@ -332,68 +286,45 @@ public class GuiUtil {
             endY = startY - height;
         }
 
-        FluidRenderer.drawFluidForGui(fluid, startX, startY, endX, endY);
+        drawFluidForGui(fluid, startX, startY, endX, endY);
+    }
+
+    /** Fills the area with the fluid's still texture, tiled every 16 pixels from (startX, startY) (1.12.2's
+     * FluidRenderer.drawFluidForGui). */
+    public static void drawFluidForGui(FluidStack fluid, double startX, double startY, double endX, double endY) {
+        TextureAtlasSprite sprite = FluidRenderer.getFluidSprite(FluidSpriteType.STILL, fluid);
+        if (sprite == null) {
+            sprite = SpriteUtil.missingSprite();
+        }
+        int colour = 0xFF_00_00_00 | (FluidRenderer.getFluidTint(fluid) & 0xFF_FF_FF);
+        double diffX = endX - startX;
+        double diffY = endY - startY;
+        double signX = Math.signum(diffX);
+        double signY = Math.signum(diffY);
+        for (double dx = 0; dx < Math.abs(diffX); dx += 16) {
+            double w = Math.min(16, Math.abs(diffX) - dx);
+            double x0 = startX + signX * dx;
+            double x1 = x0 + signX * w;
+            for (double dy = 0; dy < Math.abs(diffY); dy += 16) {
+                double h = Math.min(16, Math.abs(diffY) - dy);
+                double y0 = startY + signY * dy;
+                double y1 = y0 + signY * h;
+                GuiDraw.quad(TextureAtlas.LOCATION_BLOCKS, x0, y0, x1, y1, sprite.getU0(), sprite.getV0(),
+                    sprite.getU((float) (w / 16)), sprite.getV((float) (h / 16)), colour);
+            }
+        }
     }
 
     public static AutoGlScissor scissor(double x, double y, double width, double height) {
         return scissor(new GuiRectangle(x, y, width, height));
     }
 
+    /** Clips drawing to the area until the returned scissor is closed (scissors nest). */
     public static AutoGlScissor scissor(IGuiArea area) {
         GuiRectangle rect = area.asImmutable();
-        if (scissorRegions.isEmpty()) {
-            GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        }
-        scissorRegions.push(rect);
-        scissor0();
-        return new AutoGlScissor() {
-            @Override
-            public void close() {
-                GuiRectangle last = scissorRegions.pop();
-                if (last != rect) {
-                    throw new IllegalStateException("Popped rectangles in the wrong order!");
-                }
-                GuiRectangle next = scissorRegions.peek();
-                if (next == null) {
-                    GL11.glDisable(GL11.GL_SCISSOR_TEST);
-                } else {
-                    scissor0();
-                }
-            }
-        };
-    }
-
-    private static void scissor0() {
-        GuiRectangle total = null;
-        for (GuiRectangle rect2 : scissorRegions) {
-            if (total == null) {
-                total = rect2;
-                continue;
-            }
-            double minX = Math.max(total.x, rect2.x);
-            double minY = Math.max(total.y, rect2.y);
-            double maxX = Math.min(total.getEndX(), rect2.getEndX());
-            double maxY = Math.min(total.getEndY(), rect2.getEndY());
-            total = new GuiRectangle(minX, minY, maxX - minX, maxY - minY);
-        }
-        if (total == null) {
-            throw new IllegalStateException("Cannot call scissor0 when there are no more regions!");
-        }
-        scissor0(total);
-    }
-
-    private static void scissor0(IGuiArea area) {
-        scissor0(area.getX(), area.getY(), area.getWidth(), area.getHeight());
-    }
-
-    private static void scissor0(double x, double y, double width, double height) {
-        Minecraft mc = Minecraft.getInstance();
-        ScaledResolution res = new ScaledResolution(mc);
-        double scaleW = mc.displayWidth / res.getScaledWidth_double();
-        double scaleH = mc.displayHeight / res.getScaledHeight_double();
-        int rx = (int) (x * scaleW);
-        int ry = (int) (mc.displayHeight - (y + height) * scaleH);
-        GL11.glScissor(rx, ry, (int) (width * scaleW), (int) (height * scaleH));
+        GuiDraw.enableScissor((int) Math.floor(rect.x), (int) Math.floor(rect.y), (int) Math.ceil(rect.getEndX()),
+            (int) Math.ceil(rect.getEndY()));
+        return GuiDraw::disableScissor;
     }
 
     public static ISprite subRelative(ISprite sprite, double u, double v, double width, double height, double size) {
@@ -426,7 +357,7 @@ public class GuiUtil {
         return new SpriteNineSliced(sprite, uMin, vMin, uMax, vMax, scale);
     }
 
-    /** A type of {@link AutoCloseable} that will pop off the current {@link GL11#glScissor(int, int, int, int)}. */
+    /** An {@link AutoCloseable} that pops the current scissor region. */
     public interface AutoGlScissor extends AutoCloseable {
         @Override
         void close();
@@ -436,7 +367,8 @@ public class GuiUtil {
         List<String> list = getUnFormattedTooltip(stack);
 
         if (!list.isEmpty()) {
-            list.set(0, stack.getRarity().rarityColor + list.get(0));
+            ChatFormatting colour = stack.getRarity().color();
+            list.set(0, colour + list.get(0));
         }
 
         for (int i = 1; i < list.size(); ++i) {
@@ -448,7 +380,10 @@ public class GuiUtil {
 
     public static List<String> getUnFormattedTooltip(ItemStack stack) {
         Minecraft mc = Minecraft.getInstance();
-        List<String> list = stack.getTooltip(mc.player, getTooltipFlags());
+        List<String> list = new ArrayList<>();
+        for (Component line : Screen.getTooltipFromItem(mc, stack)) {
+            list.add(line.getString());
+        }
         if (list.isEmpty()) {
             return Collections.singletonList(getStackDisplayName(stack));
         }
@@ -456,21 +391,12 @@ public class GuiUtil {
     }
 
     public static String getStackDisplayName(ItemStack stack) {
-        String name = stack.getHoverName();
-        if (name == null) {
-            // Temp workaround for headcrumbs
-            // TODO: Remove this after https://github.com/BuildCraft/BuildCraft/issues/4268 is fixed from their side! */
-            Item item = stack.getItem();
-            String info = BuiltInRegistries.ITEM.getKey(item) + " " + item.getClass() + " (" + NbtStacks.writeItemStack(stack) + ")";
-            BCLog.logger.warn("[lib.guide] Found null display name! " + info);
-            name = "!!NULL stack.getHoverName(): " + info;
-        }
-        return name;
+        return stack.getHoverName().getString();
     }
 
-    private static TooltipFlag getTooltipFlags() {
+    public static TooltipFlag getTooltipFlags() {
         boolean adv = Minecraft.getInstance().options.advancedItemTooltips;
-        return adv ? TooltipFlags.ADVANCED : TooltipFlags.NORMAL;
+        return adv ? TooltipFlag.ADVANCED : TooltipFlag.NORMAL;
     }
 
     public static WrappedTextData getWrappedTextData(String text, IFontRenderer fontRenderer, int maxWidth,

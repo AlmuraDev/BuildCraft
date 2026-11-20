@@ -29,9 +29,10 @@ public class ElementTypeDrawnStack extends ElementType {
         INodeBoolean visible = getEquationBool(json, "visible", ctx, true);
         boolean foreground = resolveEquationBool(json, "foreground", ctx, false);
 
-        Item item = GsonHelper.getItem(json.json, "id");
+        Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(
+            net.minecraft.resources.Identifier.parse(GsonHelper.getAsString(json.json, "id")));
         int meta = resolveEquationInt(json, "meta", ctx);
-        ItemStack stack = new ItemStack(item, 1, meta);
+        ItemStack stack = new ItemStack(item, 1); // 26.3 items have no meta
 
         ISimpleDrawable icon = new GuiStack(stack);
         IGuiArea area = IGuiArea.create(pos, 16, 16);

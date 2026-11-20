@@ -43,8 +43,8 @@ public class GuiFillerPlanner extends GuiBC8<ContainerFillerPlanner> {
     }
 
     @Override
-    public void updateScreen() {
-        super.updateScreen();
+    protected void containerTick() {
+        super.containerTick();
         SPRITE_PATTERN.delegate = container.getPatternStatementClient().get().getSprite();
     }
 }

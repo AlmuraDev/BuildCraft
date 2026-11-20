@@ -1,6 +1,7 @@
 package buildcraft.lib.gui.button;
 
-import net.minecraft.client.renderer.GlStateManager;
+import buildcraft.lib.gui.GuiDraw;
+
 
 import buildcraft.lib.gui.BuildCraftGui;
 import buildcraft.lib.gui.ISimpleDrawable;
@@ -50,9 +51,7 @@ public final class GuiButtonDrawable extends GuiAbstractButton {
             return;
         }
 
-        GlStateManager.color(1, 1, 1, 1);
-        GlStateManager.enableAlpha();
-        GlStateManager.disableBlend();
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), (float) ( 1));
 
         if (enabled) {
             boolean hovered = isMouseOver();

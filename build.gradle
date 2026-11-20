@@ -42,11 +42,29 @@ def portedPackages = [
         'buildcraft/robotics/**',
 ]
 
-// Client rendering, models, the guide book and the GUI screens inside the ported packages. They are ported in the
-// GUIs+guide batch; until then the server side (containers, slots and the GUI interfaces included) compiles without them.
+// Client code inside the ported packages that isn't ported yet: the guide book (its own batch), the config screen,
+// special item models and a few 1.12.2-only render helpers. The server side compiles without them.
 def deferredSources = [
         'buildcraft/lib/client/ToastInformation.java',
-        'buildcraft/lib/client/guide/**',
+        // the guide book (its own batch); its font interface is used by GUI text
+        'buildcraft/lib/client/guide/block/**',
+        'buildcraft/lib/client/guide/data/**',
+        'buildcraft/lib/client/guide/entry/**',
+        'buildcraft/lib/client/guide/loader/**',
+        'buildcraft/lib/client/guide/node/**',
+        'buildcraft/lib/client/guide/parts/**',
+        'buildcraft/lib/client/guide/ref/**',
+        'buildcraft/lib/client/guide/world/**',
+        'buildcraft/lib/client/guide/*.java',
+        'buildcraft/lib/client/guide/font/FontManager.java',
+        'buildcraft/lib/client/guide/font/GuideFont.java',
+        // 1.12.2 atlas stitching tricks (unused) and the guide's dynamic texture
+        'buildcraft/lib/client/sprite/Atlas*.java',
+        'buildcraft/lib/client/sprite/DynamicTextureBC.java',
+        'buildcraft/lib/misc/GlUtil.java',
+        // the phantom recipe book in the auto workbench / advanced crafting table (26.3's recipe book is different)
+        'buildcraft/lib/gui/recipe/**',
+        'buildcraft/lib/misc/search/**',
         'buildcraft/lib/client/model/ModelPluggableItem.java',
         'buildcraft/lib/client/model/ModelItemSimple.java',
         'buildcraft/lib/client/model/ModelNotifyOfRF.java',
@@ -57,65 +75,21 @@ def deferredSources = [
         'buildcraft/lib/client/render/fluid/SpriteFluidFrozen.java',
         'buildcraft/lib/client/render/font/**',
         'buildcraft/lib/client/render/tile/RenderMachineWave.java',
-        'buildcraft/lib/client/sprite/Atlas*.java',
-        'buildcraft/lib/client/sprite/Dynamic*.java',
-        'buildcraft/lib/client/sprite/SpriteAtlas.java',
-        'buildcraft/lib/client/sprite/SpriteChanging.java',
-        'buildcraft/lib/client/sprite/SpriteNineSliced.java',
-        'buildcraft/lib/client/sprite/SpriteRaw.java',
-        'buildcraft/lib/client/sprite/Sub*.java',
-        'buildcraft/lib/gui/BuildCraftGui.java',
-        'buildcraft/lib/gui/GuiBC8.java',
-        'buildcraft/lib/gui/GuiIcon.java',
-        'buildcraft/lib/gui/GuiScreenBuildCraft.java',
-        'buildcraft/lib/gui/GuiStack.java',
-        'buildcraft/lib/gui/GuiSpriteScaled.java',
-        'buildcraft/lib/gui/GuiElement*.java',
-        'buildcraft/lib/gui/button/**',
-        'buildcraft/lib/gui/config/**',
-        'buildcraft/lib/gui/elem/Gui*.java',
-        'buildcraft/lib/gui/elem/Scroll*.java',
-        'buildcraft/lib/gui/help/DummyHelpElement.java',
-        'buildcraft/lib/gui/json/**',
-        'buildcraft/lib/gui/ledger/**',
-        'buildcraft/lib/gui/recipe/**',
-        'buildcraft/lib/gui/statement/**',
-        'buildcraft/lib/gui/widget/**',
-        'buildcraft/lib/misc/GuiUtil.java',
-        'buildcraft/lib/misc/RenderUtil.java',
-        'buildcraft/lib/misc/SpriteUtil.java',
-        'buildcraft/lib/misc/GlUtil.java',
-        'buildcraft/lib/misc/search/**',
         'buildcraft/core/client/*Config*.java',
-        'buildcraft/core/list/ContainerList.java',
-        'buildcraft/core/list/GuiList.java',
-        'buildcraft/core/list/ListTooltipHandler.java',
 ]
 
 // transport client and GUIs (render batch / GUIs batch)
 deferredSources += [
-        'buildcraft/transport/gui/**',
-        'buildcraft/transport/container/**',
-        'buildcraft/energy/client/gui/**',
-        'buildcraft/energy/container/**',
-        'buildcraft/factory/gui/**',
-        'buildcraft/factory/container/**',
-        'buildcraft/silicon/gui/**',
-        'buildcraft/silicon/container/**',
         // 1.12.2 item models built from pluggable models in code; they need special item model renderers on 26.3
         'buildcraft/silicon/client/model/ModelGateItem.java',
         'buildcraft/silicon/client/model/GateMeshDefinition.java',
         'buildcraft/silicon/client/model/plug/ModelLensItem.java',
         'buildcraft/silicon/client/model/plug/ModelFacadeItem.java',
         'buildcraft/silicon/client/FacadeItemColours.java',
-        'buildcraft/builders/gui/**',
-        'buildcraft/builders/container/**',
         // blueprint previews draw a fake world (GUIs batch)
         'buildcraft/builders/snapshot/FakeWorld.java',
         'buildcraft/builders/snapshot/FakeChunkProvider.java',
         'buildcraft/builders/client/render/HudSingleSchematic.java',
-        'buildcraft/robotics/gui/**',
-        'buildcraft/robotics/container/**',
         'buildcraft/robotics/zone/ZonePlannerMapRenderer.java',
 ]
 
@@ -153,6 +127,7 @@ def modIds = ['buildcraftlib', 'buildcraftcore', 'buildcraftbuilders', 'buildcra
 
 neoForge {
     version = neoforge_version
+    accessTransformers = files('buildcraft_resources/META-INF/accesstransformer.cfg')
 
     runs {
         configureEach {

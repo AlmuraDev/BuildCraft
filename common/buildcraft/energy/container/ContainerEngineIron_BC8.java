@@ -6,6 +6,8 @@
 
 package buildcraft.energy.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -20,8 +22,8 @@ public class ContainerEngineIron_BC8 extends ContainerBCTile<TileEngineIron_BC8>
     public final WidgetFluidTank widgetTankCoolant;
     public final WidgetFluidTank widgetTankResidue;
 
-    public ContainerEngineIron_BC8(Player player, TileEngineIron_BC8 engine) {
-        super(player, engine);
+    public ContainerEngineIron_BC8(MenuType<?> type, int containerId, Player player, TileEngineIron_BC8 engine) {
+        super(type, containerId, player, engine);
 
         addFullPlayerInventory(95);
 
@@ -31,33 +33,33 @@ public class ContainerEngineIron_BC8 extends ContainerBCTile<TileEngineIron_BC8>
     }
 
     @Override
-    public ItemStack transferStackInSlot(Player player, int index) {
+    public ItemStack quickMoveStack(Player player, int index) {
         // The only slots are player slots -- try to interact with all of the tanks
 
         if (!player.level().isClientSide()) {
-            Slot slot = inventorySlots.get(index);
-            ItemStack stack = slot.getStack();
+            Slot slot = slots.get(index);
+            ItemStack stack = slot.getItem();
             ItemStack original = stack.copy();
             stack = tile.tankFuel.transferStackToTank(this, stack);
-            if (!ItemStack.areItemStacksEqual(stack, original)) {
-                slot.putStack(stack);
+            if (!ItemStack.matches(stack, original)) {
+                slot.set(stack);
                 broadcastChanges();
                 return ItemStack.EMPTY;
             }
             stack = tile.tankCoolant.transferStackToTank(this, stack);
-            if (!ItemStack.areItemStacksEqual(stack, original)) {
-                slot.putStack(stack);
+            if (!ItemStack.matches(stack, original)) {
+                slot.set(stack);
                 broadcastChanges();
                 return ItemStack.EMPTY;
             }
             stack = tile.tankResidue.transferStackToTank(this, stack);
-            if (!ItemStack.areItemStacksEqual(stack, original)) {
-                slot.putStack(stack);
+            if (!ItemStack.matches(stack, original)) {
+                slot.set(stack);
                 broadcastChanges();
                 return ItemStack.EMPTY;
             }
         }
 
-        return super.transferStackInSlot(player, index);
+        return super.quickMoveStack(player, index);
     }
 }

@@ -8,7 +8,7 @@ package buildcraft.builders.gui;
 
 import java.io.IOException;
 
-import net.minecraft.client.gui.GuiTextField;
+import buildcraft.lib.gui.GuiTextFieldBC;
 import net.minecraft.resources.Identifier;
 
 import buildcraft.lib.gui.GuiBC8;
@@ -23,7 +23,7 @@ public class GuiReplacer extends GuiBC8<ContainerReplacer> {
     private static final int SIZE_X = 176, SIZE_Y = 241;
     private static final GuiIcon ICON_GUI = new GuiIcon(TEXTURE_BASE, 0, 0, SIZE_X, SIZE_Y);
 
-    private GuiTextField nameField;
+    private GuiTextFieldBC nameField;
 
     public GuiReplacer(ContainerReplacer container) {
         super(container);
@@ -32,21 +32,15 @@ public class GuiReplacer extends GuiBC8<ContainerReplacer> {
     }
 
     @Override
-    public void initGui() {
-        super.initGui();
-        nameField = new GuiTextField(0, fontRenderer, guiLeft + 30, guiTop + 117, 138, 12);
+    protected void init() {
+        super.init();
+        nameField = new GuiTextFieldBC(0, fontRenderer, guiLeft + 30, guiTop + 117, 138, 12);
     }
 
     @Override
     protected void drawBackgroundLayer(float partialTicks) {
         ICON_GUI.drawAt(mainGui.rootElement);
-        ClientSnapshots.INSTANCE.renderSnapshot(
-            BCBuildersItems.snapshot.getHeader(container.tile.invSnapshot.getStackInSlot(0)),
-            guiLeft + 8,
-            guiTop + 9,
-            160,
-            100
-        );
+        // TODO(26.3): 1.12.2 drew a preview of the snapshot here (ClientSnapshots.renderSnapshot, a fake world)
     }
 
     @Override
@@ -55,12 +49,12 @@ public class GuiReplacer extends GuiBC8<ContainerReplacer> {
     }
 
     @Override
-    public void updateScreen() {
+    protected void containerTick() {
         nameField.updateCursorCounter();
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException {
+    protected void keyTyped(char typedChar, int keyCode) {
         boolean typed = false;
         if (nameField.isFocused()) {
             typed = nameField.textboxKeyTyped(typedChar, keyCode);
@@ -72,7 +66,7 @@ public class GuiReplacer extends GuiBC8<ContainerReplacer> {
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         nameField.mouseClicked(mouseX, mouseY, mouseButton);
     }

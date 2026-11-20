@@ -4,48 +4,36 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.robotics.gui;
 
-import java.io.IOException;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import javax.annotation.Nullable;
 
-import org.joml.Vector3d;
-
-import org.apache.commons.lang3.tuple.Pair;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.util.glu.GLU;
-
-import net.minecraft.client.gui.ScaledResolution;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.Tessellator;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.resources.Identifier;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 
 import buildcraft.lib.gui.GuiBC8;
+import buildcraft.lib.gui.GuiDraw;
 import buildcraft.lib.gui.GuiIcon;
 import buildcraft.lib.gui.pos.GuiRectangle;
 
 import buildcraft.core.BCCoreItems;
 import buildcraft.core.item.ItemPaintbrush_BC8;
+import buildcraft.robotics.client.render.RenderZonePlanner;
 import buildcraft.robotics.container.ContainerZonePlanner;
 import buildcraft.robotics.zone.ZonePlan;
 import buildcraft.robotics.zone.ZonePlannerMapChunk;
 import buildcraft.robotics.zone.ZonePlannerMapChunk.MapColourData;
 import buildcraft.robotics.zone.ZonePlannerMapChunkKey;
 import buildcraft.robotics.zone.ZonePlannerMapDataClient;
-import buildcraft.robotics.zone.ZonePlannerMapRenderer;
 
+/** The zone planner: a map of the area around the block, with the 16 zone layers (one per dye colour) painted on it.
+ * Drag with an empty hand to move the map, scroll to zoom, and drag with a paintbrush to add (left button) or remove
+ * (right button) a rectangle of its colour's layer.
+ * <p>
+ * 1.12.2 drew the map in 3D (display lists of every block column, seen from above in perspective); 26.3's GUI only
+ * draws flat elements, so the map is a top-down view of each column's map colour. */
 public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
     private static final Identifier TEXTURE_BASE = Identifier.parse("buildcraftrobotics:textures/gui/zone_planner.png");
     private static final int SIZE_X = 256, SIZE_Y = 228;
@@ -54,14 +42,19 @@ public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
     private static final GuiIcon ICON_PROGRESS_OUTPUT = new GuiIcon(TEXTURE_BASE, 0, 228, 9, 28);
     private static final GuiRectangle RECT_PROGRESS_INPUT = new GuiRectangle(44, 128, 28, 9);
     private static final GuiRectangle RECT_PROGRESS_OUTPUT = new GuiRectangle(236, 45, 9, 28);
-    private float startMouseX = 0;
-    private float startMouseY = 0;
-    private float startPositionX = 0;
-    private float startPositionZ = 0;
-    private float camY = 256;
-    private float scaleSpeed = 0;
-    private float positionX;
-    private float positionZ;
+
+    /** The map area, relative to the gui. */
+    private static final int MAP_X = 8, MAP_Y = 9, MAP_W = 213, MAP_H = 100;
+    private static final double MIN_SCALE = 1, MAX_SCALE = 8;
+
+    private double startMouseX = 0;
+    private double startMouseY = 0;
+    private double startPositionX = 0;
+    private double startPositionZ = 0;
+    /** Pixels per block. */
+    private double scale = 2;
+    private double positionX;
+    private double positionZ;
     private boolean canDrag = false;
     private BlockPos lastSelected = null;
     private BlockPos selectionStartXZ = null;
@@ -71,15 +64,16 @@ public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
         super(container);
         xSize = SIZE_X;
         ySize = SIZE_Y;
-        BlockPos tilePos = container.tile.getPos();
-        positionX = tilePos.getX();
-        positionZ = tilePos.getZ();
+        BlockPos tilePos = container.tile.getBlockPos();
+        positionX = tilePos.getX() + 0.5;
+        positionZ = tilePos.getZ() + 0.5;
     }
 
     private ItemStack getCurrentStack() {
-        return mc.player.getInventory().getItemStack();
+        return container.getCarried();
     }
 
+    @Nullable
     private ItemStack getPaintbrush() {
         ItemStack currentStack = getCurrentStack();
         if (!currentStack.isEmpty() && currentStack.getItem() instanceof ItemPaintbrush_BC8) {
@@ -88,6 +82,7 @@ public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
         return null;
     }
 
+    @Nullable
     private ItemPaintbrush_BC8.Brush getPaintbrushBrush() {
         ItemStack paintbrush = getPaintbrush();
         if (paintbrush != null) {
@@ -99,19 +94,65 @@ public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
         return null;
     }
 
-    @Override
-    public void handleMouseInput() throws IOException {
-        int wheel = Mouse.getEventDWheel();
-        if (wheel != 0) {
-            scaleSpeed -= wheel / 30F;
+    // Map geometry
+
+    private double mapCentreX() {
+        return guiLeft + MAP_X + MAP_W / 2.0;
+    }
+
+    private double mapCentreY() {
+        return guiTop + MAP_Y + MAP_H / 2.0;
+    }
+
+    private boolean isInMap(double mouseX, double mouseY) {
+        return mouseX >= guiLeft + MAP_X && mouseX < guiLeft + MAP_X + MAP_W && mouseY >= guiTop + MAP_Y
+            && mouseY < guiTop + MAP_Y + MAP_H;
+    }
+
+    private int blockXAt(double screenX) {
+        return (int) Math.floor(positionX + (screenX - mapCentreX()) / scale);
+    }
+
+    private int blockZAt(double screenY) {
+        return (int) Math.floor(positionZ + (screenY - mapCentreY()) / scale);
+    }
+
+    @Nullable
+    private ZonePlannerMapChunk getMapChunk(int blockX, int blockZ) {
+        Level world = mc.level;
+        if (world == null) {
+            return null;
         }
-        super.handleMouseInput();
+        ZonePlannerMapChunkKey key = new ZonePlannerMapChunkKey(new ChunkPos(blockX >> 4, blockZ >> 4),
+            world.dimension(), RenderZonePlanner.getMapLevel());
+        return ZonePlannerMapDataClient.INSTANCE.getChunk(world, key);
+    }
+
+    @Nullable
+    private BlockPos getMapBlock(int blockX, int blockZ) {
+        ZonePlannerMapChunk chunk = getMapChunk(blockX, blockZ);
+        MapColourData data = chunk == null ? null : chunk.getData(blockX, blockZ);
+        return data == null ? null : new BlockPos(blockX, data.posY, blockZ);
+    }
+
+    // Input
+
+    @Override
+    public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
+        if (isInMap(x, y) && scrollY != 0) {
+            scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * Math.pow(1.2, scrollY)));
+            return true;
+        }
+        return super.mouseScrolled(x, y, scrollX, scrollY);
     }
 
     @Override
-    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) {
         super.mouseClicked(mouseX, mouseY, mouseButton);
         canDrag = false;
+        if (!isInMap(mouseX, mouseY)) {
+            return;
+        }
         if (getPaintbrush() != null) {
             if (lastSelected != null) {
                 selectionStartXZ = lastSelected;
@@ -129,367 +170,114 @@ public class GuiZonePlanner extends GuiBC8<ContainerZonePlanner> {
     protected void mouseClickMove(int mouseX, int mouseY, int clickedMouseButton, long timeSinceLastClick) {
         super.mouseClickMove(mouseX, mouseY, clickedMouseButton, timeSinceLastClick);
         if (!canDrag) {
-            if (lastSelected != null && getPaintbrushBrush() != null) {
-                bufferLayer = new ZonePlan(container.tile.layers[getPaintbrushBrush().colour.getMetadata()]);
-                if (selectionStartXZ != null && getPaintbrushBrush() != null && lastSelected != null) {
-                    for (int x = Math.min(selectionStartXZ.getX(), lastSelected.getX());
-                         x < Math.max(selectionStartXZ.getX(), lastSelected.getX());
-                         x++) {
-                        for (int z = Math.min(selectionStartXZ.getZ(), lastSelected.getZ());
-                             z < Math.max(selectionStartXZ.getZ(), lastSelected.getZ());
-                             z++) {
-                            if (clickedMouseButton == 0) {
-                                bufferLayer.set(
-                                    x - container.tile.getPos().getX(),
-                                    z - container.tile.getPos().getZ(),
-                                    true
-                                );
-                            } else if (clickedMouseButton == 1) {
-                                bufferLayer.set(
-                                    x - container.tile.getPos().getX(),
-                                    z - container.tile.getPos().getZ(),
-                                    false
-                                );
-                            }
+            ItemPaintbrush_BC8.Brush brush = getPaintbrushBrush();
+            if (brush != null && selectionStartXZ != null && isInMap(mouseX, mouseY)) {
+                BlockPos current = new BlockPos(blockXAt(mouseX), 0, blockZAt(mouseY));
+                lastSelected = current;
+                bufferLayer = new ZonePlan(container.tile.layers[brush.colour.getId()]);
+                BlockPos tilePos = container.tile.getBlockPos();
+                for (int x = Math.min(selectionStartXZ.getX(), current.getX());
+                     x <= Math.max(selectionStartXZ.getX(), current.getX()); x++) {
+                    for (int z = Math.min(selectionStartXZ.getZ(), current.getZ());
+                         z <= Math.max(selectionStartXZ.getZ(), current.getZ()); z++) {
+                        if (clickedMouseButton == 0) {
+                            bufferLayer.set(x - tilePos.getX(), z - tilePos.getZ(), true);
+                        } else if (clickedMouseButton == 1) {
+                            bufferLayer.set(x - tilePos.getX(), z - tilePos.getZ(), false);
                         }
                     }
                 }
             }
             return;
         }
-        float deltaX = mouseX - startMouseX;
-        float deltaY = mouseY - startMouseY;
-        float s = 0.3F;
-        positionX = startPositionX - deltaX * s;
-        positionZ = startPositionZ - deltaY * s;
+        positionX = startPositionX - (mouseX - startMouseX) / scale;
+        positionZ = startPositionZ - (mouseY - startMouseY) / scale;
     }
 
     @Override
     protected void mouseReleased(int mouseX, int mouseY, int state) {
         super.mouseReleased(mouseX, mouseY, state);
         selectionStartXZ = null;
-        if (getPaintbrushBrush() != null && bufferLayer != null) {
-            container.tile.layers[getPaintbrushBrush().colour.getMetadata()] = bufferLayer;
-            container.tile.sendLayerToServer(getPaintbrushBrush().colour.getMetadata());
+        ItemPaintbrush_BC8.Brush brush = getPaintbrushBrush();
+        if (brush != null && bufferLayer != null) {
+            container.tile.layers[brush.colour.getId()] = bufferLayer;
+            container.tile.sendLayerToServer(brush.colour.getId());
         }
         bufferLayer = null;
     }
+
+    // Drawing
 
     @Override
     protected void drawBackgroundLayer(float partialTicks) {
         ICON_GUI.drawAt(mainGui.rootElement);
 
-        drawProgress(
-            RECT_PROGRESS_INPUT,
-            ICON_PROGRESS_INPUT,
-            container.tile.deltaProgressInput.getDynamic(partialTicks),
-            1
-        );
-        drawProgress(
-            RECT_PROGRESS_OUTPUT,
-            ICON_PROGRESS_OUTPUT,
-            1,
-            container.tile.deltaProgressOutput.getDynamic(partialTicks)
-        );
+        drawProgress(RECT_PROGRESS_INPUT, ICON_PROGRESS_INPUT, container.tile.deltaProgressInput.getDynamic(partialTicks),
+            1);
+        drawProgress(RECT_PROGRESS_OUTPUT, ICON_PROGRESS_OUTPUT, 1,
+            container.tile.deltaProgressOutput.getDynamic(partialTicks));
     }
 
-    private BlockPos rayTrace(int screenX, int screenY) {
-        BlockPos found = null;
-        FloatBuffer projectionBuffer = BufferUtils.createFloatBuffer(16);
-        FloatBuffer modelViewBuffer = BufferUtils.createFloatBuffer(16);
-        IntBuffer viewportBuffer = BufferUtils.createIntBuffer(16);
-
-        GlStateManager.getFloat(GL11.GL_PROJECTION_MATRIX, projectionBuffer);
-        GlStateManager.getFloat(GL11.GL_MODELVIEW_MATRIX, modelViewBuffer);
-        GlStateManager.glGetInteger(GL11.GL_VIEWPORT, viewportBuffer);
-
-        FloatBuffer positionNearBuffer = BufferUtils.createFloatBuffer(3);
-        FloatBuffer positionFarBuffer = BufferUtils.createFloatBuffer(3);
-
-        GLU.gluUnProject(screenX, screenY, 0f, modelViewBuffer, projectionBuffer, viewportBuffer, positionNearBuffer);
-        GLU.gluUnProject(screenX, screenY, 1f, modelViewBuffer, projectionBuffer, viewportBuffer, positionFarBuffer);
-
-        Vector3d rayStart = new Vector3d(positionNearBuffer.get(0), positionNearBuffer.get(1), positionNearBuffer.get(2));
-        Vector3d rayPosition = new Vector3d(rayStart);
-        Vector3d rayDirection = new Vector3d(positionFarBuffer.get(0), positionFarBuffer.get(1), positionFarBuffer.get(2));
-        rayDirection.sub(rayStart);
-        rayDirection.normalize();
-
-        for (int i = 0; i < 10000; i++) {
-            int chunkX = (int) Math.round(rayPosition.getX()) >> 4;
-            int chunkZ = (int) Math.round(rayPosition.getZ()) >> 4;
-            ZonePlannerMapChunk zonePlannerMapChunk = ZonePlannerMapDataClient.INSTANCE.getChunk(
-                mc.world,
-                new ZonePlannerMapChunkKey(
-                    new ChunkPos(chunkX, chunkZ),
-                    mc.world.provider.getDimension(),
-                    container.tile.getLevel()
-                )
-            );
-            if (zonePlannerMapChunk != null) {
-                BlockPos pos = new BlockPos(
-                    Math.round(rayPosition.getX()) - (chunkX << 4),
-                    Math.round(rayPosition.getY()),
-                    Math.round(rayPosition.getZ()) - (chunkZ << 4)
-                );
-                MapColourData data = zonePlannerMapChunk.getData(pos.getX(), pos.getZ());
-                if (data != null && data.posY >= pos.getY()) {
-                    found = new BlockPos(pos.getX() + (chunkX << 4), data.posY, pos.getZ() + (chunkZ << 4));
-                    break;
-                }
-            } else {
-                break;
-            }
-            rayPosition.add(rayDirection);
-        }
-        return found;
-    }
-
-    @SuppressWarnings("PointlessBitwiseExpression")
     @Override
     protected void drawForegroundLayer() {
-        camY += scaleSpeed;
-        scaleSpeed *= 0.7F;
-        int posX = (int) positionX;
-        int posZ = (int) positionZ;
-        int dimension = mc.world.provider.getDimension();
-        {
-            ChunkPos chunkPos = new ChunkPos(posX >> 4, posZ >> 4);
-            ZonePlannerMapChunk zonePlannerMapChunk = ZonePlannerMapDataClient.INSTANCE.getChunk(
-                mc.world,
-                new ZonePlannerMapChunkKey(
-                    chunkPos,
-                    dimension,
-                    container.tile.getLevel()
-                )
-            );
-            BlockPos pos = null;
-            if (zonePlannerMapChunk != null) {
-                MapColourData data = zonePlannerMapChunk.getData(posX, posZ);
-                if (data != null) {
-                    pos = new BlockPos(posX, data.posY, posZ);
+        int mx = (int) mainGui.mouse.getX();
+        int my = (int) mainGui.mouse.getY();
+        lastSelected = null;
+        if (isInMap(mx, my)) {
+            lastSelected = getMapBlock(blockXAt(mx), blockZAt(my));
+        }
+
+        int left = guiLeft + MAP_X, top = guiTop + MAP_Y;
+        GuiDraw.enableScissor(left, top, left + MAP_W, top + MAP_H);
+        int minX = blockXAt(left), maxX = blockXAt(left + MAP_W);
+        int minZ = blockZAt(top), maxZ = blockZAt(top + MAP_H);
+        ItemPaintbrush_BC8.Brush brush = getPaintbrushBrush();
+        BlockPos tilePos = container.tile.getBlockPos();
+
+        for (int bx = minX; bx <= maxX; bx++) {
+            for (int bz = minZ; bz <= maxZ; bz++) {
+                ZonePlannerMapChunk chunk = getMapChunk(bx, bz);
+                if (chunk == null) {
+                    continue;
                 }
-            }
-            if (pos != null && pos.getY() + 10 > camY) {
-                camY = Math.max(camY, pos.getY() + 10);
-            }
-        }
-        int x = guiLeft;
-        int y = guiTop;
-        if (lastSelected != null) {
-            String text = "X: " + lastSelected.getX() + " Y: " + lastSelected.getY() + " Z: " + lastSelected.getZ();
-            fontRenderer.drawString(text, x + 130, y + 130, 0x404040);
-        }
-        int offsetX = 8;
-        int offsetY = 9;
-        int sizeX = 213;
-        int sizeY = 100;
-        GlStateManager.pushMatrix();
-        GlStateManager.matrixMode(GL11.GL_PROJECTION);
-        GlStateManager.pushMatrix();
-        GlStateManager.loadIdentity();
-        ScaledResolution scaledResolution = new ScaledResolution(mc);
-        int viewportX = (x + offsetX) * scaledResolution.getScaleFactor();
-        int viewportY = mc.displayHeight - (sizeY + y + offsetY) * scaledResolution.getScaleFactor();
-        int viewportWidth = sizeX * scaledResolution.getScaleFactor();
-        int viewportHeight = sizeY * scaledResolution.getScaleFactor();
-        GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(
-            viewportX,
-            viewportY,
-            viewportWidth,
-            viewportHeight
-        );
-        GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
-        GL11.glDisable(GL11.GL_SCISSOR_TEST);
-        GlStateManager.viewport(
-            viewportX,
-            viewportY,
-            viewportWidth,
-            viewportHeight
-        );
-        GlStateManager.scale(scaledResolution.getScaleFactor(), scaledResolution.getScaleFactor(), 1);
-        GLU.gluPerspective(70.0F, (float) sizeX / sizeY, 1F, 10000.0F);
-        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
-        GlStateManager.loadIdentity();
-        RenderHelper.enableStandardItemLighting();
-        GlStateManager.enableRescaleNormal();
-        GlStateManager.rotate(90, 1, 0, 0); // look down
-        GlStateManager.pushMatrix();
-        GlStateManager.translate(-positionX, -camY, -positionZ);
-        GlStateManager.disableBlend();
-        GlStateManager.disableAlpha();
-        GlStateManager.disableTexture2D();
-        int minScreenX = (x + offsetX) * scaledResolution.getScaleFactor();
-        int minScreenY = (scaledResolution.getScaledHeight() - (y + offsetY)) * scaledResolution.getScaleFactor();
-        int maxScreenX = (x + offsetX + sizeX) * scaledResolution.getScaleFactor();
-        int maxScreenY = (scaledResolution.getScaledHeight() - (y + offsetY + sizeY)) * scaledResolution.getScaleFactor();
-        int minChunkX = (posX >> 4) - 8;
-        int minChunkZ = (posZ >> 4) - 8;
-        int maxChunkX = (posX >> 4) + 8;
-        int maxChunkZ = (posZ >> 4) + 8;
-        // noinspection SuspiciousNameCombination
-        List<ChunkPos> chunkPosBounds = Stream.of(
-            Pair.of(minScreenX, minScreenY),
-            Pair.of(minScreenX, maxScreenY),
-            Pair.of(maxScreenX, minScreenY),
-            Pair.of(maxScreenX, maxScreenY)
-        )
-            .map(p -> rayTrace(p.getLeft(), p.getRight()))
-            .filter(Objects::nonNull)
-            .map(ChunkPos::new)
-            .collect(Collectors.toList());
-        for (ChunkPos chunkPos : chunkPosBounds) {
-            if (chunkPos.x < minChunkX) {
-                minChunkX = chunkPos.x;
-            }
-            if (chunkPos.z < minChunkZ) {
-                minChunkZ = chunkPos.z;
-            }
-            if (chunkPos.x > maxChunkX) {
-                maxChunkX = chunkPos.x;
-            }
-            if (chunkPos.z > maxChunkZ) {
-                maxChunkZ = chunkPos.z;
-            }
-        }
-        minChunkX--;
-        minChunkZ--;
-        maxChunkX++;
-        maxChunkZ++;
-        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-                ZonePlannerMapRenderer.INSTANCE.getChunkGlList(
-                    new ZonePlannerMapChunkKey(
-                        new ChunkPos(chunkX, chunkZ),
-                        dimension,
-                        container.tile.getLevel()
-                    )
-                ).ifPresent(GlStateManager::callList);
-            }
-        }
-
-        BlockPos found = null;
-        int foundColor = 0;
-        if (Mouse.getX() >= minScreenX &&
-            Mouse.getY() <= minScreenY &&
-            Mouse.getX() <= maxScreenX &&
-            Mouse.getY() >= maxScreenY) {
-            found = rayTrace(Mouse.getX(), Mouse.getY());
-        }
-        if (found != null) {
-            ZonePlannerMapChunk zonePlannerMapChunk = ZonePlannerMapDataClient.INSTANCE.getChunk(
-                mc.world,
-                new ZonePlannerMapChunkKey(
-                    ChunkPos.containing(found),
-                    mc.world.provider.getDimension(),
-                    container.tile.getLevel()
-                )
-            );
-            if (zonePlannerMapChunk != null) {
-                MapColourData data = zonePlannerMapChunk.getData(found.getX(), found.getZ());
-                if (data != null) {
-                    foundColor = data.colour;
+                MapColourData data = chunk.getData(bx, bz);
+                if (data == null) {
+                    continue;
                 }
-            }
-        }
+                double x0 = mapCentreX() + (bx - positionX) * scale;
+                double y0 = mapCentreY() + (bz - positionZ) * scale;
+                GuiDraw.fill(x0, y0, x0 + scale, y0 + scale, 0xFF_00_00_00 | data.colour);
 
-        if (found != null) {
-            GlStateManager.disableDepth();
-            GlStateManager.enableBlend();
-            GlStateManager.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
-            GlStateManager.glLineWidth(2);
-            int r = (int) (((foundColor >> 16) & 0xFF) * 0.7);
-            int g = (int) (((foundColor >> 8) & 0xFF) * 0.7);
-            int b = (int) (((foundColor >> 0) & 0xFF) * 0.7);
-            int a = 0x77;
-            ZonePlannerMapRenderer.INSTANCE.setColor(r << 16 | g << 8 | b << 0 | a << 24);
-            BufferBuilder builder = Tessellator.getInstance().getBuffer();
-            builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
-            ZonePlannerMapRenderer.INSTANCE.drawBlockCuboid(builder, found.getX(), found.getY(), found.getZ());
-            Tessellator.getInstance().draw();
-            GlStateManager.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
-            GlStateManager.disableBlend();
-            GlStateManager.enableDepth();
-        }
-
-        GlStateManager.disableLighting();
-        GlStateManager.enableBlend();
-
-        for (int i = 0; i < container.tile.layers.length; i++) {
-            if (getPaintbrushBrush() != null && getPaintbrushBrush().colour.getMetadata() != i) {
-                continue;
-            }
-            ZonePlan layer = container.tile.layers[i];
-            if (getPaintbrushBrush() != null && getPaintbrushBrush().colour.getMetadata() == i && bufferLayer != null) {
-                layer = bufferLayer;
-            }
-            if (!layer.getChunkPoses().isEmpty()) {
-                Tessellator.getInstance().getBuffer().begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
-                for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-                    for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-                        ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
-                        for (int blockX = chunkPos.getXStart(); blockX <= chunkPos.getXEnd(); blockX++) {
-                            for (int blockZ = chunkPos.getZStart(); blockZ <= chunkPos.getZEnd(); blockZ++) {
-                                if (!layer.get(
-                                    blockX - container.tile.getPos().getX(),
-                                    blockZ - container.tile.getPos().getZ()
-                                )) {
-                                    continue;
-                                }
-                                int height;
-                                ZonePlannerMapChunk zonePlannerMapChunk = ZonePlannerMapDataClient.INSTANCE.getChunk(
-                                    mc.world,
-                                    new ZonePlannerMapChunkKey(
-                                        chunkPos,
-                                        dimension,
-                                        container.tile.getLevel()
-                                    )
-                                );
-                                if (zonePlannerMapChunk != null) {
-                                    MapColourData data = zonePlannerMapChunk.getData(blockX, blockZ);
-                                    if (data != null) {
-                                        height = data.posY;
-                                    } else {
-                                        continue;
-                                    }
-                                } else {
-                                    continue;
-                                }
-                                int color = DyeColor.byMetadata(i).getColorValue();
-                                int r = (color >> 16) & 0xFF;
-                                int g = (color >> 8) & 0xFF;
-                                int b = (color >> 0) & 0xFF;
-                                int a = 0x55;
-                                ZonePlannerMapRenderer.INSTANCE.setColor(r << 16 | g << 8 | b << 0 | a << 24);
-                                ZonePlannerMapRenderer.INSTANCE.drawBlockCuboid(
-                                    Tessellator.getInstance().getBuffer(),
-                                    blockX,
-                                    height + 0.1,
-                                    blockZ,
-                                    height,
-                                    0.6
-                                );
-                            }
-                        }
+                for (int i = 0; i < container.tile.layers.length; i++) {
+                    if (brush != null && brush.colour.getId() != i) {
+                        continue;
+                    }
+                    ZonePlan layer = container.tile.layers[i];
+                    if (brush != null && bufferLayer != null) {
+                        layer = bufferLayer;
+                    }
+                    if (layer.get(bx - tilePos.getX(), bz - tilePos.getZ())) {
+                        int colour = DyeColor.byId(i).getTextureDiffuseColor() & 0xFF_FF_FF;
+                        GuiDraw.fill(x0, y0, x0 + scale, y0 + scale, 0x88_00_00_00 | colour);
                     }
                 }
-                Tessellator.getInstance().draw();
             }
         }
-        GlStateManager.disableBlend();
-        GlStateManager.disableLighting();
-        GlStateManager.enableTexture2D();
 
-        lastSelected = found;
-        GlStateManager.popMatrix();
-        GlStateManager.disableRescaleNormal();
-        GlStateManager.matrixMode(GL11.GL_PROJECTION);
-        GlStateManager.viewport(0, 0, mc.displayWidth, mc.displayHeight);
-        GlStateManager.popMatrix();
-        GlStateManager.matrixMode(GL11.GL_MODELVIEW);
-        GlStateManager.popMatrix();
-        RenderHelper.disableStandardItemLighting();
-        GlStateManager.disableBlend();
+        // The zone planner itself, and the hovered block
+        double tx = mapCentreX() + (tilePos.getX() - positionX) * scale;
+        double ty = mapCentreY() + (tilePos.getZ() - positionZ) * scale;
+        GuiDraw.fill(tx, ty, tx + scale, ty + scale, 0xFF_FF_FF_FF);
+        if (lastSelected != null) {
+            double sx = mapCentreX() + (lastSelected.getX() - positionX) * scale;
+            double sy = mapCentreY() + (lastSelected.getZ() - positionZ) * scale;
+            GuiDraw.fill(sx, sy, sx + scale, sy + scale, 0x77_00_00_00);
+        }
+        GuiDraw.disableScissor();
+
+        if (lastSelected != null) {
+            String text = "X: " + lastSelected.getX() + " Y: " + lastSelected.getY() + " Z: " + lastSelected.getZ();
+            GuiDraw.text(fontRenderer, text, guiLeft + 130, guiTop + 130, 0x404040, false);
+        }
     }
 }

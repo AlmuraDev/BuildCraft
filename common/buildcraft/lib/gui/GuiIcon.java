@@ -6,15 +6,8 @@
 
 package buildcraft.lib.gui;
 
-import org.lwjgl.opengl.GL11;
-
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.resources.Identifier;
 
-import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -57,10 +50,6 @@ public class GuiIcon implements ISimpleDrawable {
         return new GuiRectangle(x, y, width, height).contains(pos);
     }
 
-    public DynamicTexture createDynamicTexture(int scale) {
-        return new DynamicTexture(width * scale, height * scale);
-    }
-
     @Override
     public void drawAt(double x, double y) {
         this.drawScaledInside(x, y, this.width, this.height);
@@ -74,66 +63,14 @@ public class GuiIcon implements ISimpleDrawable {
         draw(sprite, x, y, x + drawnWidth, y + drawnHeight);
     }
 
+    /** 1.12.2 drew an arbitrary (perspective-correct) quadrilateral; 26.3's gui pipeline has no projective texture
+     * co-ordinates, so this draws the sprite over the quad's bounding box. */
     public void drawCustomQuad(double x1, double y1, double x2, double y2, double x3, double y3, double x4, double y4) {
-        sprite.bindTexture();
-
-        double uMin = sprite.getInterpU(0);
-        double uMax = sprite.getInterpU(1);
-
-        double vMin = sprite.getInterpV(0);
-        double vMax = sprite.getInterpV(1);
-
-        // Unfortunately we cannot use the vertex buffer directly (as it doesn't allow for texture4f)
-        GL11.glBegin(GL11.GL_QUADS);
-
-        double[] q = calcQ(x1, y1, x2, y2, x3, y3, x4, y4);
-
-        vertDirect(x1, y1, uMin * q[0], vMax * q[0], 0, q[0]);
-        vertDirect(x2, y2, uMax * q[1], vMax * q[1], 0, q[1]);
-        vertDirect(x3, y3, uMax * q[2], vMin * q[2], 0, q[2]);
-        vertDirect(x4, y4, uMin * q[3], vMin * q[3], 0, q[3]);
-
-        GL11.glEnd();
-    }
-
-    private static double[] calcQ(double x1, double y1, double x2, double y2, double x3, double y3, double x4,
-        double y4) {
-        // Method contents taken from http://www.bitlush.com/posts/arbitrary-quadrilaterals-in-opengl-es-2-0
-        // (or github https://github.com/bitlush/android-arbitrary-quadrilaterals-in-opengl-es-2-0 if the site is down)
-        // this code is by Keith Wood
-
-        double ax = x3 - x1;
-        double ay = y3 - y1;
-        double bx = x4 - x2;
-        double by = y4 - y2;
-
-        double cross = ax * by - ay * bx;
-
-        if (cross != 0) {
-            double cy = y1 - y2;
-            double cx = x1 - x2;
-
-            double s = (ax * cy - ay * cx) / cross;
-
-            if (s > 0 && s < 1) {
-                double t = (bx * cy - by * cx) / cross;
-
-                if (t > 0 && t < 1) {
-                    double q0 = 1 / (1 - t);
-                    double q1 = 1 / (1 - s);
-                    double q2 = 1 / t;
-                    double q3 = 1 / s;
-                    return new double[] { q0, q1, q2, q3 };
-                }
-            }
-        }
-        // in case (for some reason) some of the input was wrong then we will fail back to default rendering
-        return new double[] { 1, 1, 1, 1 };
-    }
-
-    private static void vertDirect(double x, double y, double s, double t, double r, double q) {
-        GL11.glTexCoord4d(s, t, r, q);
-        GL11.glVertex2d(x, y);
+        double minX = Math.min(Math.min(x1, x2), Math.min(x3, x4));
+        double maxX = Math.max(Math.max(x1, x2), Math.max(x3, x4));
+        double minY = Math.min(Math.min(y1, y2), Math.min(y3, y4));
+        double maxY = Math.max(Math.max(y1, y2), Math.max(y3, y4));
+        draw(sprite, minX, minY, maxX, maxY);
     }
 
     public void drawCutInside(IGuiArea element) {
@@ -158,16 +95,7 @@ public class GuiIcon implements ISimpleDrawable {
         double uMax = sprite.getInterpU(displayWidth / width);
         double vMax = sprite.getInterpV(displayHeight / height);
 
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder vb = tess.getBuffer();
-        vb.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_TEX);
-
-        vertex(vb, xMin, yMax, uMin, vMax);
-        vertex(vb, xMax, yMax, uMax, vMax);
-        vertex(vb, xMax, yMin, uMax, vMin);
-        vertex(vb, xMin, yMin, uMin, vMin);
-
-        tess.draw();
+        GuiDraw.quad(xMin, yMin, xMax, yMax, uMin, vMin, uMax, vMax);
     }
 
     public void drawCustomScaledAt(IGuiArea area, double texU0, double texV0, double texU1, double texV1) {
@@ -207,16 +135,7 @@ public class GuiIcon implements ISimpleDrawable {
         double uMax = sprite.getInterpU(texU1);
         double vMax = sprite.getInterpV(texV1);
 
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder vb = tess.getBuffer();
-        vb.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_TEX);
-
-        vertex(vb, xMin, yMax, uMin, vMax);
-        vertex(vb, xMax, yMax, uMax, vMax);
-        vertex(vb, xMax, yMin, uMax, vMin);
-        vertex(vb, xMin, yMin, uMin, vMin);
-
-        tess.draw();
+        GuiDraw.quad(xMin, yMin, xMax, yMax, uMin, vMin, uMax, vMax);
     }
 
     public static void drawAt(ISprite sprite, double x, double y, double size) {
@@ -236,21 +155,7 @@ public class GuiIcon implements ISimpleDrawable {
         double uMax = sprite.getInterpU(1);
         double vMax = sprite.getInterpV(1);
 
-        Tessellator tess = Tessellator.getInstance();
-        BufferBuilder vb = tess.getBuffer();
-        vb.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_TEX);
-
-        vertex(vb, xMin, yMax, uMin, vMax);
-        vertex(vb, xMax, yMax, uMax, vMax);
-        vertex(vb, xMax, yMin, uMax, vMin);
-        vertex(vb, xMin, yMin, uMin, vMin);
-
-        tess.draw();
+        GuiDraw.quad(xMin, yMin, xMax, yMax, uMin, vMin, uMax, vMax);
     }
 
-    private static void vertex(BufferBuilder vb, double x, double y, double u, double v) {
-        vb.pos(x, y, 0);
-        vb.tex(u, v);
-        vb.endVertex();
-    }
 }

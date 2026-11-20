@@ -46,6 +46,7 @@ public class BCEnergy {
             RegistrationHelper.createRegister(Registries.FEATURE_TYPE, MODID, modBus);
         features.register("oil_well", () -> OilWellFeature.CODEC);
 
+        BCEnergyGuis.fmlPreInit(modBus);
         BCEnergyProxy.getProxy().fmlPreInit();
 
         NeoForge.EVENT_BUS.addListener((ServerStartedEvent event) -> BCEnergyConfig.validateBiomeNames(event.getServer()));

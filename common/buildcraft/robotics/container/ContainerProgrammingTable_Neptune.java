@@ -6,6 +6,8 @@
 
 package buildcraft.robotics.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import net.minecraft.world.entity.player.Player;
 
 import buildcraft.lib.gui.ContainerBCTile;
@@ -13,7 +15,7 @@ import buildcraft.lib.gui.ContainerBCTile;
 import buildcraft.silicon.tile.TileProgrammingTable_Neptune;
 
 public class ContainerProgrammingTable_Neptune extends ContainerBCTile<TileProgrammingTable_Neptune> {
-    public ContainerProgrammingTable_Neptune(Player player, TileProgrammingTable_Neptune tile) {
-        super(player, tile);
+    public ContainerProgrammingTable_Neptune(MenuType<?> type, int containerId, Player player, TileProgrammingTable_Neptune tile) {
+        super(type, containerId, player, tile);
     }
 }

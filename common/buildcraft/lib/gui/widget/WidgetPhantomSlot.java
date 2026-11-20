@@ -6,13 +6,14 @@
 
 package buildcraft.lib.gui.widget;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import java.io.IOException;
 import java.util.List;
 
 import javax.annotation.Nonnull;
 
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.world.item.ItemStack;
 
 import buildcraft.lib.net.IMessage;
@@ -67,14 +68,14 @@ public class WidgetPhantomSlot extends Widget_Neptune<ContainerBC_Neptune> {
         if (clone) {
             if (container.player.isCreative()) {
                 ItemStack get = getStack();
-                if (!get.isEmpty() && container.player.getInventory().getItemStack().isEmpty()) {
-                    container.player.getInventory().setItemStack(get.copy());
+                if (!get.isEmpty() && container.player.containerMenu.getCarried().isEmpty()) {
+                    container.player.containerMenu.setCarried(get.copy());
                 }
             }
         } else if (shift) {
             setStack(StackUtil.EMPTY, true);
         } else {
-            ItemStack toSet = container.player.getInventory().getItemStack();
+            ItemStack toSet = container.player.containerMenu.getCarried();
             if (toSet.isEmpty()) {
                 setStack(StackUtil.EMPTY, true);
             } else {
@@ -133,9 +134,7 @@ public class WidgetPhantomSlot extends Widget_Neptune<ContainerBC_Neptune> {
 
         @Override
         public void drawForeground(float partialTicks) {
-            RenderHelper.enableGUIStandardItemLighting();
-            gui.mc.getRenderItem().renderItemAndEffectIntoGUI(getStack(), (int) getX(), (int) getY());
-            RenderHelper.disableStandardItemLighting();
+            GuiDraw.item(getStack(), (int) getX(), (int) getY());
             if (contains(gui.mouse) && shouldDrawHighlight()) {
                 GuiUtil.drawRect(this, 0x70_FF_FF_FF);
             }
@@ -155,8 +154,8 @@ public class WidgetPhantomSlot extends Widget_Neptune<ContainerBC_Neptune> {
             if (contains(gui.mouse)) {
                 byte flags = 0;
                 if (button == 1) flags |= CLICK_FLAG_SINGLE;
-                if (Screen.isShiftKeyDown()) flags |= CLICK_FLAG_SHIFT;
-                if (gui.mc.options.keyBindPickBlock.isActiveAndMatches(button - 100)) {
+                if (net.minecraft.client.Minecraft.getInstance().hasShiftDown()) flags |= CLICK_FLAG_SHIFT;
+                if (gui.mc.options.keyPickItem.matches(com.mojang.blaze3d.platform.InputConstants.Type.MOUSE.getOrCreate(button - 100))) {
                     flags |= CLICK_FLAG_CLONE;
                     BCLog.logger.info("clone");
                 }

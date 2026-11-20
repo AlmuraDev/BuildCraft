@@ -6,6 +6,8 @@
 
 package buildcraft.lib.gui.ledger;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import buildcraft.lib.gui.help.ElementHelpInfo;
 import buildcraft.lib.misc.StringUtilBC;
 import buildcraft.lib.gui.elem.GuiElementText;
@@ -13,7 +15,6 @@ import net.minecraft.client.Minecraft;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.resources.Identifier;
 
 import buildcraft.api.core.render.ISprite;
@@ -116,12 +117,11 @@ public class LedgerHelp extends Ledger_Neptune {
                 boolean isSelected = selected == element;
                 SpriteNineSliced split = SPRITE_HELP_SPLIT[isHovered ? 1 : 0][isSelected ? 1 : 0];
                 RenderUtil.setGLColorFromInt(info.info.colour);
-                GlStateManager.enableBlend();
                 split.draw(rect);
             }
             elements.clear();
         }
-        GlStateManager.color(1, 1, 1);
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), 1f);
     }
 
     /** Lays out the help text of an {@link ElementHelpInfo} in the help ledger. */
@@ -131,7 +131,7 @@ public class LedgerHelp extends Ledger_Neptune {
         for (int i = 0; i < help.localeKeys.length; i++) {
             String key = help.localeKeys[i];
             if (key == null) {
-                y += Minecraft.getInstance().font.FONT_HEIGHT + 5;
+                y += Minecraft.getInstance().font.lineHeight + 5;
                 continue;
             }
             String localized = help.isPreTranslated ? key : LocaleUtil.localize(key);

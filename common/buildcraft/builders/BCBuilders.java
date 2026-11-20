@@ -43,6 +43,7 @@ public class BCBuilders {
         BCBuildersStatements.preInit();
         BCBuildersSchematics.preInit();
 
+        BCBuildersGuis.fmlPreInit(modBus);
         BCBuildersProxy.getProxy().fmlPreInit();
 
         NeoForge.EVENT_BUS.addListener((ServerStartingEvent event) -> GlobalSavedDataSnapshots.reInit(LogicalSide.SERVER));

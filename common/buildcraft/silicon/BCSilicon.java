@@ -69,6 +69,7 @@ public class BCSilicon {
         // The transport module's pipes look for silicon's filter handler (lens filters on item pipes)
         TilePipeHolder.ITEM_PIPE_EVENT_HANDLERS.add(FilterEventHandler.class);
 
+        BCSiliconGuis.fmlPreInit(modBus);
         BCSiliconProxy.getProxy().fmlPreInit();
 
         NeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event) -> BCSiliconRecipes.registerAssemblyRecipes());

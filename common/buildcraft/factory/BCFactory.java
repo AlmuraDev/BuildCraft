@@ -32,6 +32,7 @@ public class BCFactory {
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
         BCFactoryBlocks.fmlPreInit(modBus);
         BCFactoryItems.fmlPreInit(modBus);
+        BCFactoryGuis.fmlPreInit(modBus);
         BCFactoryProxy.getProxy().fmlPreInit();
 
         modBus.addListener(BCFactory::init);

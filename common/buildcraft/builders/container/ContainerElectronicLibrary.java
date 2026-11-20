@@ -6,6 +6,8 @@
 
 package buildcraft.builders.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import java.io.IOException;
 
 import net.minecraft.world.entity.player.Player;
@@ -28,15 +30,15 @@ public class ContainerElectronicLibrary extends ContainerBCTile<TileElectronicLi
     private static final IdAllocator IDS = ContainerBC_Neptune.IDS.makeChild("electronic_library");
     private static final int ID_SELECTED = IDS.allocId("SELECTED");
 
-    public ContainerElectronicLibrary(Player player, TileElectronicLibrary tile) {
-        super(player, tile);
+    public ContainerElectronicLibrary(MenuType<?> type, int containerId, Player player, TileElectronicLibrary tile) {
+        super(type, containerId, player, tile);
         addFullPlayerInventory(138);
 
-        addSlotToContainer(new SlotOutput(tile.invDownOut, 0, 175, 57));
-        addSlotToContainer(new SlotBase(tile.invDownIn, 0, 219, 57));
+        addSlot(new SlotOutput(tile.invDownOut, 0, 175, 57));
+        addSlot(new SlotBase(tile.invDownIn, 0, 219, 57));
 
-        addSlotToContainer(new SlotBase(tile.invUpIn, 0, 175, 79));
-        addSlotToContainer(new SlotOutput(tile.invUpOut, 0, 219, 79));
+        addSlot(new SlotBase(tile.invUpIn, 0, 175, 79));
+        addSlot(new SlotOutput(tile.invUpOut, 0, 219, 79));
     }
 
     @Override

@@ -6,7 +6,8 @@
 
 package buildcraft.lib.gui.button;
 
-import net.minecraft.client.renderer.GlStateManager;
+import buildcraft.lib.gui.GuiDraw;
+
 import net.minecraft.resources.Identifier;
 
 import net.neoforged.fml.LogicalSide;
@@ -43,11 +44,9 @@ public class GuiImageButton extends GuiAbstractButton {
             return;
         }
 
-        gui.mc.renderEngine.bindTexture(texture);
+        GuiDraw.bind(texture);
 
-        GlStateManager.color(1, 1, 1, 1);
-        GlStateManager.enableAlpha();
-        GlStateManager.disableBlend();
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), (float) ( 1));
 
         int buttonState = getButtonState();
 

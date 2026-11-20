@@ -7,7 +7,18 @@ package buildcraft.energy;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 
-import buildcraft.api.core.BCLog;
+import net.neoforged.bus.api.IEventBus;
+
+import buildcraft.lib.gui.BCMenu;
+
+import buildcraft.energy.container.ContainerDynamoMJ;
+import buildcraft.energy.container.ContainerEngineIron_BC8;
+import buildcraft.energy.container.ContainerEngineRF;
+import buildcraft.energy.container.ContainerEngineStone_BC8;
+import buildcraft.energy.tile.TileDynamoMJ;
+import buildcraft.energy.tile.TileEngineIron_BC8;
+import buildcraft.energy.tile.TileEngineRF;
+import buildcraft.energy.tile.TileEngineStone_BC8;
 
 public enum BCEnergyGuis {
     ENGINE_STONE,
@@ -17,18 +28,43 @@ public enum BCEnergyGuis {
 
     public static final BCEnergyGuis[] VALUES = values();
 
+    public static BCMenu<ContainerEngineStone_BC8> engineStone;
+    public static BCMenu<ContainerEngineIron_BC8> engineIron;
+    public static BCMenu<ContainerEngineRF> engineRf;
+    public static BCMenu<ContainerDynamoMJ> dynamoMj;
+
     public static BCEnergyGuis get(int id) {
         if (id < 0 || id >= VALUES.length) return null;
         return VALUES[id];
     }
 
-    // TODO(26.3 GUIs batch): open the engine and dynamo menus (energy/container, energy/client/gui) once containers
-    // have menu types.
+    public static void fmlPreInit(IEventBus modBus) {
+        var register = BCMenu.createRegister(BCEnergy.MODID, modBus);
+        engineStone = BCMenu.tile(register, "engine_stone", TileEngineStone_BC8.class, ContainerEngineStone_BC8::new);
+        engineIron = BCMenu.tile(register, "engine_iron", TileEngineIron_BC8.class, ContainerEngineIron_BC8::new);
+        engineRf = BCMenu.tile(register, "engine_rf", TileEngineRF.class, ContainerEngineRF::new);
+        dynamoMj = BCMenu.tile(register, "dynamo_mj", TileDynamoMJ.class, ContainerDynamoMJ::new);
+    }
+
+    public BCMenu<?> menu() {
+        switch (this) {
+            case ENGINE_STONE:
+                return engineStone;
+            case ENGINE_IRON:
+                return engineIron;
+            case ENGINE_RF:
+                return engineRf;
+            case DYNAMO_MJ:
+            default:
+                return dynamoMj;
+        }
+    }
+
     public void openGUI(Player player) {
-        BCLog.logger.debug("[energy.gui] " + name() + " isn't ported to 26.3 yet");
+        openGUI(player, player.blockPosition());
     }
 
     public void openGUI(Player player, BlockPos pos) {
-        openGUI(player);
+        menu().open(player, pos);
     }
 }

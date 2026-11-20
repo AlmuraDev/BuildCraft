@@ -6,6 +6,8 @@
 
 package buildcraft.builders.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import java.io.IOException;
 
 import net.minecraft.world.entity.player.Player;
@@ -27,12 +29,12 @@ public class ContainerArchitectTable extends ContainerBCTile<TileArchitectTable>
     private static final IdAllocator IDS = ContainerBC_Neptune.IDS.makeChild("architect_table");
     private static final int ID_NAME = IDS.allocId("NAME");
 
-    public ContainerArchitectTable(Player player, TileArchitectTable tile) {
-        super(player, tile);
+    public ContainerArchitectTable(MenuType<?> type, int containerId, Player player, TileArchitectTable tile) {
+        super(type, containerId, player, tile);
         addFullPlayerInventory(88, 84);
 
-        addSlotToContainer(new SlotBase(tile.invSnapshotIn, 0, 135, 35));
-        addSlotToContainer(new SlotOutput(tile.invSnapshotOut, 0, 194, 35));
+        addSlot(new SlotBase(tile.invSnapshotIn, 0, 135, 35));
+        addSlot(new SlotOutput(tile.invSnapshotOut, 0, 194, 35));
     }
     
     @Override

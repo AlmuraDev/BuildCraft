@@ -6,11 +6,8 @@
 
 package buildcraft.lib.client.sprite;
 
-import org.lwjgl.opengl.GL11;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.util.Mth;
 
@@ -62,7 +59,6 @@ public class DynamicTextureBC {
     }
 
     public void bindGlTexture() {
-        GlStateManager.bindTexture(dynamicTexture.getGlTextureId());
     }
 
     public void deleteGlTexture() {

@@ -4,6 +4,9 @@ loaderVersion = "${neoforge_loader_version_range}"
 license = "${mod_license}"
 issueTrackerURL = "https://github.com/AlmuraDev/BuildCraft/issues"
 
+[[accessTransformers]]
+file = "META-INF/accesstransformer.cfg"
+
 [[mods]]
 modId = "buildcraftlib"
 version = "${version}"

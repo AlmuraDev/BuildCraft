@@ -6,7 +6,8 @@
 
 package buildcraft.transport.gui;
 
-import net.minecraft.client.renderer.GlStateManager;
+import buildcraft.lib.gui.GuiDraw;
+
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.Identifier;
 
@@ -42,8 +43,9 @@ public class GuiDiamondWoodPipe extends GuiBC8<ContainerDiamondWoodPipe> impleme
 
     private PipeBehaviourWoodDiamond pipe;
 
-    public GuiDiamondWoodPipe(Player player, PipeBehaviourWoodDiamond pipe) {
-        super(new ContainerDiamondWoodPipe(player, pipe));
+    public GuiDiamondWoodPipe(ContainerDiamondWoodPipe container) {
+        super(container);
+        PipeBehaviourWoodDiamond pipe = container.behaviour;
 
         this.pipe = pipe;
 
@@ -52,8 +54,8 @@ public class GuiDiamondWoodPipe extends GuiBC8<ContainerDiamondWoodPipe> impleme
     }
 
     @Override
-    public void initGui() {
-        super.initGui();
+    protected void init() {
+        super.init();
 
         this.whiteListButton = new GuiImageButton(mainGui, WHITE_LIST_BUTTON_ID, this.guiLeft + 7, this.guiTop + 41, 18, TEXTURE_BUTTON, 19, 19);
         this.whiteListButton.setToolTip(ToolTip.createLocalized("tip.PipeItemsEmerald.whitelist"));
@@ -110,11 +112,11 @@ public class GuiDiamondWoodPipe extends GuiBC8<ContainerDiamondWoodPipe> impleme
     @Override
     protected void drawForegroundLayer() {
         String title = LocaleUtil.localize("gui.pipes.emerald.title");
-        double titleX = mainGui.rootElement.getX() + (xSize - fontRenderer.getStringWidth(title)) / 2;
-        fontRenderer.drawString(title, (int) titleX, (int) mainGui.rootElement.getY() + 6, 0x404040);
-        fontRenderer.drawString(LocaleUtil.localize("gui.inventory"), (int) mainGui.rootElement.getX() + 8, (int) mainGui.rootElement.getY() + ySize - 93, 0x404040);
+        double titleX = mainGui.rootElement.getX() + (xSize - fontRenderer.width(title)) / 2;
+        GuiDraw.text(fontRenderer, title, (int) titleX, (int) mainGui.rootElement.getY() + 6, 0x404040, false);
+        GuiDraw.text(fontRenderer, LocaleUtil.localize("gui.inventory"), (int) mainGui.rootElement.getX() + 8, (int) mainGui.rootElement.getY() + ySize - 93, 0x404040, false);
         if (pipe.filterMode == FilterMode.ROUND_ROBIN) {
-            GlStateManager.color(1, 1, 1, 1);
+            GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), (float) ( 1));
             GuiIcon icon = pipe.filterValid ? ICON_ROUND_ROBIN_INDEX : ICON_ROUND_ROBIN_NONE;
             int x = pipe.filterValid ? 18 * pipe.currentFilter : 0;
             icon.drawAt(mainGui.rootElement.getX() + 6 + x, mainGui.rootElement.getY() + 16);

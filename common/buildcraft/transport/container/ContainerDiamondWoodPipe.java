@@ -6,6 +6,8 @@
 
 package buildcraft.transport.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import java.io.IOException;
 
 import net.minecraft.world.entity.player.Player;
@@ -25,11 +27,11 @@ import buildcraft.transport.pipe.behaviour.PipeBehaviourWoodDiamond;
 import buildcraft.transport.pipe.behaviour.PipeBehaviourWoodDiamond.FilterMode;
 
 public class ContainerDiamondWoodPipe extends ContainerPipe {
-    private final PipeBehaviourWoodDiamond behaviour;
+    public final PipeBehaviourWoodDiamond behaviour;
     private final ItemHandlerSimple filterInv;
 
-    public ContainerDiamondWoodPipe(Player player, PipeBehaviourWoodDiamond behaviour) {
-        super(player, behaviour.pipe.getHolder());
+    public ContainerDiamondWoodPipe(MenuType<?> type, int containerId, Player player, PipeBehaviourWoodDiamond behaviour) {
+        super(type, containerId, player, behaviour.pipe.getHolder());
         this.behaviour = behaviour;
         this.filterInv = behaviour.filters;
         behaviour.pipe.getHolder().onPlayerOpen(player);
@@ -37,13 +39,13 @@ public class ContainerDiamondWoodPipe extends ContainerPipe {
         addFullPlayerInventory(79);
 
         for (int i = 0; i < 9; i++) {
-            addSlotToContainer(new SlotPhantom(filterInv, i, 8 + i * 18, 18));
+            addSlot(new SlotPhantom(filterInv, i, 8 + i * 18, 18));
         }
     }
 
     @Override
-    public void onContainerClosed(Player player) {
-        super.onContainerClosed(player);
+    public void removed(Player player) {
+        super.removed(player);
         behaviour.pipe.getHolder().onPlayerClose(player);
     }
 

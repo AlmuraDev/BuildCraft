@@ -6,6 +6,8 @@
 
 package buildcraft.builders.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import net.minecraft.world.entity.player.Player;
 
 import buildcraft.lib.gui.ContainerBCTile;
@@ -14,12 +16,12 @@ import buildcraft.lib.gui.slot.SlotBase;
 import buildcraft.builders.tile.TileReplacer;
 
 public class ContainerReplacer extends ContainerBCTile<TileReplacer> {
-    public ContainerReplacer(Player player, TileReplacer tile) {
-        super(player, tile);
+    public ContainerReplacer(MenuType<?> type, int containerId, Player player, TileReplacer tile) {
+        super(type, containerId, player, tile);
 
-        addSlotToContainer(new SlotBase(tile.invSnapshot, 0, 8, 115));
-        addSlotToContainer(new SlotBase(tile.invSchematicFrom, 0, 8, 137));
-        addSlotToContainer(new SlotBase(tile.invSchematicTo, 0, 56, 137));
+        addSlot(new SlotBase(tile.invSnapshot, 0, 8, 115));
+        addSlot(new SlotBase(tile.invSchematicFrom, 0, 8, 137));
+        addSlot(new SlotBase(tile.invSchematicTo, 0, 56, 137));
 
         addFullPlayerInventory(159);
     }

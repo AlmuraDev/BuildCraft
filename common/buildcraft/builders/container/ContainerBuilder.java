@@ -6,6 +6,8 @@
 
 package buildcraft.builders.container;
 
+import net.minecraft.world.inventory.MenuType;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,16 +26,16 @@ import buildcraft.builders.tile.TileBuilder;
 public class ContainerBuilder extends ContainerBCTile<TileBuilder> {
     public final List<WidgetFluidTank> widgetTanks;
 
-    public ContainerBuilder(Player player, TileBuilder tile) {
-        super(player, tile);
+    public ContainerBuilder(MenuType<?> type, int containerId, Player player, TileBuilder tile) {
+        super(type, containerId, player, tile);
 
         addFullPlayerInventory(140);
 
-        addSlotToContainer(new SlotBase(tile.invSnapshot, 0, 80, 27));
+        addSlot(new SlotBase(tile.invSnapshot, 0, 80, 27));
 
         for (int sy = 0; sy < 3; sy++) {
             for (int sx = 0; sx < 9; sx++) {
-                addSlotToContainer(new SlotBase(tile.invResources, sx + sy * 9, 8 + sx * 18, 72 + sy * 18));
+                addSlot(new SlotBase(tile.invResources, sx + sy * 9, 8 + sx * 18, 72 + sy * 18));
             }
         }
 
@@ -44,7 +46,7 @@ public class ContainerBuilder extends ContainerBCTile<TileBuilder> {
 
         for(int y = 0; y < 6; y++) {
             for(int x = 0; x < 4; x++) {
-                addSlotToContainer(new SlotDisplay(this::getDisplay, x + y * 4, 179 + x * 18, 18 + y * 18));
+                addSlot(new SlotDisplay(this::getDisplay, x + y * 4, 179 + x * 18, 18 + y * 18));
             }
         }
     }

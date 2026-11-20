@@ -7,17 +7,19 @@
 package buildcraft.core.list;
 
 import buildcraft.lib.misc.NBTUtilBC;
-import java.io.IOException;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.Nonnull;
 
-import org.lwjgl.input.Keyboard;
+import com.mojang.blaze3d.platform.InputConstants;
 
-import net.minecraft.client.gui.GuiTextField;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.NonNullList;
 import net.minecraft.resources.Identifier;
@@ -51,17 +53,18 @@ public class GuiList extends GuiBC8<ContainerList> implements IButtonClickEventL
     private static final int BUTTON_COUNT = 3;
 
     private final Map<Integer, Map<ListMatchHandler.Type, NonNullList<ItemStack>>> exampleCache = new HashMap<>();
-    private GuiTextField textField;
+    private EditBox textField;
 
-    public GuiList(Player iPlayer) {
-        super(new ContainerList(iPlayer));
+    public GuiList(ContainerList container) {
+        super(container);
         xSize = SIZE_X;
         ySize = SIZE_Y;
     }
 
     @Override
-    public void initGui() {
-        super.initGui();
+    protected void init() {
+        super.init();
+        mainGui.shownElements.removeIf(e -> e instanceof GuiImageButton || e instanceof WidgetListSlot.GuiElementPhantomSlot);
 
         for (int line = 0; line < container.slots.length; line++) {
             WidgetListSlot[] arr = container.slots[line];
@@ -113,8 +116,6 @@ public class GuiList extends GuiBC8<ContainerList> implements IButtonClickEventL
             }
         }
 
-        buttonList.clear();
-
         for (int sy = 0; sy < ListHandler.HEIGHT; sy++) {
             int bOff = sy * BUTTON_COUNT;
             int bOffX = this.guiLeft + 8 + ListHandler.WIDTH * 18 - BUTTON_COUNT * 11;
@@ -153,10 +154,12 @@ public class GuiList extends GuiBC8<ContainerList> implements IButtonClickEventL
             }
         }
 
-        textField = new GuiTextField(6, this.fontRenderer, guiLeft + 10, guiTop + 10, 156, 12);
-        textField.setMaxStringLength(32);
-        textField.setText(BCCoreItems.list.getName(container.getListItemStack()));
+        textField = new EditBox(this.fontRenderer, guiLeft + 10, guiTop + 10, 156, 12, Component.empty());
+        textField.setMaxLength(32);
+        textField.setValue(BCCoreItems.list.getLabel(container.getListItemStack()));
+        textField.setResponder(container::setLabel);
         textField.setFocused(false);
+        addRenderableWidget(textField);
     }
 
     @Override
@@ -170,13 +173,8 @@ public class GuiList extends GuiBC8<ContainerList> implements IButtonClickEventL
         }
     }
 
-    @Override
-    protected void drawForegroundLayer() {
-        textField.drawTextBox();
-    }
-
     private boolean isCarryingNonEmptyList() {
-        ItemStack stack = mc.player.inventory.getItemStack();
+        ItemStack stack = container.getCarried();
         return !stack.isEmpty() && stack.getItem() instanceof ItemList_BC8 && NBTUtilBC.getItemData(stack) != null;
     }
 
@@ -185,24 +183,32 @@ public class GuiList extends GuiBC8<ContainerList> implements IButtonClickEventL
     }
 
     @Override
-    protected void keyTyped(char typedChar, int keyCode) throws IOException {
-        if (textField.isFocused() && keyCode != Keyboard.KEY_ESCAPE) {
-            textField.textboxKeyTyped(typedChar, keyCode);
-            container.setLabel(textField.getText());
-        } else {
-            super.keyTyped(typedChar, keyCode);
+    public boolean keyPressed(KeyEvent event) {
+        if (textField.isFocused() && event.key() != InputConstants.KEY_ESCAPE) {
+            textField.keyPressed(event);
+            return true;
         }
+        return super.keyPressed(event);
     }
 
     @Override
-    protected void mouseClicked(int x, int y, int b) throws IOException {
-        super.mouseClicked(x, y, b);
-
-        if (isCarryingNonEmptyList() || !hasListEquipped()) {
-            return;
+    public boolean charTyped(CharacterEvent event) {
+        if (textField.isFocused()) {
+            return textField.charTyped(event);
         }
+        return super.charTyped(event);
+    }
 
-        textField.mouseClicked(x, y, b);
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        boolean handled = super.mouseClicked(event, doubleClick);
+        if (isCarryingNonEmptyList() || !hasListEquipped()) {
+            textField.setFocused(false);
+            return handled;
+        }
+        boolean inField = textField.isMouseOver(event.x(), event.y());
+        textField.setFocused(inField);
+        return handled || inField;
     }
 
     @Override

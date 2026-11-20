@@ -7,17 +7,32 @@ package buildcraft.core;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 
-import buildcraft.api.core.BCLog;
+import net.neoforged.bus.api.IEventBus;
+
+import buildcraft.lib.gui.BCMenu;
+
+import buildcraft.core.list.ContainerList;
 
 public enum BCCoreGuis {
     LIST;
 
-    // TODO(26.3 GUIs batch): open the list's menu (ContainerList) once containers have menu types.
+    /** The list's menu (it reads the list from the player's hands, so it needs no position). */
+    public static BCMenu<ContainerList> listMenu;
+
+    public static void fmlPreInit(IEventBus modBus) {
+        var register = BCMenu.createRegister(BCCore.MODID, modBus);
+        listMenu = BCMenu.register(register, "list", (type, id, player, pos, data) -> new ContainerList(type, id, player));
+    }
+
     public void openGUI(Player player) {
-        BCLog.logger.debug("[core.gui] " + name() + " isn't ported to 26.3 yet");
+        openGUI(player, player.blockPosition());
     }
 
     public void openGUI(Player player, BlockPos pos) {
-        openGUI(player);
+        switch (this) {
+            case LIST:
+                listMenu.open(player, pos);
+                break;
+        }
     }
 }

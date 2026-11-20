@@ -66,6 +66,7 @@ public class BCTransport {
         SchematicBlockFactoryRegistry.registerFactory("pipe", 300, SchematicBlockPipe::predicate,
             SchematicBlockPipe::new);
 
+        BCTransportGuis.fmlPreInit(modBus);
         BCTransportProxy.getProxy().fmlPreInit();
 
         NeoForge.EVENT_BUS.register(BCTransportEventDist.INSTANCE);

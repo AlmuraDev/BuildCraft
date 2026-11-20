@@ -1,9 +1,10 @@
 package buildcraft.lib.gui.statement;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import java.util.Arrays;
 import java.util.List;
 
-import net.minecraft.client.renderer.GlStateManager;
 
 import buildcraft.api.statements.IGuiSlot;
 
@@ -77,17 +78,17 @@ public class GuiElementStatementVariant extends GuiElementSimple implements IMen
 
     @Override
     public void drawBackground(float partialTicks) {
-        GlStateManager.pushMatrix();
+        GuiDraw.pushPose();
         // Render above items in the players inventory
-        GlStateManager.translate(0, 0, 1000);
-        GlStateManager.color(1, 1, 1);
+        GuiDraw.nextLayer();
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), 1f);
         SELECTION_HOVER.draw(this);
         iteratePossible((pos, slot) -> {
             double x = pos.getX();
             double y = pos.getY();
             GuiElementStatementSource.drawGuiSlot(slot, x, y);
         });
-        GlStateManager.popMatrix();
+        GuiDraw.popPose();
     }
 
     @Override

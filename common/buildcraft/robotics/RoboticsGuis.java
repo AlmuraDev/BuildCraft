@@ -7,18 +7,28 @@ package buildcraft.robotics;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 
-import buildcraft.api.core.BCLog;
+import net.neoforged.bus.api.IEventBus;
+
+import buildcraft.lib.gui.BCMenu;
+
+import buildcraft.robotics.container.ContainerZonePlanner;
+import buildcraft.robotics.tile.TileZonePlanner;
 
 public enum RoboticsGuis {
     ZONE_PLANTER;
 
-    // TODO(26.3 GUIs batch): open the zone planner menu (robotics/container, robotics/gui) once containers have menu
-    // types.
+    public static BCMenu<ContainerZonePlanner> zonePlanner;
+
+    public static void fmlPreInit(IEventBus modBus) {
+        var register = BCMenu.createRegister(BCRobotics.MODID, modBus);
+        zonePlanner = BCMenu.tile(register, "zone_planner", TileZonePlanner.class, ContainerZonePlanner::new);
+    }
+
     public void openGUI(Player player) {
-        BCLog.logger.debug("[robotics.gui] " + name() + " isn't ported to 26.3 yet");
+        openGUI(player, player.blockPosition());
     }
 
     public void openGUI(Player player, BlockPos pos) {
-        openGUI(player);
+        zonePlanner.open(player, pos);
     }
 }

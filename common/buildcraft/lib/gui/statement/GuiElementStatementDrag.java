@@ -1,10 +1,10 @@
 package buildcraft.lib.gui.statement;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import javax.annotation.Nullable;
 
-import org.lwjgl.opengl.GL11;
 
-import net.minecraft.client.renderer.GlStateManager;
 
 import buildcraft.api.core.EnumPipePart;
 import buildcraft.api.core.render.ISprite;
@@ -73,9 +73,8 @@ public class GuiElementStatementDrag implements IMenuElement {
                     }
                 }
             }
-            GlStateManager.clear(GL11.GL_DEPTH_BUFFER_BIT);
             if (!canPlace) {
-                GlStateManager.color(1.0f, 0.7f, 0.7f);
+                GuiDraw.colour((float) (1.0f), (float) ( 0.7f), (float) ( 0.7f), 1f);
             }
             double x = gui.mouse.getX() - 9;
             double y = gui.mouse.getY() - 9;
@@ -97,7 +96,7 @@ public class GuiElementStatementDrag implements IMenuElement {
                     }
                 }
             }
-            GlStateManager.color(1, 1, 1);
+            GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), 1f);
         }
     }
 

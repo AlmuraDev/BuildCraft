@@ -320,7 +320,7 @@ public class FluidRenderer {
         vertex.render(bb, IDENTITY_POSE, OverlayTexture.NO_OVERLAY);
     }
 
-    // TODO(26.3 GUIs batch): drawFluidForGui (1.12.2 drew a tiled fluid into the GUI with the tessellator).
+    // GUIs draw fluids with GuiUtil.drawFluidForGui.
 
     /** Used to keep track of what position maps to what texture co-ord.
      * <p>

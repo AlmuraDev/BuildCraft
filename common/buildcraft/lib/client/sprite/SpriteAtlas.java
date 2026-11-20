@@ -26,11 +26,11 @@ public class SpriteAtlas implements ISprite {
 
     @Override
     public double getInterpU(double u) {
-        return sprite.getInterpolatedU(u * 16);
+        return sprite.getU((float) u);
     }
 
     @Override
     public double getInterpV(double v) {
-        return sprite.getInterpolatedV(v * 16);
+        return sprite.getV((float) v);
     }
 }

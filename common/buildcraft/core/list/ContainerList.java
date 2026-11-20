@@ -62,8 +62,8 @@ public class ContainerList extends ContainerBC_Neptune {
         }
     }
 
-    public ContainerList(Player iPlayer) {
-        super(iPlayer);
+    public ContainerList(net.minecraft.world.inventory.MenuType<?> type, int containerId, Player iPlayer) {
+        super(type, containerId, iPlayer);
 
         lines = ListHandler.getLines(getListItemStack());
 
@@ -80,7 +80,7 @@ public class ContainerList extends ContainerBC_Neptune {
     }
 
     @Override
-    public boolean canInteractWith(Player player) {
+    public boolean stillValid(Player player) {
         return !getListItemStack().isEmpty();
     }
 
@@ -125,7 +125,7 @@ public class ContainerList extends ContainerBC_Neptune {
     }
 
     public void setLabel(final String text) {
-        BCCoreItems.list.setName(getListItemStack(), text);
+        BCCoreItems.list.setLabel(getListItemStack(), text);
 
         if (player.level().isClientSide()) {
             sendMessage(ID_LABEL, (buffer) -> buffer.writeUtf(text));

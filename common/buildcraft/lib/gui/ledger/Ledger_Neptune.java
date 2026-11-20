@@ -6,6 +6,8 @@
 
 package buildcraft.lib.gui.ledger;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntSupplier;
@@ -13,7 +15,6 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.util.Mth;
 
@@ -261,7 +262,7 @@ public class Ledger_Neptune implements IInteractionElement, IContainingElement {
 
         RenderUtil.setGLColorFromIntPlusAlpha(colour);
         split.draw(startX, startY, interpWidth, interpHeight);
-        GlStateManager.color(1, 1, 1, 1);
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), (float) ( 1));
 
         IGuiPosition pos2;
 
@@ -393,7 +394,7 @@ public class Ledger_Neptune implements IInteractionElement, IContainingElement {
     }
 
     public String getTitle() {
-        return I18n.format(title);
+        return I18n.get(title);
     }
 
     public int getTitleColour() {

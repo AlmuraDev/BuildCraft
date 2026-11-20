@@ -36,7 +36,10 @@ public class BCCoreClientProxy extends BCCoreProxy {
         BCCore.MOD_BUS.addListener(BCCoreModels::registerRenderers);
         DetachedRenderer.INSTANCE.addRenderer(RenderMatrixType.FROM_WORLD_ORIGIN, RenderVolumeBoxes.INSTANCE);
         RenderMarkerConnections.register();
-        // TODO(26.3 GUIs batch): ListTooltipHandler, once ContainerList is ported.
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(buildcraft.core.list.ListTooltipHandler.INSTANCE);
+        BCCore.MOD_BUS.addListener((net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) ->
+            buildcraft.lib.client.BCMenuScreens.register(event, buildcraft.core.BCCoreGuis.listMenu,
+                buildcraft.core.list.GuiList::new));
         MessageManager.setHandler(MessageVolumeBoxes.class, MessageVolumeBoxes.HANDLER, LogicalSide.CLIENT);
     }
 

@@ -8,31 +8,29 @@ package buildcraft.lib.misc;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
 import com.mojang.authlib.GameProfile;
-import com.mojang.authlib.minecraft.MinecraftProfileTexture;
-import com.mojang.authlib.minecraft.MinecraftProfileTexture.Type;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.tileentity.TileEntitySkull;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.entity.player.PlayerSkin;
 
-import buildcraft.api.core.render.ISprite;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
-import buildcraft.lib.BCLibSprites;
-import buildcraft.lib.client.sprite.SpriteRaw;
+import buildcraft.lib.client.sprite.SpriteHolderRegistry;
+import buildcraft.lib.gui.GuiDraw;
 
+@OnlyIn(Dist.CLIENT)
 public class SpriteUtil {
-
-    private static final Identifier LOCATION_SKIN_LOADING = Identifier.parse("skin:loading");
-    private static final Map<GameProfile, GameProfile> CACHED = new HashMap<>();
+    private static final Map<GameProfile, Supplier<PlayerSkin>> SKINS = new HashMap<>();
 
     public static void bindBlockTextureMap() {
-        bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
+        GuiDraw.bindBlockAtlas();
     }
 
     public static void bindTexture(String identifier) {
@@ -40,81 +38,26 @@ public class SpriteUtil {
     }
 
     public static void bindTexture(Identifier identifier) {
-        Minecraft.getInstance().renderEngine.bindTexture(identifier);
+        GuiDraw.bind(identifier);
     }
 
-    /** Transforms the given {@link Identifier}, adding ".png" to the end and prepending that
-     * {@link Identifier#getResourcePath()} with "textures/", just like what {@link TextureMap} does. */
+    /** Transforms the given {@link Identifier}, adding ".png" to the end and prepending "textures/" to its path (a
+     * sprite name to its texture file). */
     public static Identifier transformLocation(Identifier location) {
         return Identifier.fromNamespaceAndPath(location.getNamespace(), "textures/" + location.getPath() + ".png");
     }
 
+    /** @return The skin of the given profile (the default skin until it has been downloaded), or null for none. */
     @Nullable
-    public static Identifier getSkinSpriteLocation(GameProfile profile) {
-        Identifier loc = getSkinSpriteLocation0(profile);
-        return loc == LOCATION_SKIN_LOADING ? null : loc;
-    }
-
-    @Nullable
-    private static Identifier getSkinSpriteLocation0(GameProfile profile) {
+    public static PlayerSkin getSkin(@Nullable GameProfile profile) {
         if (profile == null) {
             return null;
         }
-        Minecraft mc = Minecraft.getInstance();
-
-        if (CACHED.containsKey(profile) && CACHED.get(profile) == null && Math.random() >= 0.99) {
-            CACHED.remove(profile);
-        }
-
-        try {
-            if (!CACHED.containsKey(profile)) {
-                CACHED.put(profile, TileEntitySkull.updateGameprofile(profile));
-            }
-            GameProfile p2 = CACHED.get(profile);
-            if (p2 == null) {
-                return null;
-            }
-            profile = p2;
-            Map<Type, MinecraftProfileTexture> map = mc.getSkinManager().loadSkinFromCache(profile);
-            MinecraftProfileTexture tex = map.get(Type.SKIN);
-            if (tex != null) {
-                return mc.getSkinManager().loadSkin(tex, Type.SKIN);
-            }
-            return LOCATION_SKIN_LOADING;
-        } catch (NullPointerException | ClassCastException e) {
-            // Fix for https://github.com/BuildCraft/BuildCraft/issues/4419
-            // I'm not quite sure why this throws an NPE but this should at
-            // least stop it from crashing
-            e.printStackTrace();
-            CACHED.put(profile, profile);
-            return null;
-        }
-    }
-
-    public static ISprite getFaceSprite(GameProfile profile) {
-        if (profile == null) {
-            return BCLibSprites.HELP;
-        }
-        Identifier loc = getSkinSpriteLocation0(profile);
-        if (loc == null) {
-            return BCLibSprites.LOCK;
-        }
-        return new SpriteRaw(loc, 8, 8, 8, 8, 64);
-    }
-
-    @Nullable
-    public static ISprite getFaceOverlaySprite(GameProfile profile) {
-        if (profile == null) {
-            return null;
-        }
-        Identifier loc = getSkinSpriteLocation0(profile);
-        if (loc == null) {
-            return null;
-        }
-        return new SpriteRaw(loc, 40, 8, 8, 8, 64);
+        return SKINS.computeIfAbsent(profile, p -> Minecraft.getInstance().getSkinManager().createLookup(p, false))
+            .get();
     }
 
     public static TextureAtlasSprite missingSprite() {
-        return Minecraft.getInstance().getTextureMapBlocks().getMissingSprite();
+        return SpriteHolderRegistry.missingSprite();
     }
 }

@@ -7,8 +7,6 @@
 package buildcraft.lib.gui;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.world.item.ItemStack;
 
 public class GuiStack implements ISimpleDrawable {
@@ -20,10 +18,8 @@ public class GuiStack implements ISimpleDrawable {
 
     @Override
     public void drawAt(double x, double y) {
-        GlStateManager.color(1, 1, 1);
-        RenderHelper.enableGUIStandardItemLighting();
-        Minecraft.getInstance().getRenderItem().renderItemIntoGUI(stack, (int) x, (int) y);
-        RenderHelper.disableStandardItemLighting();
-        GlStateManager.color(1, 1, 1);
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), 1f);
+        GuiDraw.item(stack, (int) x, (int) y);
+        GuiDraw.colour((float) (1), (float) ( 1), (float) ( 1), 1f);
     }
 }

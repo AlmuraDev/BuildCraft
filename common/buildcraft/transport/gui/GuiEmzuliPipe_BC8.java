@@ -6,6 +6,8 @@
 
 package buildcraft.transport.gui;
 
+import buildcraft.lib.gui.GuiDraw;
+
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -51,15 +53,15 @@ public class GuiEmzuliPipe_BC8 extends GuiBC8<ContainerEmzuliPipe_BC8> {
         PAINT_BUTTON_BUILDER.active = enabled.offset(0, 20);
     }
 
-    public GuiEmzuliPipe_BC8(Player player, PipeBehaviourEmzuli behaviour) {
-        super(new ContainerEmzuliPipe_BC8(player, behaviour));
+    public GuiEmzuliPipe_BC8(ContainerEmzuliPipe_BC8 container) {
+        super(container);
         xSize = SIZE_X;
         ySize = SIZE_Y;
     }
 
     @Override
-    public void initGui() {
-        super.initGui();
+    protected void init() {
+        super.init();
         addButton(SlotIndex.SQUARE, 49, 19);
         addButton(SlotIndex.CIRCLE, 49, 47);
         addButton(SlotIndex.TRIANGLE, 106, 19);
@@ -138,11 +140,11 @@ public class GuiEmzuliPipe_BC8 extends GuiBC8<ContainerEmzuliPipe_BC8> {
     @Override
     protected void drawForegroundLayer() {
         String title = LocaleUtil.localize("gui.pipes.emzuli.title");
-        double titleX = mainGui.rootElement.getX() + (xSize - fontRenderer.getStringWidth(title)) / 2;
-        fontRenderer.drawString(title, (int) titleX, (int) mainGui.rootElement.getY() + 6, 0x404040);
+        double titleX = mainGui.rootElement.getX() + (xSize - fontRenderer.width(title)) / 2;
+        GuiDraw.text(fontRenderer, title, (int) titleX, (int) mainGui.rootElement.getY() + 6, 0x404040, false);
 
         int invX = (int) mainGui.rootElement.getX() + 8;
         int invY = (int) mainGui.rootElement.getY() + ySize - 93;
-        fontRenderer.drawString(LocaleUtil.localize("gui.inventory"), invX, invY, 0x404040);
+        GuiDraw.text(fontRenderer, LocaleUtil.localize("gui.inventory"), invX, invY, 0x404040, false);
     }
 }
