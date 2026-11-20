@@ -137,6 +137,44 @@ public class BCSiliconModels {
         });
         registerPlugItem(event, "light_sensor", () -> new MutableQuad[][] { LIGHT_SENSOR.getCutoutQuads() });
         registerPlugItem(event, "timer", () -> new MutableQuad[][] { TIMER.getCutoutQuads() });
+        event.register(net.minecraft.resources.Identifier.fromNamespaceAndPath("buildcraftsilicon", "facade"),
+            buildcraft.lib.client.model.ItemModelParts.codec(new FacadeItemSource(),
+                buildcraft.lib.client.model.ItemModelParts.TRANSFORM_PLUG_AS_BLOCK));
+    }
+
+    /** Facade items: the facade as it sits on the west side of a pipe, with the blocker behind solid facades
+     * (1.12.2's ModelFacadeItem). Facades of several states cycle through them, as on the pipe. */
+    private static final class FacadeItemSource
+        implements buildcraft.lib.client.model.ItemModelParts.Source<KeyPlugFacade> {
+        @Override
+        public KeyPlugFacade key(net.minecraft.world.item.ItemStack stack) {
+            buildcraft.silicon.plug.FacadeInstance inst = buildcraft.silicon.item.ItemPluggableFacade.getStates(stack);
+            buildcraft.silicon.plug.FacadePhasedState state = inst.getCurrentStateForStack();
+            buildcraft.api.core.BCRenderLayer layer = state.stateInfo.isTranslucentLayer
+                ? buildcraft.api.core.BCRenderLayer.TRANSLUCENT : buildcraft.api.core.BCRenderLayer.CUTOUT;
+            return new KeyPlugFacade(layer, Direction.WEST, state.stateInfo.state, inst.isHollow());
+        }
+
+        @Override
+        public void addQuads(KeyPlugFacade key, buildcraft.lib.client.model.ItemModelParts.QuadSink sink) {
+            java.util.List<MutableQuad> quads = PlugBakerFacade.INSTANCE.bake(key);
+            MutableQuad[] out = new MutableQuad[quads.size()];
+            for (int i = 0; i < out.length; i++) {
+                MutableQuad q = new MutableQuad(quads.get(i));
+                int tint = q.getTint();
+                if (tint >= 0) {
+                    // bakeForKey packs the block's tint index as tint * 6 + side
+                    int colour = buildcraft.silicon.client.FacadeTints.getColour(key.state, null, null,
+                        tint / Direction.values().length);
+                    if (colour != -1) {
+                        q.multColouri((colour >> 16) & 0xFF, (colour >> 8) & 0xFF, colour & 0xFF, 0xFF);
+                    }
+                    q.setTint(-1);
+                }
+                out[i] = q;
+            }
+            sink.add(out, key.layer == buildcraft.api.core.BCRenderLayer.TRANSLUCENT);
+        }
     }
 
     /** A plug item drawn as its plug's model (1.12.2's ModelPluggableItem). */

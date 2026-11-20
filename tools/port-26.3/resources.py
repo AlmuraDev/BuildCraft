@@ -306,7 +306,7 @@ def _add_silicon():
     # Gates and lenses are also drawn from their plug models in code (BCSiliconModels.registerItemModels)
     items['plug_gate'] = {'type': 'buildcraftsilicon:gate'}
     items['plug_lens'] = {'type': 'buildcraftsilicon:lens'}
-    items['plug_facade'] = model('minecraft:block/stone')
+    items['plug_facade'] = {'type': 'buildcraftsilicon:facade'}
     for block in ['laser', 'assembly_table', 'advanced_crafting_table', 'integration_table', 'charging_table',
                   'programming_table']:
         items[block] = model('buildcraftsilicon:item/' + block)

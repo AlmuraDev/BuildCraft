@@ -67,6 +67,7 @@ public final class ItemModelParts<K> implements ItemModel {
     public static final ItemTransforms TRANSFORM_BLOCK;
     public static final ItemTransforms TRANSFORM_PLUG_AS_ITEM;
     public static final ItemTransforms TRANSFORM_PLUG_AS_ITEM_BIGGER;
+    public static final ItemTransforms TRANSFORM_PLUG_AS_BLOCK;
 
     static {
         ItemTransform thirdpLeft = def(75, 45, 0, 0, 2.5, 0, 0.375);
@@ -88,6 +89,13 @@ public final class ItemModelParts<K> implements ItemModel {
         TRANSFORM_PLUG_AS_ITEM = transforms(thirdpLeft, thirdpRight, firstpLeft, firstpRight, itemHead, itemGui,
             itemGround, itemFixed);
         TRANSFORM_PLUG_AS_ITEM_BIGGER = scale(TRANSFORM_PLUG_AS_ITEM, 1.8f);
+
+        thirdpLeft = def(75, 45, 0, 0, 2.5, 0, 0.375);
+        thirdpRight = def(75, 225, 0, 0, 2.5, 0, 0.375);
+        firstpLeft = def(0, 45, 0, 0, 0, 0, 0.4);
+        firstpRight = def(0, 225, 0, 0, 0, 0, 0.4);
+        gui = def(30, 135, 0, -3, 1.5, 0, 0.625);
+        TRANSFORM_PLUG_AS_BLOCK = transforms(thirdpLeft, thirdpRight, firstpLeft, firstpRight, head, gui, ground, fixed);
     }
 
     private static ItemTransform def(double rx, double ry, double rz, double tx, double ty, double tz, double scale) {

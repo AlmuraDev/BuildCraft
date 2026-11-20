@@ -1,6 +1,5 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "minecraft:block/stone"
+    "type": "buildcraftsilicon:facade"
   }
 }
