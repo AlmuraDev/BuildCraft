@@ -6,6 +6,8 @@
 
 package buildcraft.factory.tile;
 
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.BlockPos;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -69,7 +71,8 @@ public abstract class TileAutoWorkbenchBase extends TileBC_Neptune
 
     public ItemStack resultClient = ItemStack.EMPTY;
 
-    public TileAutoWorkbenchBase(int width, int height) {
+    public TileAutoWorkbenchBase(BlockPos pos, BlockState state, int width, int height) {
+        super(pos, state);
         int slots = width * height;
         invBlueprint = itemManager.addInvHandler("blueprint", slots, EnumAccess.PHANTOM);
         invMaterialFilter = itemManager.addInvHandler("material_filter", slots, EnumAccess.PHANTOM);
@@ -86,7 +89,7 @@ public abstract class TileAutoWorkbenchBase extends TileBC_Neptune
     protected void onSlotChange(IItemHandlerModifiable handler, int slot, @Nonnull ItemStack before,
         @Nonnull ItemStack after) {
         super.onSlotChange(handler, slot, before, after);
-        if (!ItemStack.areItemStacksEqual(before, after)) {
+        if (!ItemStack.matches(before, after)) {
             crafting.onInventoryChange(handler);
         }
     }
@@ -103,7 +106,7 @@ public abstract class TileAutoWorkbenchBase extends TileBC_Neptune
                     // This is used for #hasWork(), to ensure that it doesn't return
                     // false for the one tick in between crafts.
                     powerStored = crafting.canCraft() ? 1 : 0;
-                    AdvancementUtil.unlockAdvancement(getOwner().getId(), ADVANCEMENT_AUTOCRAFT);
+                    AdvancementUtil.unlockAdvancement(getOwner().id(), ADVANCEMENT_AUTOCRAFT);
                 }
             } else {
                 powerStored += POWER_GEN_PASSIVE;

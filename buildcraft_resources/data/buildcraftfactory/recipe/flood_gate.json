@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "b": "minecraft:iron_bars",
+    "t": "buildcraftfactory:tank",
+    "g": "#c:gears/iron",
+    "i": "#c:ingots/iron"
+  },
+  "pattern": [
+    "igi",
+    "btb",
+    "ibi"
+  ],
+  "result": {
+    "id": "buildcraftfactory:flood_gate"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftfactory:flood_gate"
+    },
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftfactory:tank"
+    }
+  ]
+}

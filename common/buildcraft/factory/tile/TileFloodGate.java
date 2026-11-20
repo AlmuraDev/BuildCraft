@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableList;
 
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.NumericTag;
 import net.minecraft.nbt.ByteArrayTag;
@@ -68,14 +69,15 @@ public class TileFloodGate extends TileBC_Neptune implements ITickable, IDebugga
 
     private static final int[] REBUILD_DELAYS = { 16, 32, 64, 128, 256 };
 
-    private final Tank tank = new Tank("tank", 2 * Fluid.BUCKET_VOLUME, this);
+    private final Tank tank = new Tank("tank", 2 * net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME, this);
     public final Set<Direction> openSides = EnumSet.copyOf(BlockFloodGate.CONNECTED_MAP.keySet());
     public final Deque<BlockPos> queue = new ArrayDeque<>();
     private final Map<BlockPos, List<BlockPos>> paths = new HashMap<>();
     private int delayIndex = 0;
     private int tick = 0;
 
-    public TileFloodGate() {
+    public TileFloodGate(BlockPos pos, BlockState state) {
+        super(pos, state);
         caps.addCapabilityInstance(CapUtil.CAP_FLUIDS, tank, EnumPipePart.VALUES);
         tankManager.add(tank);
     }
@@ -85,29 +87,26 @@ public class TileFloodGate extends TileBC_Neptune implements ITickable, IDebugga
     }
 
     private void buildQueue() {
-        world.profiler.startSection("prepare");
         queue.clear();
         paths.clear();
         FluidStack fluid = tank.getFluid();
-        if (fluid == null || fluid.amount <= 0) {
-            world.profiler.endSection();
+        if (fluid == null || fluid.getAmount() <= 0) {
             return;
         }
         Set<BlockPos> checked = new HashSet<>();
         checked.add(pos);
         List<BlockPos> nextPosesToCheck = new ArrayList<>();
         for (Direction face : openSides) {
-            BlockPos offset = pos.offset(face);
+            BlockPos offset = pos.relative(face);
             nextPosesToCheck.add(offset);
             paths.put(offset, ImmutableList.of(offset));
         }
-        Direction[] directions = fluid.getFluid().isGaseous(fluid) ? SEARCH_GASEOUS : SEARCH_NORMAL;
-        world.profiler.endStartSection("build");
+        Direction[] directions = fluid.getFluid().getFluidType().isLighterThanAir() ? SEARCH_GASEOUS : SEARCH_NORMAL;
         outer: while (!nextPosesToCheck.isEmpty()) {
             List<BlockPos> nextPosesToCheckCopy = new ArrayList<>(nextPosesToCheck);
             nextPosesToCheck.clear();
             for (BlockPos toCheck : nextPosesToCheckCopy) {
-                if (toCheck.distanceSq(pos) > 64 * 64) {
+                if (toCheck.distSqr(pos) > 64 * 64) {
                     continue;
                 }
                 if (checked.add(toCheck)) {
@@ -120,7 +119,7 @@ public class TileFloodGate extends TileBC_Neptune implements ITickable, IDebugga
                         }
                         List<BlockPos> checkPath = paths.get(toCheck);
                         for (Direction side : directions) {
-                            BlockPos next = toCheck.offset(side);
+                            BlockPos next = toCheck.relative(side);
                             if (checked.contains(next)) {
                                 continue;
                             }
@@ -134,7 +133,6 @@ public class TileFloodGate extends TileBC_Neptune implements ITickable, IDebugga
                 }
             }
         }
-        world.profiler.endSection();
     }
 
     private boolean canFill(BlockPos offsetPos) {
@@ -170,15 +168,15 @@ public class TileFloodGate extends TileBC_Neptune implements ITickable, IDebugga
             return;
         }
 
-        if (tank.getFluidAmount() < Fluid.BUCKET_VOLUME) {
+        if (tank.getFluidAmount() < net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME) {
             return;
         }
 
         tick++;
         if (tick % 16 == 0) {
             if (!tank.isEmpty() && !queue.isEmpty()) {
-                FluidStack fluid = tank.drain(Fluid.BUCKET_VOLUME, false);
-                if (fluid != null && fluid.amount >= Fluid.BUCKET_VOLUME) {
+                FluidStack fluid = tank.drain(net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME, false);
+                if (fluid != null && fluid.getAmount() >= net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME) {
                     BlockPos currentPos = queue.removeLast();
                     List<BlockPos> path = paths.get(currentPos);
                     boolean canFill = true;
@@ -194,13 +192,10 @@ public class TileFloodGate extends TileBC_Neptune implements ITickable, IDebugga
                         }
                     }
                     if (canFill && canFill(currentPos)) {
-                        FakePlayer fakePlayer =
-                            BuildCraftAPI.fakePlayerProvider.getFakePlayer((ServerLevel) world, getOwner(), currentPos);
-                        if (FluidUtil.tryPlaceFluid(fakePlayer, world, currentPos, tank, fluid)) {
-                            AdvancementUtil.unlockAdvancement(getOwner().getId(), ADVANCEMENT_FLOOD_SINGLE);
+                        if (FluidUtilBC.tryPlaceFluid(world, currentPos, tank, fluid)) {
+                            AdvancementUtil.unlockAdvancement(getOwner().id(), ADVANCEMENT_FLOOD_SINGLE);
                             for (Direction side : Direction.values()) {
-                                world.notifyNeighborsOfStateChange(currentPos.offset(side), BCFactoryBlocks.floodGate,
-                                    false);
+                                world.updateNeighborsAt(currentPos.relative(side), BCFactoryBlocks.floodGate);
                             }
                             delayIndex = 0;
                             tick = 0;
@@ -227,7 +222,7 @@ public class TileFloodGate extends TileBC_Neptune implements ITickable, IDebugga
         byte b = 0;
         for (Direction face : Direction.values()) {
             if (openSides.contains(face)) {
-                b |= 1 << face.getIndex();
+                b |= 1 << face.get3DDataValue();
             }
         }
         nbt.putByte("openSides", b);
@@ -239,9 +234,9 @@ public class TileFloodGate extends TileBC_Neptune implements ITickable, IDebugga
         super.readFromNBT(nbt);
         Tag open = nbt.get("openSides");
         if (open instanceof NumericTag) {
-            byte sides = ((NumericTag) open).getByte();
+            byte sides = ((NumericTag) open).byteValue();
             for (Direction face : Direction.values()) {
-                if (((sides >> face.getIndex()) & 1) == 1) {
+                if (((sides >> face.get3DDataValue()) & 1) == 1) {
                     openSides.add(face);
                 } else {
                     openSides.remove(face);
@@ -249,10 +244,10 @@ public class TileFloodGate extends TileBC_Neptune implements ITickable, IDebugga
             }
         } else if (open instanceof ByteArrayTag) {
             // Legacy: 7.99.7 and before
-            byte[] bytes = ((ByteArrayTag) open).getByteArray();
+            byte[] bytes = ((ByteArrayTag) open).getAsByteArray();
             BitSet bitSet = BitSet.valueOf(bytes);
             for (Direction face : Direction.values()) {
-                if (bitSet.get(face.getIndex())) {
+                if (bitSet.get(face.get3DDataValue())) {
                     openSides.add(face);
                 } else {
                     openSides.remove(face);

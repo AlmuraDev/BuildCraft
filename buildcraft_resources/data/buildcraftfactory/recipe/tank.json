@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "g": "#c:glass_blocks/colorless"
+  },
+  "pattern": [
+    "ggg",
+    "g g",
+    "ggg"
+  ],
+  "result": {
+    "id": "buildcraftfactory:tank"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftfactory:tank"
+    }
+  ]
+}

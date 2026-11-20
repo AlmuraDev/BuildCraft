@@ -6,51 +6,46 @@
 
 package buildcraft.factory.block;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import buildcraft.lib.block.BlockBCBase_Neptune;
 
 import buildcraft.factory.tile.TileMiner;
 
+/** The mining tube under a mining well or pump. Unbreakable while its miner is above it. */
 public class BlockTube extends BlockBCBase_Neptune {
-    private static final AABB BOUNDING_BOX = new AABB(4 / 16D, 0 / 16D, 4 / 16D, 12 / 16D, 16 / 16D, 12 / 16D);
+    private static final VoxelShape SHAPE = Block.box(4, 0, 4, 12, 16, 12);
 
-    public BlockTube(Material material, String id) {
-        super(material, id);
-        setBlockUnbreakable();
+    public BlockTube(BlockBehaviour.Properties properties, String id) {
+        super(properties.strength(-1.0F, 3600000.0F).noOcclusion(), id);
     }
 
     @Override
-    public boolean isOpaqueCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    public boolean isFullCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    public boolean removedByPlayer(BlockState state, Level world, BlockPos pos, Player player, boolean willHarvest) {
+    public boolean onDestroyedByPlayer(BlockState state, Level world, BlockPos pos, Player player, ItemStack toolStack,
+        boolean willHarvest, FluidState fluid) {
         BlockPos currentPos = pos;
         // noinspection StatementWithEmptyBody
-        while (world.getBlockState(currentPos = currentPos.up()).getBlock() == this) {
+        while (world.getBlockState(currentPos = currentPos.above()).getBlock() == this) {
         }
         if (!(world.getBlockEntity(currentPos) instanceof TileMiner)) {
-            return super.removedByPlayer(state, world, pos, player, willHarvest);
+            return super.onDestroyedByPlayer(state, world, pos, player, toolStack, willHarvest, fluid);
         } else {
             return false;
         }
     }
 
     @Override
-    public AABB getBoundingBox(BlockState state, BlockGetter source, BlockPos pos) {
-        return BOUNDING_BOX;
+    protected VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return SHAPE;
     }
 }

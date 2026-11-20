@@ -8,41 +8,38 @@ package buildcraft.factory.block;
 
 import java.util.List;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import buildcraft.api.core.BCRenderLayer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.core.BlockPos;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.ScheduledTickAccess;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import buildcraft.api.properties.BuildCraftProperties;
 import buildcraft.api.transport.pipe.ICustomPipeConnection;
 
 import buildcraft.lib.block.BlockBCTile_Neptune;
-import buildcraft.lib.tile.TileBC_Neptune;
 
 import buildcraft.factory.tile.TileTank;
 
+/** Tanks join the tank below them: JOINED_BELOW is a real state property now (1.12.2 worked it out in getActualState),
+ * kept up to date by {@link #updateShape}. */
 public class BlockTank extends BlockBCTile_Neptune implements ICustomPipeConnection, ITankBlockConnector {
     private static final Property<Boolean> JOINED_BELOW = BuildCraftProperties.JOINED_BELOW;
-    private static final AABB BOUNDING_BOX = new AABB(2 / 16D, 0 / 16D, 2 / 16D, 14 / 16D, 16 / 16D, 14 / 16D);
+    private static final VoxelShape SHAPE = Block.box(2, 0, 2, 14, 16, 14);
 
-    public BlockTank(Material material, String id) {
-        super(material, id);
-    }
-
-    @Override
-    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
-        return new TileTank();
+    public BlockTank(BlockBehaviour.Properties properties, String id) {
+        super(properties.noOcclusion(), id);
     }
 
     @Override
@@ -51,46 +48,44 @@ public class BlockTank extends BlockBCTile_Neptune implements ICustomPipeConnect
         properties.add(JOINED_BELOW);
     }
 
-    @OnlyIn(Dist.CLIENT)
-    @Override
-    public BCRenderLayer getBlockLayer() {
-        return BCRenderLayer.CUTOUT;
+    private static boolean isTankBelow(BlockGetter world, BlockPos pos) {
+        return world.getBlockState(pos.below()).getBlock() instanceof ITankBlockConnector;
     }
 
     @Override
-    public boolean isFullCube(BlockState state) {
-        return false;
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        BlockState state = super.getStateForPlacement(context);
+        return state == null ? null
+            : state.setValue(JOINED_BELOW, isTankBelow(context.getLevel(), context.getClickedPos()));
     }
 
     @Override
-    public boolean isOpaqueCube(BlockState state) {
-        return false;
+    protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess ticks, BlockPos pos,
+        Direction direction, BlockPos neighbourPos, BlockState neighbourState, RandomSource random) {
+        state = super.updateShape(state, world, ticks, pos, direction, neighbourPos, neighbourState, random);
+        if (direction == Direction.DOWN) {
+            state = state.setValue(JOINED_BELOW, neighbourState.getBlock() instanceof ITankBlockConnector);
+        }
+        return state;
     }
 
     @Override
-    public AABB getBoundingBox(BlockState state, BlockGetter world, BlockPos pos) {
-        return BOUNDING_BOX;
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    @Override
-    public boolean shouldSideBeRendered(BlockState state, BlockGetter world, BlockPos pos, Direction side) {
-        return side.getAxis() != Axis.Y || !(world.getBlockState(pos.offset(side)).getBlock() instanceof ITankBlockConnector);
+    protected VoxelShape getShape(BlockState state, BlockGetter world, BlockPos pos, CollisionContext context) {
+        return SHAPE;
     }
 
     @Override
-    public BlockState getActualState(BlockState state, BlockGetter world, BlockPos pos) {
-        boolean isTankBelow = world.getBlockState(pos.down()).getBlock() instanceof ITankBlockConnector;
-        return state.setValue(JOINED_BELOW, isTankBelow);
+    protected boolean skipRendering(BlockState state, BlockState neighbourState, Direction side) {
+        return side.getAxis() == Axis.Y && neighbourState.getBlock() instanceof ITankBlockConnector;
     }
 
     @Override
-    public boolean hasComparatorInputOverride(BlockState state) {
+    protected boolean hasAnalogOutputSignal(BlockState state) {
         return true;
     }
 
     @Override
-    public int getComparatorInputOverride(BlockState blockState, Level world, BlockPos pos) {
+    protected int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos, Direction direction) {
         BlockEntity tile = world.getBlockEntity(pos);
         if (tile instanceof TileTank) {
             return ((TileTank) tile).getComparatorLevel();

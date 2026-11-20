@@ -6,38 +6,28 @@
 
 package buildcraft.factory.block;
 
-import java.util.List;
 import java.util.Locale;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.EnumProperty;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import buildcraft.api.core.BCRenderLayer;
-import net.minecraft.world.InteractionResult;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.StringRepresentable;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.level.Level;
-
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 
 import buildcraft.api.transport.pipe.ICustomPipeConnection;
 
 import buildcraft.lib.block.BlockBCTile_Neptune;
 import buildcraft.lib.block.IBlockWithFacing;
-import buildcraft.lib.tile.TileBC_Neptune;
 
-import buildcraft.factory.BCFactoryBlocks;
 import buildcraft.factory.tile.TileHeatExchange;
 
+/** The heat exchanger. Its only state property is the facing: which part of an exchanger a block is (start, middle,
+ * end) comes from its tile, and which neighbours it joins from their states, both read by its block model
+ * (ModelHeatExchange; 1.12.2 put them in getActualState). */
 public class BlockHeatExchange extends BlockBCTile_Neptune implements ICustomPipeConnection, IBlockWithFacing {
-
     public enum EnumExchangePart implements StringRepresentable {
         START,
         MIDDLE,
@@ -55,66 +45,15 @@ public class BlockHeatExchange extends BlockBCTile_Neptune implements ICustomPip
         }
     }
 
-    public static final Property<EnumExchangePart> PROP_PART = EnumProperty.create("part", EnumExchangePart.class);
-    public static final Property<Boolean> PROP_CONNECTED_Y = BooleanProperty.create("connected_y");
-    public static final Property<Boolean> PROP_CONNECTED_LEFT = BooleanProperty.create("connected_left");
-    public static final Property<Boolean> PROP_CONNECTED_RIGHT = BooleanProperty.create("connected_right");
-
-    public BlockHeatExchange(Material material, String id) {
-        super(material, id);
-    }
-
-    @Override
-    protected void addProperties(List<Property<?>> properties) {
-        super.addProperties(properties);
-        properties.add(PROP_PART);
-        properties.add(PROP_CONNECTED_Y);
-        properties.add(PROP_CONNECTED_LEFT);
-        properties.add(PROP_CONNECTED_RIGHT);
-    }
-
-    @Override
-    public BlockState getActualState(BlockState state, BlockGetter world, BlockPos pos) {
-        BlockEntity tile = world.getBlockEntity(pos);
-        if (tile instanceof TileHeatExchange) {
-            TileHeatExchange exchange = (TileHeatExchange) tile;
-            EnumExchangePart part;
-            if (exchange.isStart()) {
-                part = EnumExchangePart.START;
-            } else if (exchange.isEnd()) {
-                part = EnumExchangePart.END;
-            } else {
-                part = EnumExchangePart.MIDDLE;
-            }
-            Direction thisFacing = state.getValue(PROP_FACING);
-            state = state.setValue(PROP_PART, part);
-            state = state.setValue(PROP_CONNECTED_Y, false);
-
-            boolean connectLeft = doesNeighbourConnect(world, pos, thisFacing, thisFacing.getClockWise());
-            state = state.setValue(PROP_CONNECTED_LEFT, connectLeft);
-
-            boolean connectRight = doesNeighbourConnect(world, pos, thisFacing, thisFacing.getCounterClockWise());
-            state = state.setValue(PROP_CONNECTED_RIGHT, connectRight);
-        }
-        state = state.setValue(PROP_CONNECTED_Y, false);
-        return state;
-    }
-
-    private static boolean doesNeighbourConnect(BlockGetter world, BlockPos pos, Direction thisFacing,
-        Direction dir) {
-        BlockState neighbour = world.getBlockState(pos.offset(dir));
-        if (neighbour.getBlock() == BCFactoryBlocks.heatExchange) {
-            return neighbour.getValue(PROP_FACING) == thisFacing;
-        }
-        return false;
+    public BlockHeatExchange(BlockBehaviour.Properties properties, String id) {
+        super(properties.noOcclusion(), id);
     }
 
     @Override
     public boolean rotateBlock(Level world, BlockPos pos, Direction axis) {
         BlockEntity tile = world.getBlockEntity(pos);
         if (tile instanceof TileHeatExchange) {
-            TileHeatExchange exchange = (TileHeatExchange) tile;
-            return exchange.rotate();
+            return ((TileHeatExchange) tile).rotate();
         }
         return false;
     }
@@ -123,31 +62,9 @@ public class BlockHeatExchange extends BlockBCTile_Neptune implements ICustomPip
     public InteractionResult attemptRotation(Level world, BlockPos pos, BlockState state, Direction sideWrenched) {
         BlockEntity tile = world.getBlockEntity(pos);
         if (tile instanceof TileHeatExchange) {
-            TileHeatExchange exchange = (TileHeatExchange) tile;
-            return exchange.rotate() ? InteractionResult.PASS : InteractionResult.FAIL;
+            return ((TileHeatExchange) tile).rotate() ? InteractionResult.PASS : InteractionResult.FAIL;
         }
         return InteractionResult.FAIL;
-    }
-
-    @Override
-    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
-        return new TileHeatExchange();
-    }
-
-    @Override
-    public boolean isOpaqueCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    public boolean isFullCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public BCRenderLayer getBlockLayer() {
-        return BCRenderLayer.CUTOUT;
     }
 
     @Override

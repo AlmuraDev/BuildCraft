@@ -1,19 +1,17 @@
 /* Copyright (c) 2016 SpaceToad and the BuildCraft team
- * 
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.factory;
 
 import java.util.function.Consumer;
 
-import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 
-import buildcraft.lib.BCLib;
 import buildcraft.lib.registry.RegistryConfig;
 import buildcraft.lib.registry.TagManager;
 import buildcraft.lib.registry.TagManager.EnumTagType;
@@ -21,41 +19,31 @@ import buildcraft.lib.registry.TagManager.TagEntry;
 
 import buildcraft.core.BCCore;
 
-//@formatter:off
-@Mod(
-    modid = BCFactory.MODID,
-    name = "BuildCraft Factory",
-    version = BCLib.VERSION,
-    dependencies = "required-after:buildcraftcore@[" + BCLib.VERSION + "]"
-)
-//@formatter:on
+@Mod(BCFactory.MODID)
 public class BCFactory {
     public static final String MODID = "buildcraftfactory";
 
-    @Mod.Instance(MODID)
     public static BCFactory INSTANCE = null;
+    public static IEventBus MOD_BUS;
 
-    @Mod.EventHandler
-    public static void preInit(FMLPreInitializationEvent evt) {
+    public BCFactory(IEventBus modBus, ModContainer container) {
+        INSTANCE = this;
+        MOD_BUS = modBus;
         RegistryConfig.useOtherModConfigFor(MODID, BCCore.MODID);
-
-        BCFactoryBlocks.fmlPreInit();
-        BCFactoryItems.fmlPreInit();
-
-        NetworkRegistry.INSTANCE.registerGuiHandler(INSTANCE, BCFactoryProxy.getProxy());
-        NeoForge.EVENT_BUS.register(BCFactoryEventDist.INSTANCE);
-
+        BCFactoryBlocks.fmlPreInit(modBus);
+        BCFactoryItems.fmlPreInit(modBus);
         BCFactoryProxy.getProxy().fmlPreInit();
+
+        modBus.addListener(BCFactory::init);
+        modBus.addListener(BCFactory::postInit);
     }
 
-    @Mod.EventHandler
-    public static void init(FMLInitializationEvent evt) {
-        BCFactoryProxy.getProxy().fmlInit();
+    private static void init(FMLCommonSetupEvent evt) {
+        evt.enqueueWork(() -> BCFactoryProxy.getProxy().fmlInit());
     }
 
-    @Mod.EventHandler
-    public static void postInit(FMLPostInitializationEvent evt) {
-        BCFactoryProxy.getProxy().fmlPostInit();
+    private static void postInit(FMLLoadCompleteEvent evt) {
+        evt.enqueueWork(() -> BCFactoryProxy.getProxy().fmlPostInit());
     }
 
     static {

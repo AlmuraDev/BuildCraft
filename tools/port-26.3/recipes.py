@@ -36,7 +36,7 @@ SPECIAL = {
     'blockGlassColorless': 'c:glass_blocks/colorless', 'paneGlassColorless': 'c:glass_panes/colorless',
 }
 # Ore names that were a single item rather than a tag
-SPECIAL_ITEMS = {'paper': 'minecraft:paper'}
+SPECIAL_ITEMS = {'paper': 'minecraft:paper', 'craftingTableWood': '#c:player_workstations/crafting_tables'}
 
 # 1.12.2 dye damage -> colour
 DYE_BY_DAMAGE = ['black', 'red', 'green', 'brown', 'blue', 'purple', 'cyan', 'light_gray', 'gray', 'pink', 'lime',
@@ -235,6 +235,20 @@ def self_drop(block, state_props=None):
     }
 
 
+def water_gel_loot():
+    """Water gel drops gelled water: 1-2 while spreading, 1 once it is setting (1.12.2's quantityDropped)."""
+    modifiers = [{'type': 'minecraft:set_count', 'count': {'type': 'minecraft:uniform', 'min': 1, 'max': 2},
+                  'condition': {'type': 'minecraft:match_block', 'blocks': 'buildcraftfactory:water_gel',
+                                'state': {'stage': stage}}}
+                 for stage in ['spread_0', 'spread_1', 'spread_2', 'spread_3']]
+    return {
+        'type': 'minecraft:block',
+        'pools': [{'rolls': 1, 'entries': [{'type': 'minecraft:item', 'name': 'buildcraftfactory:gel',
+                                            'modifier': modifiers}]}],
+        'random_sequence': 'buildcraftfactory:blocks/water_gel',
+    }
+
+
 # Block loot tables (26.3 drops come from data): mod -> {block path: loot table}
 LOOT = {
     'buildcraftcore': {
@@ -247,6 +261,10 @@ LOOT = {
     'buildcraftenergy': {
         'mj_dynamo': self_drop('buildcraftenergy:mj_dynamo'),
     },
+    'buildcraftfactory': dict(
+        [(b, self_drop('buildcraftfactory:' + b)) for b in
+         ['autoworkbench_item', 'mining_well', 'pump', 'flood_gate', 'tank', 'chute', 'distiller', 'heat_exchange']]
+        + [('water_gel', water_gel_loot())]),
 }
 
 

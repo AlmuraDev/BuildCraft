@@ -6,61 +6,50 @@
 
 package buildcraft.factory.client.render;
 
-import org.lwjgl.opengl.GL11;
+import javax.annotation.Nullable;
 
-import net.minecraft.client.Minecraft;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.GlStateManager.DestFactor;
-import net.minecraft.client.renderer.GlStateManager.SourceFactor;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.core.Direction;
-import net.minecraft.core.BlockPos;
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import net.minecraft.world.phys.Vec3;
+
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+
+import buildcraft.lib.client.render.tile.RecordedRenderState;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 import net.neoforged.neoforge.fluids.FluidStack;
 
 import buildcraft.lib.client.render.fluid.FluidRenderer;
 import buildcraft.lib.client.render.fluid.FluidSpriteType;
 import buildcraft.lib.fluid.FluidSmoother.FluidStackInterp;
-import buildcraft.lib.misc.RenderUtil;
-import buildcraft.lib.misc.RenderUtil.AutoTessellator;
+import buildcraft.lib.misc.FluidUtilBC;
 
 import buildcraft.factory.tile.TileTank;
 
-public class RenderTank extends TileEntitySpecialRenderer<TileTank> {
+/** The fluid in a tank, joined to the tanks above and below when they are full of the same fluid. */
+@OnlyIn(Dist.CLIENT)
+public class RenderTank implements BlockEntityRenderer<TileTank, RecordedRenderState> {
     private static final Vec3 MIN = new Vec3(0.13, 0.01, 0.13);
     private static final Vec3 MAX = new Vec3(0.86, 0.99, 0.86);
     private static final Vec3 MIN_CONNECTED = new Vec3(0.13, 0, 0.13);
     private static final Vec3 MAX_CONNECTED = new Vec3(0.86, 1 - 1e-5, 0.86);
 
-    public RenderTank() {}
-
     @Override
-    public void render(TileTank tile, double x, double y, double z, float partialTicks, int destroyStage, float alpha) {
+    public void extractRenderState(TileTank tile, RecordedRenderState state, float partialTicks, Vec3 cameraPosition,
+        @Nullable ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(tile, state, partialTicks, cameraPosition, breakProgress);
+        state.reset();
         FluidStackInterp forRender = tile.getFluidForRender(partialTicks);
-        if (forRender == null) {
-            return;
-        }
-        Minecraft.getMinecraft().mcProfiler.startSection("bc");
-        Minecraft.getMinecraft().mcProfiler.startSection("tank");
-
-        // gl state setup
-        RenderHelper.disableStandardItemLighting();
-        Minecraft.getMinecraft().getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA);
-
-        // buffer setup
-        try (AutoTessellator tess = RenderUtil.getThreadLocalUnusedTessellator()) {
-            BufferBuilder bb = tess.tessellator.getBuffer();
-            bb.begin(GL11.GL_QUADS, DefaultVertexFormat.BLOCK);
-            bb.setTranslation(x, y, z);
-
+        if (forRender != null) {
             boolean[] sideRender = { true, true, true, true, true, true };
             boolean connectedUp = isFullyConnected(tile, Direction.UP, partialTicks);
             boolean connectedDown = isFullyConnected(tile, Direction.DOWN, partialTicks);
@@ -70,29 +59,18 @@ public class RenderTank extends TileEntitySpecialRenderer<TileTank> {
             Vec3 min = connectedDown ? MIN_CONNECTED : MIN;
             Vec3 max = connectedUp ? MAX_CONNECTED : MAX;
             FluidStack fluid = forRender.fluid;
-            int blocklight = fluid.getFluid().getLuminosity(fluid);
-            int combinedLight = tile.getWorld().getCombinedLight(tile.getPos(), blocklight);
-
-            FluidRenderer.vertex.lighti(combinedLight);
-
+            int blocklight = fluid.getFluid().getFluidType().getLightLevel(fluid);
+            int light = state.lightCoords;
+            FluidRenderer.vertex.lighti(Math.max(blocklight, LightCoordsUtil.block(light)), LightCoordsUtil.sky(light));
             FluidRenderer.renderFluid(FluidSpriteType.STILL, fluid, forRender.amount, tile.tank.getCapacity(), min, max,
-                bb, sideRender);
-
-            // buffer finish
-            bb.setTranslation(0, 0, 0);
-            tess.tessellator.draw();
+                state.translucent, sideRender);
         }
-
-        // gl state finish
-        RenderHelper.enableStandardItemLighting();
-
-        Minecraft.getMinecraft().mcProfiler.endSection();
-        Minecraft.getMinecraft().mcProfiler.endSection();
+        state.finish();
     }
 
     private static boolean isFullyConnected(TileTank thisTank, Direction face, float partialTicks) {
-        BlockPos pos = thisTank.getPos().offset(face);
-        BlockEntity oTile = thisTank.getWorld().getBlockEntity(pos);
+        BlockPos pos = thisTank.getBlockPos().relative(face);
+        BlockEntity oTile = thisTank.getLevel().getBlockEntity(pos);
         if (oTile instanceof TileTank) {
             TileTank oTank = (TileTank) oTile;
             if (!TileTank.canTanksConnect(thisTank, oTank, face)) {
@@ -106,15 +84,26 @@ public class RenderTank extends TileEntitySpecialRenderer<TileTank> {
             if (fluid == null || forRender.amount <= 0) {
                 return false;
             } else if (thisTank.getFluidForRender(partialTicks) == null
-                || !fluid.isFluidEqual(thisTank.getFluidForRender(partialTicks).fluid)) {
+                || !FluidUtilBC.isFluidEqual(fluid, thisTank.getFluidForRender(partialTicks).fluid)) {
                 return false;
             }
-            if (fluid.getFluid().isGaseous(fluid)) {
+            if (fluid.getFluid().getFluidType().isLighterThanAir()) {
                 face = face.getOpposite();
             }
             return forRender.amount >= oTank.tank.getCapacity() || face == Direction.UP;
         } else {
             return false;
         }
+    }
+
+    @Override
+    public RecordedRenderState createRenderState() {
+        return new RecordedRenderState();
+    }
+
+    @Override
+    public void submit(RecordedRenderState state, PoseStack poseStack, SubmitNodeCollector collector,
+        CameraRenderState camera) {
+        state.submit(poseStack, collector);
     }
 }

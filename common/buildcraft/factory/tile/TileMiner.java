@@ -6,11 +6,13 @@
 
 package buildcraft.factory.tile;
 
+import buildcraft.lib.misc.NBTUtilBC;
 import java.io.IOException;
 import java.util.List;
 
 import javax.annotation.Nonnull;
 
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.core.Direction;
@@ -56,7 +58,8 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
     protected boolean isComplete = false;
     protected final MjBattery battery = new MjBattery(getBatteryCapacity());
 
-    public TileMiner() {
+    public TileMiner(BlockPos pos, BlockState state) {
+        super(pos, state);
         caps.addProvider(new MjCapabilityHelper(createMjReceiver()));
         caps.addCapabilityInstance(TilesAPI.CAP_HAS_WORK, () -> !isComplete, EnumPipePart.VALUES);
     }
@@ -94,7 +97,7 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
     @Override
     public void onLoad() {
         super.onLoad();
-        offset = world.rand.nextInt(10);
+        offset = world.getRandom().nextInt(10);
     }
 
     @Override
@@ -164,7 +167,7 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
     public CompoundTag writeToNBT(CompoundTag nbt) {
         super.writeToNBT(nbt);
         if (currentPos != null) {
-            nbt.put("currentPos", NbtUtils.createPosTag(currentPos));
+            nbt.put("currentPos", NBTUtilBC.writeLegacyPosTag(currentPos));
         }
         nbt.putInt("wantedLength", wantedLength);
         nbt.putInt("progress", progress);
@@ -176,7 +179,7 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
     public void readFromNBT(CompoundTag nbt) {
         super.readFromNBT(nbt);
         if (nbt.contains("currentPos")) {
-            currentPos = NbtUtils.getPosFromTag(nbt.getCompoundOrEmpty("currentPos"));
+            currentPos = NBTUtilBC.readLegacyPosTag(nbt.getCompoundOrEmpty("currentPos"));
         }
         wantedLength = nbt.getIntOr("wantedLength", 0);
         progress = nbt.getIntOr("progress", 0);
@@ -232,26 +235,7 @@ public abstract class TileMiner extends TileBC_Neptune implements ITickable, IDe
         left.add("progress = " + LocaleUtil.localizeMj(progress));
     }
 
-    @Nonnull
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public double getMaxRenderDistanceSquared() {
-        return Double.MAX_VALUE;
-    }
-
     // Rendering
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public boolean hasFastRenderer() {
-        return true;
-    }
 
     @OnlyIn(Dist.CLIENT)
     public float getPercentFilledForRender() {

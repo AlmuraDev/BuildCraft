@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "p": "minecraft:iron_pickaxe",
+    "r": "#c:dusts/redstone",
+    "g": "#c:gears/iron",
+    "i": "#c:ingots/iron"
+  },
+  "pattern": [
+    "iri",
+    "igi",
+    "ipi"
+  ],
+  "result": {
+    "id": "buildcraftfactory:mining_well"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftfactory:mining_well"
+    }
+  ]
+}

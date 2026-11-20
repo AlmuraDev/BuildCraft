@@ -200,6 +200,93 @@ def _add_energy():
 _add_energy()
 
 
+# ---- Factory ----
+# Blockstates 1.12.2 built from Forge submodels and per-variant texture overrides, which vanilla blockstates can't
+# express: the chute (connections as submodels) and flood gate (open/closed side textures) become multipart, the
+# water gel and distiller get one model per texture set, and the heat exchanger uses its custom model (ModelHeatExchange).
+CHUTE_FACING = {'up': (0, 0), 'down': (180, 0), 'east': (90, 90), 'south': (90, 180), 'west': (90, 270),
+                'north': (90, 0)}
+CHUTE_CONNECTED = {'up': (180, 0), 'down': (0, 0), 'east': (90, 270), 'south': (90, 0), 'west': (90, 90),
+                   'north': (90, 180)}
+GEL_STAGES = ['spread_0', 'spread_1', 'spread_2', 'spread_3', 'gelling_0', 'gelling_1', 'gel']
+FACE_FROM_TO = {
+    'up': ([0, 16, 0], [16, 16, 16]), 'down': ([0, 0, 0], [16, 0, 16]),
+    'north': ([0, 0, 0], [16, 16, 0]), 'south': ([0, 0, 16], [16, 16, 16]),
+    'west': ([0, 0, 0], [0, 16, 16]), 'east': ([16, 0, 0], [16, 16, 16]),
+}
+
+
+def _face_model(face, texture):
+    """A model of one full face of a cube."""
+    frm, to = FACE_FROM_TO[face]
+    return {'parent': 'block/block', 'textures': {'particle': texture, 'face': texture},
+            'elements': [{'from': frm, 'to': to,
+                          'faces': {face: {'uv': [0, 0, 16, 16], 'texture': '#face', 'cullface': face}}}]}
+
+
+def _rot(model, x, y):
+    out = {'model': model}
+    if x:
+        out['x'] = x
+    if y:
+        out['y'] = y
+    return out
+
+
+def _add_factory():
+    ns = 'buildcraftfactory'
+    models = MODELS.setdefault(ns, {})
+    states = BLOCKSTATES.setdefault(ns, {})
+    items = ITEMS.setdefault(ns, {})
+
+    parts = [{'when': {'facing': f}, 'apply': _rot('buildcraftfactory:block/chute', x, y)}
+             for f, (x, y) in CHUTE_FACING.items()]
+    parts += [{'when': {'connected_' + f: 'true'}, 'apply': _rot('buildcraftfactory:block/chute_connected', x, y)}
+              for f, (x, y) in CHUTE_CONNECTED.items()]
+    states['chute'] = {'multipart': parts, '__converted_26_3': True}
+
+    tex = 'buildcraftfactory:blocks/flood_gate/'
+    models['block/flood_gate/up'] = _face_model('up', tex + 'top')
+    parts = [{'apply': {'model': 'buildcraftfactory:block/flood_gate/up'}}]
+    for face in ['down', 'north', 'south', 'east', 'west']:
+        for open_ in (True, False):
+            name = 'block/flood_gate/%s_%s' % (face, 'open' if open_ else 'closed')
+            models[name] = _face_model(face, tex + ('open' if open_ else 'closed'))
+            parts.append({'when': {'connected_' + face: 'true' if open_ else 'false'},
+                          'apply': {'model': 'buildcraftfactory:' + name}})
+    states['flood_gate'] = {'multipart': parts, '__converted_26_3': True}
+
+    variants = {}
+    for stage in GEL_STAGES:
+        models['block/water_gel/' + stage] = {'parent': 'block/cube_all',
+                                              'textures': {'all': 'buildcraftfactory:blocks/gel/' + stage}}
+        variants['stage=' + stage] = {'model': 'buildcraftfactory:block/water_gel/' + stage}
+    states['water_gel'] = {'variants': variants, '__converted_26_3': True}
+
+    models['block/distiller_textured'] = {'parent': 'buildcraftfactory:block/distiller', 'textures': {
+        'particle': 'buildcraftfactory:blocks/distiller/tank_sprite_a',
+        'sprite_a': 'buildcraftfactory:blocks/distiller/tank_sprite_a',
+        'sprite_b': 'buildcraftfactory:blocks/distiller/tank_sprite_b',
+        'power': 'buildcraftfactory:blocks/distiller/power_sprite_a'}}
+    states['distiller'] = {'variants': {
+        'facing=' + f: _rot('buildcraftfactory:block/distiller_textured', 0, y)
+        for f, y in [('south', 270), ('east', 180), ('north', 90), ('west', 0)]}, '__converted_26_3': True}
+
+    states['heat_exchange'] = {'variants': {'': {'type': 'buildcraftfactory:heat_exchange'}},
+                               '__converted_26_3': True}
+
+    for name in ['autoworkbench_item', 'mining_well', 'pump', 'flood_gate', 'tank', 'chute', 'distiller']:
+        items[name] = model('buildcraftfactory:item/' + name)
+    # TODO(26.3): the heat exchanger item was its baked variable model; the middle section's item model for now
+    items['heat_exchange'] = model('buildcraftfactory:item/heat_exchange_middle')
+    items['water_gel_spawn'] = model('buildcraftfactory:item/water_gel')
+    items['gel'] = model('buildcraftfactory:item/gel')
+    items['plastic_sheet'] = model('buildcraftfactory:item/plastic_sheet')
+
+
+_add_factory()
+
+
 def write_models_and_states():
     for ns, models in MODELS.items():
         for path, data in models.items():

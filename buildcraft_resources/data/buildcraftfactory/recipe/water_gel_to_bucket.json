@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "g": "buildcraftfactory:gel",
+    "b": "minecraft:bucket"
+  },
+  "pattern": [
+    "g",
+    "b"
+  ],
+  "result": {
+    "id": "minecraft:water_bucket"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftfactory:gel"
+    }
+  ]
+}

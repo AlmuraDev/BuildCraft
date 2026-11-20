@@ -1,19 +1,38 @@
+/*
+ * Copyright (c) 2017 SpaceToad and the BuildCraft team
+ * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not
+ * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/
+ */
+
 package buildcraft.factory.client.model;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.common.collect.ImmutableList;
+import javax.annotation.Nullable;
 
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.client.Minecraft;
+import com.mojang.serialization.MapCodec;
+
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
+import net.minecraft.client.resources.model.ModelBaker;
+import net.minecraft.client.resources.model.ResolvableModel;
 import net.minecraft.client.resources.model.geometry.BakedQuad;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.sprite.Material;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.state.BlockState;
+
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.model.DynamicBlockStateModel;
+import net.neoforged.neoforge.client.model.block.CustomUnbakedBlockStateModel;
 
 import buildcraft.lib.block.BlockBCBase_Neptune;
-import buildcraft.lib.client.model.ModelItemSimple;
 import buildcraft.lib.client.model.MutableQuad;
+import buildcraft.lib.client.sprite.SpriteHolderRegistry;
 import buildcraft.lib.expression.DefaultContexts;
 import buildcraft.lib.expression.FunctionContext;
 import buildcraft.lib.expression.api.NodeType;
@@ -21,16 +40,22 @@ import buildcraft.lib.expression.api.NodeTypes;
 import buildcraft.lib.expression.node.value.NodeVariableBoolean;
 import buildcraft.lib.expression.node.value.NodeVariableObject;
 
+import buildcraft.factory.BCFactoryBlocks;
 import buildcraft.factory.BCFactoryModels;
-import buildcraft.factory.block.BlockHeatExchange;
 import buildcraft.factory.block.BlockHeatExchange.EnumExchangePart;
+import buildcraft.factory.tile.TileHeatExchange;
 
-public class ModelHeatExchange extends ModelItemSimple {
+/** The heat exchanger's block model: its variable model (models/tiles/heat_exchange_static.json) baked for every
+ * part, facing and left/right connection. The part comes from the tile's model data, the connections from the
+ * neighbours' states. The variants are worked out on the first use after each reload, as the variable model is only
+ * loaded once models are baked. */
+@OnlyIn(Dist.CLIENT)
+public final class ModelHeatExchange implements DynamicBlockStateModel {
+    public static final ModelHeatExchange INSTANCE = new ModelHeatExchange();
+    public static final Identifier TYPE = Identifier.fromNamespaceAndPath("buildcraftfactory", "heat_exchange");
 
     public static final NodeType<EnumExchangePart> TYPE_EXCHANGE_PART;
-
     public static final FunctionContext FUNCTION_CONTEXT;
-
     public static final NodeVariableBoolean VAR_CONNECTED_LEFT;
     public static final NodeVariableBoolean VAR_CONNECTED_RIGHT;
     public static final NodeVariableBoolean VAR_CONNECTED_UP;
@@ -53,64 +78,139 @@ public class ModelHeatExchange extends ModelItemSimple {
         VAR_DIRECTION = FUNCTION_CONTEXT.putVariableObject("direction", Direction.class);
     }
 
-    private final TextureAtlasSprite particle;
-    private final List<List<BakedQuad>> cache = new ArrayList<>();
+    private static final int VARIANTS = 4 * 4 * 3;
 
-    public ModelHeatExchange() {
-        super(ImmutableList.of(), TRANSFORM_BLOCK, false);
+    @Nullable
+    private static Part[] cache;
 
-        VAR_CONNECTED_DOWN.value = false;
-        VAR_CONNECTED_UP.value = false;
-        VAR_CONNECTED_LEFT.value = false;
-        VAR_CONNECTED_RIGHT.value = false;
-        VAR_PART.value = EnumExchangePart.MIDDLE;
-        VAR_DIRECTION.value = Direction.NORTH;
+    private ModelHeatExchange() {}
 
-        if (BCFactoryModels.HEAT_EXCHANGE_STATIC.getCutoutQuads().length == 0) {
-            particle = Minecraft.getMinecraft().getTextureMapBlocks().getMissingSprite();
-        } else {
-            particle = BCFactoryModels.HEAT_EXCHANGE_STATIC.getCutoutQuads()[0].toBakedItem().getSprite();
+    private record Part(List<BakedQuad> quads, Material.Baked particle, int flags) implements BlockStateModelPart {
+        @Override
+        public List<BakedQuad> getQuads(@Nullable Direction direction) {
+            return direction == null ? quads : List.of();
         }
 
-        for (int i = 0; i < 4 * 8 * 3; i++) {
-            boolean connectedUpDown = (i & 4) == 4;
-            EnumExchangePart part = EnumExchangePart.values()[i / (8 * 4)];
-            VAR_CONNECTED_LEFT.value = (i & 1) == 1;
-            VAR_CONNECTED_RIGHT.value = (i & 2) == 2;
-            VAR_CONNECTED_UP.value = connectedUpDown && part == EnumExchangePart.END;
-            VAR_CONNECTED_DOWN.value = connectedUpDown && part == EnumExchangePart.START;
-            VAR_PART.value = part;
-            VAR_DIRECTION.value = Direction.getHorizontal((i / 8) & 3);
-            List<BakedQuad> quads = new ArrayList<>();
+        @Override
+        public boolean useAmbientOcclusion() {
+            return false;
+        }
 
-            for (MutableQuad quad : BCFactoryModels.HEAT_EXCHANGE_STATIC.getCutoutQuads()) {
-                quad.multShade();
-                quads.add(quad.toBakedBlock());
+        @Override
+        public Material.Baked particleMaterial() {
+            return particle;
+        }
+
+        @Override
+        public int materialFlags() {
+            return flags;
+        }
+    }
+
+    /** Index of a variant: left, right, facing (horizontal), part. */
+    private static int index(boolean left, boolean right, Direction facing, EnumExchangePart part) {
+        return (left ? 1 : 0) | (right ? 2 : 0) | (facing.get2DDataValue() * 4) | (part.ordinal() * 16);
+    }
+
+    private static synchronized Part[] getCache() {
+        Part[] parts = cache;
+        if (parts == null) {
+            parts = new Part[VARIANTS];
+            for (int i = 0; i < VARIANTS; i++) {
+                EnumExchangePart part = EnumExchangePart.values()[i / 16];
+                VAR_CONNECTED_LEFT.value = (i & 1) == 1;
+                VAR_CONNECTED_RIGHT.value = (i & 2) == 2;
+                VAR_CONNECTED_UP.value = false;
+                VAR_CONNECTED_DOWN.value = false;
+                VAR_PART.value = part;
+                VAR_DIRECTION.value = Direction.from2DDataValue((i / 4) & 3);
+                List<BakedQuad> quads = new ArrayList<>();
+                int flags = 0;
+                for (MutableQuad quad : BCFactoryModels.HEAT_EXCHANGE_STATIC.getCutoutQuads()) {
+                    MutableQuad copy = new MutableQuad(quad);
+                    copy.multShade();
+                    BakedQuad baked = copy.toBakedQuad(false);
+                    flags |= baked.materialInfo().flags();
+                    quads.add(baked);
+                }
+                Material.Baked particle = new Material.Baked(
+                    quads.isEmpty() ? SpriteHolderRegistry.missingSprite() : quads.get(0).materialInfo().sprite(), false);
+                parts[i] = new Part(List.copyOf(quads), particle, flags);
             }
-
-            cache.add(quads);
+            cache = parts;
         }
+        return parts;
+    }
+
+    /** Forgets the baked variants (the variable model was reloaded). */
+    public static synchronized void clearCache() {
+        cache = null;
+    }
+
+    private static boolean doesNeighbourConnect(BlockAndTintGetter level, BlockPos pos, Direction thisFacing,
+        Direction dir) {
+        BlockState neighbour = level.getBlockState(pos.relative(dir));
+        if (neighbour.getBlock() == BCFactoryBlocks.heatExchange) {
+            return neighbour.getValue(BlockBCBase_Neptune.PROP_FACING) == thisFacing;
+        }
+        return false;
+    }
+
+    private static Part getPart(BlockAndTintGetter level, BlockPos pos, BlockState state) {
+        Direction facing = state.hasProperty(BlockBCBase_Neptune.PROP_FACING)
+            ? state.getValue(BlockBCBase_Neptune.PROP_FACING) : Direction.NORTH;
+        EnumExchangePart part = level.getModelData(pos).get(TileHeatExchange.MODEL_PART);
+        if (part == null) {
+            part = EnumExchangePart.MIDDLE;
+        }
+        boolean left = doesNeighbourConnect(level, pos, facing, facing.getClockWise());
+        boolean right = doesNeighbourConnect(level, pos, facing, facing.getCounterClockWise());
+        return getCache()[index(left, right, facing, part)];
     }
 
     @Override
-    public TextureAtlasSprite getParticleTexture() {
-        return particle;
+    public Object createGeometryKey(BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random) {
+        return getPart(level, pos, state);
     }
 
     @Override
-    public List<BakedQuad> getQuads(BlockState state, Direction side, long rand) {
-        if (side != null) {
-            return ImmutableList.of();
-        }
-        return cache.get(getIndexOf(state));
+    public void collectParts(BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random,
+        List<BlockStateModelPart> parts) {
+        parts.add(getPart(level, pos, state));
     }
 
-    private static int getIndexOf(BlockState state) {
-        return (state.getValue(BlockHeatExchange.PROP_CONNECTED_LEFT) ? 1 : 0)//
-            | (state.getValue(BlockHeatExchange.PROP_CONNECTED_RIGHT) ? 2 : 0)//
-            | (state.getValue(BlockHeatExchange.PROP_CONNECTED_Y) ? 4 : 0)//
-            | (state.getValue(BlockBCBase_Neptune.PROP_FACING).get2DDataValue() * 8)//
-            | (state.getValue(BlockHeatExchange.PROP_PART).ordinal() * 8 * 4)//
-        ;
+    @Override
+    public Material.Baked particleMaterial(BlockAndTintGetter level, BlockPos pos, BlockState state) {
+        return getPart(level, pos, state).particle();
+    }
+
+    @Override
+    public Material.Baked particleMaterial() {
+        return getCache()[0].particle();
+    }
+
+    @Override
+    public int materialFlags() {
+        return getCache()[0].flags();
+    }
+
+    /** The blockstate file's model: <code>{"type": "buildcraftfactory:heat_exchange"}</code>. */
+    public static final class Unbaked implements CustomUnbakedBlockStateModel {
+        public static final Unbaked INSTANCE = new Unbaked();
+        public static final MapCodec<Unbaked> CODEC = MapCodec.unit(INSTANCE);
+
+        @Override
+        public MapCodec<? extends CustomUnbakedBlockStateModel> codec() {
+            return CODEC;
+        }
+
+        @Override
+        public ModelHeatExchange bake(ModelBaker modelBakery) {
+            clearCache();
+            return ModelHeatExchange.INSTANCE;
+        }
+
+        @Override
+        public void resolveDependencies(ResolvableModel.Resolver resolver) {}
     }
 }

@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "s": "minecraft:sand",
+    "r": [
+      "buildcraftenergy:bucket_oil_residue",
+      "buildcraftenergy:bucket_oil_residue_heat_1",
+      "buildcraftenergy:bucket_oil_residue_heat_2"
+    ]
+  },
+  "pattern": [
+    " s ",
+    "srs",
+    " s "
+  ],
+  "result": {
+    "id": "buildcraftfactory:water_gel_spawn"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftfactory:water_gel_spawn"
+    }
+  ]
+}

@@ -272,8 +272,9 @@ public class MutableVertex {
         return lighti((int) (block * 0xF), (int) (sky * 0xF));
     }
 
+    /** @param combined Packed light coordinates (LightCoordsUtil.pack). */
     public MutableVertex lighti(int combined) {
-        return lighti(combined >> 4, combined >> 20);
+        return lighti(LightCoordsUtil.block(combined), LightCoordsUtil.sky(combined));
     }
 
     public MutableVertex lighti(int block, int sky) {
@@ -290,8 +291,9 @@ public class MutableVertex {
         return new Vector2f(light_block * 15f, light_sky * 15f);
     }
 
+    /** @return The packed light coordinates (LightCoordsUtil.pack). */
     public int lightc() {
-        return light_block << 4 + light_sky << 20;
+        return LightCoordsUtil.pack(light_block, light_sky);
     }
 
     public int[] lighti() {

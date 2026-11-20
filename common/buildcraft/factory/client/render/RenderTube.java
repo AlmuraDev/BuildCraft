@@ -6,45 +6,33 @@
 
 package buildcraft.factory.client.render;
 
-import javax.annotation.Nonnull;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
-import net.minecraftforge.client.model.animation.FastTESR;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import buildcraft.lib.client.render.laser.LaserData_BC8;
 import buildcraft.lib.client.render.laser.LaserData_BC8.LaserType;
 import buildcraft.lib.client.render.laser.LaserRenderer_BC8;
+import buildcraft.lib.client.render.tile.RecordedRenderState;
 
 import buildcraft.factory.tile.TileMiner;
 
-public class RenderTube extends FastTESR<TileMiner> {
-    private final LaserType laserType;
+/** The tube that a mining well or pump lowers, drawn as a laser from the block down to the tube's end. */
+@OnlyIn(Dist.CLIENT)
+public final class RenderTube {
+    private RenderTube() {}
 
-    public RenderTube(LaserType laserType) {
-        this.laserType = laserType;
-    }
-
-    @Override
-    public void renderTileEntityFast(@Nonnull TileMiner tile, double x, double y, double z, float partialTicks, int destroyStage, float partial, @Nonnull BufferBuilder buffer) {
+    public static void renderTube(TileMiner tile, LaserType laserType, float partialTicks, VertexConsumer out) {
         if (tile.isComplete()) {
             return;
         }
-
-        double tubeY = tile.getPos().getY() - tile.getLength(partialTicks);
-
-        BlockPos from = tile.getPos();
-        buffer.setTranslation(x - from.getX(), y - from.getY(), z - from.getZ());
-
-        Vec3 start = new Vec3(from.getX() + 0.5, from.getY(), from.getZ() + 0.5);
-
-        Vec3 end = new Vec3(from.getX() + 0.5, tubeY, from.getZ() + 0.5);
-
+        double length = tile.getLength(partialTicks);
+        Vec3 start = new Vec3(0.5, 0, 0.5);
+        Vec3 end = new Vec3(0.5, -length, 0.5);
         LaserData_BC8 data = new LaserData_BC8(laserType, start, end, 1 / 16.0);
-        LaserRenderer_BC8.renderLaserDynamic(data, buffer);
-
-        buffer.setTranslation(0, 0, 0);
+        LaserRenderer_BC8.renderLaserDynamic(data, out, RecordedRenderState.IDENTITY);
     }
 }

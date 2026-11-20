@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "r": "#c:dusts/redstone",
+    "b": "minecraft:bucket",
+    "t": "buildcraftfactory:tank",
+    "g": "#c:gears/iron",
+    "i": "#c:ingots/iron"
+  },
+  "pattern": [
+    "iri",
+    "igi",
+    "tbt"
+  ],
+  "result": {
+    "id": "buildcraftfactory:pump"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftfactory:pump"
+    }
+  ]
+}

@@ -6,28 +6,18 @@
 
 package buildcraft.factory;
 
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 
-import javax.annotation.Nonnull;
-
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.client.renderer.block.model.ModelResourceLocation;
-import net.minecraft.client.renderer.block.statemap.StateMapperBase;
-
-import net.minecraftforge.client.event.ModelBakeEvent;
-import net.minecraftforge.client.event.ModelRegistryEvent;
-import net.minecraftforge.client.model.ModelLoader;
-import net.neoforged.neoforge.common.NeoForge;
-import net.minecraftforge.fml.client.registry.ClientRegistry;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.LogicalSide;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.event.RegisterBlockStateModels;
 
 import buildcraft.lib.client.model.ModelHolderVariable;
-import buildcraft.lib.client.model.ModelItemSimple;
-import buildcraft.lib.client.model.MutableQuad;
+import buildcraft.lib.registry.TileTypes;
 
 import buildcraft.factory.client.model.ModelHeatExchange;
 import buildcraft.factory.client.render.RenderDistiller;
@@ -36,11 +26,11 @@ import buildcraft.factory.client.render.RenderMiningWell;
 import buildcraft.factory.client.render.RenderPump;
 import buildcraft.factory.client.render.RenderTank;
 import buildcraft.factory.tile.TileDistiller_BC8;
-import buildcraft.factory.tile.TileHeatExchange;
-import buildcraft.factory.tile.TileMiningWell;
-import buildcraft.factory.tile.TilePump;
-import buildcraft.factory.tile.TileTank;
 
+/** Factory's client models and tile renderers. The heat exchanger's block model is {@link ModelHeatExchange}, named by
+ * its blockstate file. TODO(26.3): the heat exchanger item used its baked variable model; it shows a plain fallback
+ * model until it has a special item model renderer. */
+@OnlyIn(Dist.CLIENT)
 public class BCFactoryModels {
     public static final ModelHolderVariable DISTILLER = new ModelHolderVariable(
         "buildcraftfactory:models/tiles/distiller.json",
@@ -52,50 +42,30 @@ public class BCFactoryModels {
     );
 
     public static void fmlPreInit() {
-        NeoForge.EVENT_BUS.register(BCFactoryModels.class);
+        BCFactory.MOD_BUS.addListener(BCFactoryModels::registerBlockStateModels);
+        BCFactory.MOD_BUS.addListener(BCFactoryModels::registerRenderers);
+        BCFactory.MOD_BUS.addListener((ModelEvent.BakingCompleted event) -> ModelHeatExchange.clearCache());
     }
 
-    @SubscribeEvent
-    @OnlyIn(Dist.CLIENT)
-    public static void onModelRegistry(ModelRegistryEvent event) {
-        if (BCFactoryBlocks.heatExchange != null) {
-            ModelLoader.setCustomStateMapper(
-                BCFactoryBlocks.heatExchange,
-                new StateMapperBase() {
-                    @Nonnull
-                    @Override
-                    protected ModelResourceLocation getModelResourceLocation(@Nonnull BlockState state) {
-                        return new ModelResourceLocation("buildcraftfactory:heat_exchange#normal");
-                    }
-                }
-            );
+    private static void registerBlockStateModels(RegisterBlockStateModels event) {
+        event.registerModel(ModelHeatExchange.TYPE, ModelHeatExchange.Unbaked.CODEC);
+    }
+
+    private static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        register(event, BCFactoryBlocks.miningWell, ctx -> new RenderMiningWell());
+        register(event, BCFactoryBlocks.pump, ctx -> new RenderPump());
+        register(event, BCFactoryBlocks.tank, ctx -> new RenderTank());
+        register(event, BCFactoryBlocks.distiller, ctx -> new RenderDistiller());
+        register(event, BCFactoryBlocks.heatExchange, ctx -> new RenderHeatExchange());
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static void register(EntityRenderersEvent.RegisterRenderers event, Block block,
+        BlockEntityRendererProvider provider) {
+        if (block == null) {
+            return;
         }
-    }
-
-    public static void fmlInit() {
-        ClientRegistry.bindTileEntitySpecialRenderer(TileMiningWell.class, new RenderMiningWell());
-        ClientRegistry.bindTileEntitySpecialRenderer(TilePump.class, new RenderPump());
-        ClientRegistry.bindTileEntitySpecialRenderer(TileTank.class, new RenderTank());
-        ClientRegistry.bindTileEntitySpecialRenderer(TileDistiller_BC8.class, new RenderDistiller());
-        ClientRegistry.bindTileEntitySpecialRenderer(TileHeatExchange.class, new RenderHeatExchange());
-    }
-
-    @SubscribeEvent
-    public static void onModelBake(ModelBakeEvent event) {
-        event.getModelRegistry().putObject(
-            new ModelResourceLocation("buildcraftfactory:heat_exchange#normal"),
-            new ModelHeatExchange()
-        );
-        event.getModelRegistry().putObject(
-            new ModelResourceLocation("buildcraftfactory:heat_exchange#inventory"),
-            new ModelItemSimple(
-                Arrays.stream(BCFactoryModels.HEAT_EXCHANGE_STATIC.getCutoutQuads())
-                    .map(MutableQuad::multShade)
-                    .map(MutableQuad::toBakedItem)
-                    .collect(Collectors.toList()),
-                ModelItemSimple.TRANSFORM_BLOCK,
-                true
-            )
-        );
+        BlockEntityType type = TileTypes.forState(block.defaultBlockState());
+        event.registerBlockEntityRenderer(type, (BlockEntityRendererProvider) provider);
     }
 }

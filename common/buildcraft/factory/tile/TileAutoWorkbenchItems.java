@@ -4,8 +4,11 @@
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.factory.tile;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
+
 public class TileAutoWorkbenchItems extends TileAutoWorkbenchBase {
-    public TileAutoWorkbenchItems() {
-        super(3, 3);
+    public TileAutoWorkbenchItems(BlockPos pos, BlockState state) {
+        super(pos, state, 3, 3);
     }
 }

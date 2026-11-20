@@ -39,6 +39,38 @@ import buildcraft.lib.fluid.Tank;
 
 public class FluidUtilBC {
 
+    /** Places a bucket's worth of the fluid from the handler as a source block (1.12.2's FluidUtil.tryPlaceFluid, which
+     * the flood gate used). Fluids that would boil away (water in the nether) aren't placed.
+     *
+     * @return true if the block was placed and the fluid drained. */
+    public static boolean tryPlaceFluid(Level world, BlockPos pos, IFluidHandler from, @Nullable FluidStack fluid) {
+        if (fluid == null || fluid.isEmpty()) {
+            return false;
+        }
+        Fluid type = fluid.getFluid();
+        net.minecraft.world.level.block.state.BlockState toPlace = type.defaultFluidState().createLegacyBlock();
+        if (toPlace.isAir()) {
+            return false;
+        }
+        net.minecraft.world.level.block.state.BlockState existing = world.getBlockState(pos);
+        if (!existing.isAir() && !existing.canBeReplaced(type)) {
+            return false;
+        }
+        FluidStack wanted = fluid.copyWithAmount(1000);
+        FluidStack drained = from.drain(wanted, false);
+        if (drained == null || drained.getAmount() < 1000) {
+            return false;
+        }
+        if (type.getFluidType().isVaporizedOnPlacement(world, pos, wanted)) {
+            return false;
+        }
+        if (!world.setBlock(pos, toPlace, net.minecraft.world.level.block.Block.UPDATE_ALL_IMMEDIATE)) {
+            return false;
+        }
+        from.drain(wanted, true);
+        return true;
+    }
+
     public static void pushFluidAround(BlockGetter world, BlockPos pos, Tank tank) {
         FluidStack potential = tank.drain(tank.getFluidAmount(), false);
         int drained = 0;

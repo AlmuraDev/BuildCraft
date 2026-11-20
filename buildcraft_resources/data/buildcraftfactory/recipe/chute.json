@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "c": "minecraft:chest",
+    "g": "#c:gears/stone",
+    "i": "#c:ingots/iron"
+  },
+  "pattern": [
+    "ici",
+    "igi",
+    " i "
+  ],
+  "result": {
+    "id": "buildcraftfactory:chute"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftfactory:chute"
+    }
+  ]
+}

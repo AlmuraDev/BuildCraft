@@ -6,59 +6,14 @@
 
 package buildcraft.factory.block;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import buildcraft.api.core.BCRenderLayer;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.Level;
-
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 
 import buildcraft.lib.block.BlockBCTile_Neptune;
 import buildcraft.lib.block.IBlockWithFacing;
-import buildcraft.lib.tile.TileBC_Neptune;
 
-import buildcraft.factory.tile.TileDistiller_BC8;
-
+/** The distiller. Activation goes to the tile (TileDistiller_BC8.onActivated), as BlockBCTile_Neptune does. */
 public class BlockDistiller extends BlockBCTile_Neptune implements IBlockWithFacing {
-    public BlockDistiller(Material material, String id) {
-        super(material, id);
-    }
-
-    @Override
-    public TileBC_Neptune createTileEntity(Level worldIn, BlockState state) {
-        return new TileDistiller_BC8();
-    }
-
-    @Override
-    public boolean isOpaqueCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    public boolean isFullCube(BlockState state) {
-        return false;
-    }
-
-    @Override
-    public boolean onBlockActivated(Level world, BlockPos pos, BlockState state, Player player, InteractionHand hand,
-        Direction facing, float hitX, float hitY, float hitZ) {
-        BlockEntity tile = world.getBlockEntity(pos);
-        if (tile instanceof TileDistiller_BC8) {
-            return ((TileDistiller_BC8) tile).onActivated(player, hand, facing, hitX, hitY, hitZ);
-        }
-        return false;
-    }
-
-    @Override
-    @OnlyIn(Dist.CLIENT)
-    public BCRenderLayer getBlockLayer() {
-        return BCRenderLayer.CUTOUT;
+    public BlockDistiller(BlockBehaviour.Properties properties, String id) {
+        super(properties.noOcclusion(), id);
     }
 }

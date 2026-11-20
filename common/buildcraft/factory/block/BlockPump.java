@@ -6,22 +6,12 @@
 
 package buildcraft.factory.block;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 
 import buildcraft.lib.block.BlockBCTile_Neptune;
-import buildcraft.lib.tile.TileBC_Neptune;
-
-import buildcraft.factory.tile.TilePump;
 
 public class BlockPump extends BlockBCTile_Neptune {
-    public BlockPump(Material material, String id) {
-        super(material, id);
-    }
-
-    @Override
-    public TileBC_Neptune createTileEntity(Level worldIn, BlockState state) {
-        return new TilePump();
+    public BlockPump(BlockBehaviour.Properties properties, String id) {
+        super(properties, id);
     }
 }

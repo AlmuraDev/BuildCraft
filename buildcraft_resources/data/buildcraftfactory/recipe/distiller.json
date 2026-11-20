@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "r": "minecraft:redstone_torch",
+    "t": "buildcraftfactory:tank",
+    "g": "#c:gears/diamond"
+  },
+  "pattern": [
+    "rtr",
+    "tgt"
+  ],
+  "result": {
+    "id": "buildcraftfactory:distiller"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftfactory:distiller"
+    }
+  ]
+}

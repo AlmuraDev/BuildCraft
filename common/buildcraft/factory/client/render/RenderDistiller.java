@@ -6,28 +6,27 @@
 
 package buildcraft.factory.client.render;
 
+import javax.annotation.Nullable;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.world.phys.Vec3;
+
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+
+import buildcraft.lib.client.render.tile.RecordedRenderState;
+
 import java.util.EnumMap;
 import java.util.Map;
 
-import org.lwjgl.opengl.GL11;
-
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.client.Minecraft;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.GlStateManager.DestFactor;
-import net.minecraft.client.renderer.GlStateManager.SourceFactor;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.texture.TextureMap;
-import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.core.Direction;
-import net.minecraft.world.phys.Vec3;
-
-import net.neoforged.fml.LogicalSide;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.util.LightCoordsUtil;
+import net.minecraft.world.level.block.state.BlockState;
 
 import buildcraft.lib.block.BlockBCBase_Neptune;
 import buildcraft.lib.client.model.MutableQuad;
@@ -36,16 +35,14 @@ import buildcraft.lib.client.render.fluid.FluidRenderer.TankSize;
 import buildcraft.lib.client.render.fluid.FluidSpriteType;
 import buildcraft.lib.fluid.FluidSmoother;
 import buildcraft.lib.fluid.FluidSmoother.FluidStackInterp;
-import buildcraft.lib.misc.RenderUtil;
-import buildcraft.lib.misc.RenderUtil.AutoTessellator;
-import buildcraft.lib.misc.VecUtil;
 
 import buildcraft.factory.BCFactoryBlocks;
 import buildcraft.factory.BCFactoryModels;
 import buildcraft.factory.tile.TileDistiller_BC8;
 
+/** The distiller's moving parts (its variable model) and the fluid in its three tanks. */
 @OnlyIn(Dist.CLIENT)
-public class RenderDistiller extends TileEntitySpecialRenderer<TileDistiller_BC8> {
+public class RenderDistiller implements BlockEntityRenderer<TileDistiller_BC8, RecordedRenderState> {
     private static final Map<Direction, TankRenderSizes> TANK_SIZES = new EnumMap<>(Direction.class);
 
     static {
@@ -57,93 +54,54 @@ public class RenderDistiller extends TileEntitySpecialRenderer<TileDistiller_BC8
         for (int i = 0; i < 4; i++) {
             TANK_SIZES.put(face, sizes);
             face = face.getClockWise();
-            sizes = sizes.getClockWise();
+            sizes = sizes.rotateY();
         }
     }
 
     @Override
-    public void render(TileDistiller_BC8 tile, double x, double y, double z, float partialTicks, int destroyStage,
-        float alpha) {
-        super.render(tile, x, y, z, partialTicks, destroyStage, alpha);
+    public void extractRenderState(TileDistiller_BC8 tile, RecordedRenderState state, float partialTicks,
+        Vec3 cameraPosition, @Nullable ModelFeatureRenderer.CrumblingOverlay breakProgress) {
+        BlockEntityRenderer.super.extractRenderState(tile, state, partialTicks, cameraPosition, breakProgress);
+        state.reset();
+        BlockState blockState = tile.getBlockState();
+        if (blockState.getBlock() == BCFactoryBlocks.distiller) {
+            int combinedLight = state.lightCoords;
+            Direction face = blockState.getValue(BlockBCBase_Neptune.PROP_FACING);
+            TankRenderSizes sizes = TANK_SIZES.get(face);
 
-        BlockState state = tile.getWorld().getBlockState(tile.getPos());
-        if (state.getBlock() != BCFactoryBlocks.distiller) {
-            return;
-        }
-
-        ProfilerFiller profiler = Minecraft.getMinecraft().mcProfiler;
-        profiler.startSection("bc");
-        profiler.startSection("distiller");
-
-        int combinedLight = tile.getWorld().getCombinedLight(tile.getPos(), 0);
-        Direction face = state.getValue(BlockBCBase_Neptune.PROP_FACING);
-        TankRenderSizes sizes = TANK_SIZES.get(face);
-
-        // gl state setup
-        RenderHelper.disableStandardItemLighting();
-        Minecraft.getMinecraft().getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
-        GlStateManager.enableBlend();
-        GlStateManager.blendFunc(SourceFactor.SRC_ALPHA, DestFactor.ONE_MINUS_SRC_ALPHA);
-
-        // buffer setup
-        try (AutoTessellator tess = RenderUtil.getThreadLocalUnusedTessellator()) {
-            BufferBuilder bb = tess.tessellator.getBuffer();
-            bb.begin(GL11.GL_QUADS, DefaultVertexFormat.BLOCK);
-            bb.setTranslation(x, y, z);
-
-            profiler.startSection("model");
-            profiler.startSection("compute");
             if (tile.clientModelData.hasNoNodes()) {
                 tile.clientModelData.setNodes(BCFactoryModels.DISTILLER.createTickableNodes());
             }
             tile.setClientModelVariables(partialTicks);
             tile.clientModelData.refresh();
             MutableQuad[] quads = BCFactoryModels.DISTILLER.getCutoutQuads();
-            profiler.endStartSection("render");
-
-            MutableQuad copy = new MutableQuad(0, null);
-            int lightc = combinedLight;
-            int light_block = (lightc >> 4) & 15;
-            int light_sky = (lightc >> 20) & 15;
+            int lightBlock = LightCoordsUtil.block(combinedLight);
+            int lightSky = LightCoordsUtil.sky(combinedLight);
             for (MutableQuad q : quads) {
-                copy.copyFrom(q);
-                copy.maxLighti(light_block, light_sky);
+                MutableQuad copy = new MutableQuad(q);
+                copy.maxLighti(lightBlock, lightSky);
                 copy.multShade();
-                copy.render(bb);
+                copy.render(state.cutout);
             }
 
-            profiler.endSection();
-            profiler.endStartSection("fluid");
-
-            renderTank(sizes.tankIn, tile.smoothedTankIn, combinedLight, partialTicks, bb);
-            renderTank(sizes.tankOutGas, tile.smoothedTankGasOut, combinedLight, partialTicks, bb);
-            renderTank(sizes.tankOutLiquid, tile.smoothedTankLiquidOut, combinedLight, partialTicks, bb);
-
-            // buffer finish
-            bb.setTranslation(0, 0, 0);
-            profiler.endStartSection("draw");
-            tess.tessellator.draw();
+            renderTank(sizes.tankIn, tile.smoothedTankIn, combinedLight, partialTicks, state);
+            renderTank(sizes.tankOutGas, tile.smoothedTankGasOut, combinedLight, partialTicks, state);
+            renderTank(sizes.tankOutLiquid, tile.smoothedTankLiquidOut, combinedLight, partialTicks, state);
         }
-
-        // gl state finish
-        RenderHelper.enableStandardItemLighting();
-
-        profiler.endSection();
-        profiler.endSection();
-        profiler.endSection();
+        state.finish();
     }
 
     public static void renderTank(TankSize size, FluidSmoother tank, int combinedLight, float partialTicks,
-        BufferBuilder bb) {
+        RecordedRenderState state) {
         FluidStackInterp fluid = tank.getFluidForRender(partialTicks);
         if (fluid == null || fluid.amount <= 0) {
             return;
         }
-        int blockLight = fluid.fluid.getFluid().getLuminosity(fluid.fluid) & 0xF;
-        combinedLight |= blockLight << 4;
-        FluidRenderer.vertex.lighti(combinedLight);
+        int blockLight = fluid.fluid.getFluid().getFluidType().getLightLevel(fluid.fluid) & 0xF;
+        FluidRenderer.vertex.lighti(Math.max(blockLight, LightCoordsUtil.block(combinedLight)),
+            LightCoordsUtil.sky(combinedLight));
         FluidRenderer.renderFluid(FluidSpriteType.STILL, fluid.fluid, fluid.amount, tank.getCapacity(), size.min,
-            size.max, bb, null);
+            size.max, state.translucent, null);
     }
 
     static class TankRenderSizes {
@@ -156,38 +114,18 @@ public class RenderDistiller extends TileEntitySpecialRenderer<TileDistiller_BC8
         }
 
         public TankRenderSizes rotateY() {
-            return new TankRenderSizes(tankIn.getClockWise(), tankOutGas.getClockWise(), tankOutLiquid.getClockWise());
+            return new TankRenderSizes(tankIn.rotateY(), tankOutGas.rotateY(), tankOutLiquid.rotateY());
         }
     }
 
-    static class Size {
-        final Vec3 min, max;
+    @Override
+    public RecordedRenderState createRenderState() {
+        return new RecordedRenderState();
+    }
 
-        public Size(int sx, int sy, int sz, int ex, int ey, int ez) {
-            this(new Vec3(sx, sy, sz).scale(1 / 16.0), new Vec3(ex, ey, ez).scale(1 / 16.0));
-        }
-
-        public Size(Vec3 min, Vec3 max) {
-            this.min = min;
-            this.max = max;
-        }
-
-        public Size shrink(double by) {
-            return new Size(min.add(by, by, by), max.subtract(by, by, by));
-        }
-
-        public Size rotateY() {
-            Vec3 _min = rotateY(min);
-            Vec3 _max = rotateY(max);
-            return new Size(VecUtil.min(_min, _max), VecUtil.max(_min, _max));
-        }
-
-        private static Vec3 rotateY(Vec3 vec) {
-            return new Vec3(//
-                1 - vec.z, //
-                vec.y, //
-                vec.x//
-            );
-        }
+    @Override
+    public void submit(RecordedRenderState state, PoseStack poseStack, SubmitNodeCollector collector,
+        CameraRenderState camera) {
+        state.submit(poseStack, collector);
     }
 }

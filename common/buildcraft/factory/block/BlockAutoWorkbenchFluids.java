@@ -6,37 +6,29 @@
 
 package buildcraft.factory.block;
 
-import net.minecraft.block.material.Material;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 
 import buildcraft.lib.block.BlockBCTile_Neptune;
-import buildcraft.lib.tile.TileBC_Neptune;
 
 import buildcraft.factory.BCFactoryGuis;
-import buildcraft.factory.tile.TileAutoWorkbenchFluids;
 
 public class BlockAutoWorkbenchFluids extends BlockBCTile_Neptune {
-
-    public BlockAutoWorkbenchFluids(Material material, String id) {
-        super(material, id);
+    public BlockAutoWorkbenchFluids(BlockBehaviour.Properties properties, String id) {
+        super(properties, id);
     }
 
     @Override
-    public TileBC_Neptune createTileEntity(Level world, BlockState state) {
-        return new TileAutoWorkbenchFluids();
-    }
-
-    @Override
-    public boolean onBlockActivated(Level world, BlockPos pos, BlockState state, Player player, InteractionHand hand,
-        Direction side, float hitX, float hitY, float hitZ) {
+    protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player,
+        BlockHitResult hit) {
         if (!world.isClientSide()) {
             BCFactoryGuis.AUTO_WORKBENCH_FLUIDS.openGUI(player, pos);
         }
-        return true;
+        return InteractionResult.SUCCESS;
     }
 }

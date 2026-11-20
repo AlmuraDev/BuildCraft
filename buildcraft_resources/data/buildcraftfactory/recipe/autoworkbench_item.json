@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "g": "#c:gears/stone",
+    "w": "#c:player_workstations/crafting_tables"
+  },
+  "pattern": [
+    "gwg"
+  ],
+  "result": {
+    "id": "buildcraftfactory:autoworkbench_item"
+  },
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:item_exists",
+      "item": "buildcraftfactory:autoworkbench_item"
+    }
+  ]
+}

@@ -78,3 +78,20 @@ type = "required"
 versionRange = "[${version}]"
 ordering = "AFTER"
 side = "BOTH"
+
+[[mods]]
+modId = "buildcraftfactory"
+version = "${version}"
+displayName = "BuildCraft Factory"
+bannerFile = "assets/buildcraft/logo.png"
+credits = "Created by SpaceToad"
+authors = "SpaceToad, BuildCraft Team, AlmuraDev"
+displayURL = "https://www.mod-buildcraft.com/"
+description = '''Pumps, tanks, mining wells, flood gates, distillers and other machines.'''
+
+[[dependencies.buildcraftfactory]]
+modId = "buildcraftcore"
+type = "required"
+versionRange = "[${version}]"
+ordering = "AFTER"
+side = "BOTH"

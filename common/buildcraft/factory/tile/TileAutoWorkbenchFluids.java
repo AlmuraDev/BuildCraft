@@ -8,6 +8,8 @@ package buildcraft.factory.tile;
 
 import java.util.List;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.Direction;
 
 import net.minecraft.world.level.material.Fluid;
@@ -19,11 +21,11 @@ import buildcraft.lib.fluid.Tank;
 import buildcraft.lib.misc.CapUtil;
 
 public class TileAutoWorkbenchFluids extends TileAutoWorkbenchBase implements IDebuggable {
-    private final Tank tank1 = new Tank("tank1", Fluid.BUCKET_VOLUME * 6, this);
-    private final Tank tank2 = new Tank("tank2", Fluid.BUCKET_VOLUME * 6, this);
+    private final Tank tank1 = new Tank("tank1", net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME * 6, this);
+    private final Tank tank2 = new Tank("tank2", net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME * 6, this);
 
-    public TileAutoWorkbenchFluids() {
-        super(2, 2);
+    public TileAutoWorkbenchFluids(BlockPos pos, BlockState state) {
+        super(pos, state, 2, 2);
         tankManager.addAll(tank1, tank2);
         caps.addCapabilityInstance(CapUtil.CAP_FLUIDS, tankManager, EnumPipePart.CENTER);
         caps.addCapabilityInstance(CapUtil.CAP_FLUIDS, tank1, EnumPipePart.DOWN, EnumPipePart.NORTH, EnumPipePart.WEST);

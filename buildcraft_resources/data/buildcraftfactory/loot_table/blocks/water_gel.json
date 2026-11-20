@@ -1,0 +1,77 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "buildcraftfactory:gel",
+          "modifier": [
+            {
+              "type": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1,
+                "max": 2
+              },
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "buildcraftfactory:water_gel",
+                "state": {
+                  "stage": "spread_0"
+                }
+              }
+            },
+            {
+              "type": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1,
+                "max": 2
+              },
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "buildcraftfactory:water_gel",
+                "state": {
+                  "stage": "spread_1"
+                }
+              }
+            },
+            {
+              "type": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1,
+                "max": 2
+              },
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "buildcraftfactory:water_gel",
+                "state": {
+                  "stage": "spread_2"
+                }
+              }
+            },
+            {
+              "type": "minecraft:set_count",
+              "count": {
+                "type": "minecraft:uniform",
+                "min": 1,
+                "max": 2
+              },
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "buildcraftfactory:water_gel",
+                "state": {
+                  "stage": "spread_3"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "random_sequence": "buildcraftfactory:blocks/water_gel"
+}

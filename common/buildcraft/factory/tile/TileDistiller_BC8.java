@@ -8,6 +8,7 @@ package buildcraft.factory.tile;
 import java.io.IOException;
 import java.util.List;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.nbt.CompoundTag;
@@ -80,9 +81,9 @@ public class TileDistiller_BC8 extends TileBC_Neptune implements ITickable, IDeb
 
     public static final long MAX_MJ_PER_TICK = 6 * MjAPI.MJ;
 
-    public final Tank tankIn = new Tank("in", 4 * Fluid.BUCKET_VOLUME, this, this::isDistillableFluid);
-    public final Tank tankGasOut = new Tank("gasOut", 4 * Fluid.BUCKET_VOLUME, this);
-    public final Tank tankLiquidOut = new Tank("liquidOut", 4 * Fluid.BUCKET_VOLUME, this);
+    public final Tank tankIn = new Tank("in", 4 * net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME, this, this::isDistillableFluid);
+    public final Tank tankGasOut = new Tank("gasOut", 4 * net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME, this);
+    public final Tank tankLiquidOut = new Tank("liquidOut", 4 * net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME, this);
 
     private final MjBattery mjBattery = new MjBattery(1024 * MjAPI.MJ);
 
@@ -102,7 +103,8 @@ public class TileDistiller_BC8 extends TileBC_Neptune implements ITickable, IDeb
 
     private long powerAvgClient;
 
-    public TileDistiller_BC8() {
+    public TileDistiller_BC8(BlockPos pos, BlockState state) {
+        super(pos, state);
         tankIn.setCanDrain(false);
         tankGasOut.setCanFill(false);
         tankLiquidOut.setCanFill(false);
@@ -295,10 +297,10 @@ public class TileDistiller_BC8 extends TileBC_Neptune implements ITickable, IDeb
             FluidStack outGas = currentRecipe.outGas();
 
             FluidStack potentialIn = tankIn.drainInternal(reqIn, false);
-            boolean canExtract = reqIn.isFluidStackIdentical(potentialIn);
+            boolean canExtract = potentialIn != null && FluidStack.matches(reqIn, potentialIn);
 
-            boolean canFillLiquid = tankLiquidOut.fillInternal(outLiquid, false) == outLiquid.amount;
-            boolean canFillGas = tankGasOut.fillInternal(outGas, false) == outGas.amount;
+            boolean canFillLiquid = tankLiquidOut.fillInternal(outLiquid, false) == outLiquid.getAmount();
+            boolean canFillGas = tankGasOut.fillInternal(outGas, false) == outGas.getAmount();
 
             if (canExtract && canFillLiquid && canFillGas) {
                 hasWork = true;

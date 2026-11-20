@@ -36,6 +36,7 @@ def portedPackages = [
         'buildcraft/core/**',
         'buildcraft/transport/**',
         'buildcraft/energy/**',
+        'buildcraft/factory/**',
 ]
 
 // Client rendering, models, the guide book and the GUI screens inside the ported packages. They are ported in the
@@ -53,7 +54,6 @@ def deferredSources = [
         'buildcraft/lib/client/render/fluid/SpriteFluidFrozen.java',
         'buildcraft/lib/client/render/font/**',
         'buildcraft/lib/client/render/tile/RenderMachineWave.java',
-        'buildcraft/lib/client/render/tile/RenderPartCube.java',
         'buildcraft/lib/client/sprite/Atlas*.java',
         'buildcraft/lib/client/sprite/Dynamic*.java',
         'buildcraft/lib/client/sprite/SpriteAtlas.java',
@@ -96,6 +96,8 @@ deferredSources += [
         'buildcraft/transport/container/**',
         'buildcraft/energy/client/gui/**',
         'buildcraft/energy/container/**',
+        'buildcraft/factory/gui/**',
+        'buildcraft/factory/container/**',
 ]
 
 def mainResourceDirs = ['buildcraft_resources', 'BuildCraft-Localization', 'BuildCraftGuide/guide_resources']

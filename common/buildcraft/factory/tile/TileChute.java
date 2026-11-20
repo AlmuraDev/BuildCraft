@@ -16,12 +16,13 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.util.EntitySelectors;
+import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.core.Direction;
 import buildcraft.lib.tile.ITickable;
 import net.minecraft.resources.Identifier;
@@ -65,7 +66,8 @@ public class TileChute extends TileBC_Neptune implements ITickable, IDebuggable 
     private final MjBattery battery = new MjBattery(1 * MjAPI.MJ);
     private int progress = 0;
 
-    public TileChute() {
+    public TileChute(BlockPos pos, BlockState state) {
+        super(pos, state);
         caps.addProvider(new MjCapabilityHelper(new MjBatteryReceiver(battery)));
     }
 
@@ -77,7 +79,7 @@ public class TileChute extends TileBC_Neptune implements ITickable, IDebuggable 
     private void pickupItems(Direction currentSide) {
         AABB aabb = BoundingBoxUtil.extrudeFace(getPos(), currentSide, 0.25);
         int count = PICKUP_MAX;
-        for (ItemEntity entity : world.getEntitiesOfClass(ItemEntity.class, aabb, EntitySelectors.IS_ALIVE)) {
+        for (ItemEntity entity : world.getEntitiesOfClass(ItemEntity.class, aabb, EntitySelector.ENTITY_STILL_ALIVE)) {
             int moved = ItemTransactorHelper.move(new TransactorEntityItem(entity), inv, count);
             count -= moved;
             if (count <= 0) {
@@ -91,17 +93,10 @@ public class TileChute extends TileBC_Neptune implements ITickable, IDebuggable 
         List<Direction> sides = new ArrayList<>(Arrays.asList(Direction.values()));
         Collections.shuffle(sides, new Random());
         sides.removeIf(Predicate.isEqual(currentSide));
-        Stream.<Pair<Direction, ICapabilityProvider>>concat(
-            sides.stream()
-                .map(side -> Pair.of(side, world.getBlockEntity(pos.offset(side)))),
-            sides.stream()
-                .flatMap(side ->
-                    world.getEntitiesOfClass(Entity.class, new AABB(pos.offset(side))).stream()
-                        .filter(entity -> !(entity instanceof LivingEntity))
-                        .map(entity -> Pair.of(side, entity))
-                )
-        )
-            .map(sideProvider -> ItemTransactorHelper.getTransactor(sideProvider.getRight(), sideProvider.getLeft().getOpposite()))
+        // 1.12.2 also inserted into non-living entities with an item capability (minecarts); 26.3 entity
+        // capabilities aren't sided BlockCapabilities, so only blocks are filled. TODO(26.3): entity inventories.
+        sides.stream()
+            .map(side -> ItemTransactorHelper.getTransactor(world.getBlockEntity(pos.relative(side)), side.getOpposite()))
             .filter(Predicate.isEqual(NoSpaceTransactor.INSTANCE).negate())
             .forEach(transactor -> {
                 if (ItemTransactorHelper.move(inv, transactor, 1) > 0) {
@@ -109,7 +104,7 @@ public class TileChute extends TileBC_Neptune implements ITickable, IDebuggable 
                 }
             });
         if (didWork[0]) {
-            AdvancementUtil.unlockAdvancement(getOwner().getId(), ADVANCEMENT_DID_INSERT);
+            AdvancementUtil.unlockAdvancement(getOwner().id(), ADVANCEMENT_DID_INSERT);
         }
     }
 

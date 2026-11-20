@@ -1,10 +1,10 @@
 /* Copyright (c) 2016 SpaceToad and the BuildCraft team
- * 
+ *
  * This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not
  * distributed with this file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package buildcraft.factory;
 
-import net.minecraft.block.material.Material;
+import net.neoforged.bus.api.IEventBus;
 
 import buildcraft.lib.registry.RegistrationHelper;
 
@@ -29,8 +29,6 @@ import buildcraft.factory.tile.TileTank;
 
 public class BCFactoryBlocks {
 
-    private static final RegistrationHelper HELPER = new RegistrationHelper();
-
     public static BlockAutoWorkbenchItems autoWorkbenchItems;
     public static BlockMiningWell miningWell;
     public static BlockPump pump;
@@ -40,29 +38,29 @@ public class BCFactoryBlocks {
     public static BlockChute chute;
     public static BlockDistiller distiller;
     public static BlockHeatExchange heatExchange;
-
     // public static BlockAutoWorkbenchFluids autoWorkbenchFluids;
     public static BlockWaterGel waterGel;
 
-    public static void fmlPreInit() {
-        autoWorkbenchItems = HELPER.addBlockAndItem(new BlockAutoWorkbenchItems(Material.ROCK, "block.autoworkbench.item"));
-        miningWell = HELPER.addBlockAndItem(new BlockMiningWell(Material.IRON, "block.mining_well"));
-        pump = HELPER.addBlockAndItem(new BlockPump(Material.IRON, "block.pump"));
-        tube = HELPER.addBlock(new BlockTube(Material.IRON, "block.tube"));
-        floodGate = HELPER.addBlockAndItem(new BlockFloodGate(Material.IRON, "block.flood_gate"));
-        tank = HELPER.addBlockAndItem(new BlockTank(Material.IRON, "block.tank"));
-        chute = HELPER.addBlockAndItem(new BlockChute(Material.IRON, "block.chute"));
-        distiller = HELPER.addBlockAndItem(new BlockDistiller(Material.IRON, "block.distiller"));
-        heatExchange = HELPER.addBlockAndItem(new BlockHeatExchange(Material.IRON, "block.heat_exchange"));
-        waterGel = HELPER.addBlock(new BlockWaterGel(Material.CLAY, "block.water_gel"));
+    public static void fmlPreInit(IEventBus modBus) {
+        RegistrationHelper helper = new RegistrationHelper(BCFactory.MODID, modBus);
+        helper.addBlockAndItem("block.autoworkbench.item", BlockAutoWorkbenchItems::new, b -> autoWorkbenchItems = b);
+        helper.addBlockAndItem("block.mining_well", BlockMiningWell::new, b -> miningWell = b);
+        helper.addBlockAndItem("block.pump", BlockPump::new, b -> pump = b);
+        helper.addBlock("block.tube", BlockTube::new, b -> tube = b);
+        helper.addBlockAndItem("block.flood_gate", BlockFloodGate::new, b -> floodGate = b);
+        helper.addBlockAndItem("block.tank", BlockTank::new, b -> tank = b);
+        helper.addBlockAndItem("block.chute", BlockChute::new, b -> chute = b);
+        helper.addBlockAndItem("block.distiller", BlockDistiller::new, b -> distiller = b);
+        helper.addBlockAndItem("block.heat_exchange", BlockHeatExchange::new, b -> heatExchange = b);
+        helper.addBlock("block.water_gel", BlockWaterGel::new, b -> waterGel = b);
 
-        HELPER.registerTile(TileAutoWorkbenchItems.class, "tile.autoworkbench.item");
-        HELPER.registerTile(TileMiningWell.class, "tile.mining_well");
-        HELPER.registerTile(TilePump.class, "tile.pump");
-        HELPER.registerTile(TileFloodGate.class, "tile.flood_gate");
-        HELPER.registerTile(TileTank.class, "tile.tank");
-        HELPER.registerTile(TileChute.class, "tile.chute");
-        HELPER.registerTile(TileDistiller_BC8.class, "tile.distiller");
-        HELPER.registerTile(TileHeatExchange.class, "tile.heat_exchange");
+        helper.registerTile("tile.autoworkbench.item", TileAutoWorkbenchItems::new, () -> autoWorkbenchItems);
+        helper.registerTile("tile.mining_well", TileMiningWell::new, () -> miningWell);
+        helper.registerTile("tile.pump", TilePump::new, () -> pump);
+        helper.registerTile("tile.flood_gate", TileFloodGate::new, () -> floodGate);
+        helper.registerTile("tile.tank", TileTank::new, () -> tank);
+        helper.registerTile("tile.chute", TileChute::new, () -> chute);
+        helper.registerTile("tile.distiller", TileDistiller_BC8::new, () -> distiller);
+        helper.registerTile("tile.heat_exchange", TileHeatExchange::new, () -> heatExchange);
     }
 }

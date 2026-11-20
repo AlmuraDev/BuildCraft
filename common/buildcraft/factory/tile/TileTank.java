@@ -14,6 +14,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -63,15 +64,16 @@ public class TileTank extends TileBC_Neptune implements ITickable, IDebuggable, 
 
     private int lastComparatorLevel;
 
-    public TileTank() {
-        this(16 * Fluid.BUCKET_VOLUME);
+    public TileTank(BlockPos pos, BlockState state) {
+        this(pos, state, 16 * net.neoforged.neoforge.fluids.FluidType.BUCKET_VOLUME);
     }
 
-    protected TileTank(int capacity) {
-        this(new Tank("tank", capacity, null));
+    protected TileTank(BlockPos pos, BlockState state, int capacity) {
+        this(pos, state, new Tank("tank", capacity, null));
     }
 
-    protected TileTank(Tank tank) {
+    protected TileTank(BlockPos pos, BlockState state, Tank tank) {
+        super(pos, state);
         tank.setTileEntity(this);
         this.tank = tank;
         tankManager.add(tank);
@@ -100,7 +102,7 @@ public class TileTank extends TileBC_Neptune implements ITickable, IDebuggable, 
             int compLevel = getComparatorLevel();
             if (compLevel != lastComparatorLevel) {
                 lastComparatorLevel = compLevel;
-                markDirty();
+                setChanged();
             }
         }
     }
@@ -129,14 +131,14 @@ public class TileTank extends TileBC_Neptune implements ITickable, IDebuggable, 
             }
             if (fluid == null) {
                 fluid = held;
-            } else if (!fluid.isFluidEqual(held)) {
+            } else if (!FluidUtilBC.isFluidEqual(fluid, held)) {
                 return;
             }
         }
         if (fluid == null) {
             return;
         }
-        if (fluid.getFluid().isGaseous(fluid)) {
+        if (fluid.getFluid().getFluidType().isLighterThanAir()) {
             Collections.reverse(tanks);
         }
         TileTank prev = null;
@@ -294,11 +296,11 @@ public class TileTank extends TileBC_Neptune implements ITickable, IDebuggable, 
             }
         } else {
             total = total.copy();
-            total.amount = 0;
+            total.setAmount(0);
             for (TileTank t : tanks) {
                 FluidStack other = t.tank.getFluid();
                 if (other != null) {
-                    total.amount += other.amount;
+                    total.grow(other.getAmount());
                 }
                 capacity += t.tank.getCapacity();
             }
@@ -308,18 +310,18 @@ public class TileTank extends TileBC_Neptune implements ITickable, IDebuggable, 
 
     @Override
     public int fill(FluidStack resource, boolean doFill) {
-        if (resource == null || resource.amount <= 0) {
+        if (resource == null || resource.getAmount() <= 0) {
             return 0;
         }
         int filled = 0;
         List<TileTank> tanks = getTanks();
         for (TileTank t : tanks) {
             FluidStack current = t.tank.getFluid();
-            if (current != null && !current.isFluidEqual(resource)) {
+            if (current != null && !FluidUtilBC.isFluidEqual(current, resource)) {
                 return 0;
             }
         }
-        boolean gas = resource.getFluid().isGaseous(resource);
+        boolean gas = resource.getFluid().getFluidType().isLighterThanAir();
         if (gas) {
             Collections.reverse(tanks);
         }
@@ -330,9 +332,9 @@ public class TileTank extends TileBC_Neptune implements ITickable, IDebuggable, 
                 if (isPlayerInteracting & doFill) {
                     t.sendNetworkUpdate(NET_RENDER_DATA);
                 }
-                resource.amount -= tankFilled;
+                resource.shrink(tankFilled);
                 filled += tankFilled;
-                if (resource.amount == 0) {
+                if (resource.getAmount() == 0) {
                     break;
                 }
             }
@@ -350,7 +352,7 @@ public class TileTank extends TileBC_Neptune implements ITickable, IDebuggable, 
         if (resource == null) {
             return null;
         }
-        return drain(resource::isFluidEqual, resource.amount, doDrain);
+        return drain(fluid -> FluidUtilBC.isFluidEqual(resource, fluid), resource.getAmount(), doDrain);
     }
 
     // IFluidHandlerAdv
@@ -365,7 +367,7 @@ public class TileTank extends TileBC_Neptune implements ITickable, IDebuggable, 
         for (TileTank tile : tanks) {
             FluidStack fluid = tile.tank.getFluid();
             if (fluid != null) {
-                gas = fluid.getFluid().isGaseous(fluid);
+                gas = fluid.getFluid().getFluidType().isLighterThanAir();
                 break;
             }
         }
@@ -374,7 +376,7 @@ public class TileTank extends TileBC_Neptune implements ITickable, IDebuggable, 
         }
         FluidStack total = null;
         for (TileTank t : tanks) {
-            int realMax = maxDrain - (total == null ? 0 : total.amount);
+            int realMax = maxDrain - (total == null ? 0 : total.getAmount());
             if (realMax <= 0) {
                 break;
             }
@@ -385,9 +387,9 @@ public class TileTank extends TileBC_Neptune implements ITickable, IDebuggable, 
             }
             if (total == null) {
                 total = drained.copy();
-                total.amount = 0;
+                total.setAmount(0);
             }
-            total.amount += drained.amount;
+            total.grow(drained.getAmount());
         }
         return total;
     }

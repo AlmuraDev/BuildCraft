@@ -37,7 +37,7 @@ public class TileMiningWell extends TileMiner {
     private final SafeTimeTracker tracker = new SafeTimeTracker(256);
     private final WorldEventListenerAdapter worldEventListener = new WorldEventListenerAdapter() {
         @Override
-        public void notifyBlockUpdate(@Nonnull Level world,
+        public void sendBlockUpdated(@Nonnull Level world,
                                       @Nonnull BlockPos pos,
                                       @Nonnull BlockState oldState,
                                       @Nonnull BlockState newState,
@@ -50,8 +50,8 @@ public class TileMiningWell extends TileMiner {
         }
     };
 
-    public TileMiningWell() {
-        super();
+    public TileMiningWell(BlockPos pos, BlockState state) {
+        super(pos, state);
         caps.addCapabilityInstance(CapUtil.CAP_ITEM_TRANSACTOR, AutomaticProvidingTransactor.INSTANCE, EnumPipePart.VALUES);
     }
 
@@ -63,7 +63,7 @@ public class TileMiningWell extends TileMiner {
             progress += battery.extractPower(0, target - progress);
             if (progress >= target) {
                 progress = 0;
-                world.sendBlockBreakProgress(currentPos.hashCode(), currentPos, -1);
+                world.destroyBlockProgress(currentPos.hashCode(), currentPos, -1);
                 BlockUtil.breakBlockAndGetDrops(
                     (ServerLevel) world,
                     currentPos,
@@ -75,7 +75,7 @@ public class TileMiningWell extends TileMiner {
                 nextPos();
             } else {
                 if (!world.isEmptyBlock(currentPos)) {
-                    world.sendBlockBreakProgress(currentPos.hashCode(), currentPos, (int) ((progress * 9) / target));
+                    world.destroyBlockProgress(currentPos.hashCode(), currentPos, (int) ((progress * 9) / target));
                 }
             }
         } else if (shouldCheck || tracker.markTimeIfDelay(world)) {
@@ -92,13 +92,13 @@ public class TileMiningWell extends TileMiner {
         }
 
         Fluid fluid = BlockUtil.getFluidWithFlowing(world, currentPos);
-        return fluid == null || fluid.getViscosity() <= 1000;
+        return fluid == null || fluid.getFluidType().getViscosity() <= 1000;
     }
 
     private void nextPos() {
         currentPos = pos;
         while (true) {
-            currentPos = currentPos.down();
+            currentPos = currentPos.below();
             if (world.isOutsideBuildHeight(currentPos)) {
                 break;
             }
@@ -117,20 +117,20 @@ public class TileMiningWell extends TileMiner {
     }
 
     @Override
-    public void validate() {
-        super.validate();
+    public void clearRemoved() {
+        super.clearRemoved();
         if (!world.isClientSide()) {
             WorldEventListeners.add(world, worldEventListener);
         }
     }
 
     @Override
-    public void invalidate() {
-        super.invalidate();
+    public void setRemoved() {
+        super.setRemoved();
         if (!world.isClientSide()) {
             WorldEventListeners.remove(world, worldEventListener);
             if (currentPos != null) {
-                world.sendBlockBreakProgress(currentPos.hashCode(), currentPos, -1);
+                world.destroyBlockProgress(currentPos.hashCode(), currentPos, -1);
             }
         }
     }

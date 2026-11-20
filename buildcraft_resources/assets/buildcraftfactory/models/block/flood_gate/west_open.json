@@ -1,0 +1,33 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "particle": "buildcraftfactory:blocks/flood_gate/open",
+    "face": "buildcraftfactory:blocks/flood_gate/open"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        0,
+        16,
+        16
+      ],
+      "faces": {
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#face",
+          "cullface": "west"
+        }
+      }
+    }
+  ]
+}
