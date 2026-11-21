@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftfactory:blocks/tank"
+  "random_sequence": "buildcraftfactory:blocks/tank",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:tank"
+    }
+  ]
 }

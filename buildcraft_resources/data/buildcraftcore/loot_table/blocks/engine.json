@@ -23,5 +23,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftcore:blocks/engine"
+  "random_sequence": "buildcraftcore:blocks/engine",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:engine"
+    }
+  ]
 }

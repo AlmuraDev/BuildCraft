@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcrafttransport:blocks/filtered_buffer"
+  "random_sequence": "buildcrafttransport:blocks/filtered_buffer",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcrafttransport:filtered_buffer"
+    }
+  ]
 }

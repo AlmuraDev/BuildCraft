@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftfactory:blocks/heat_exchange"
+  "random_sequence": "buildcraftfactory:blocks/heat_exchange",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:heat_exchange"
+    }
+  ]
 }

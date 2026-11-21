@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftcore:blocks/marker_path"
+  "random_sequence": "buildcraftcore:blocks/marker_path",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:marker_path"
+    }
+  ]
 }

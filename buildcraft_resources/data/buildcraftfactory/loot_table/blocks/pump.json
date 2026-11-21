@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftfactory:blocks/pump"
+  "random_sequence": "buildcraftfactory:blocks/pump",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:pump"
+    }
+  ]
 }

@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftfactory:blocks/distiller"
+  "random_sequence": "buildcraftfactory:blocks/distiller",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:distiller"
+    }
+  ]
 }

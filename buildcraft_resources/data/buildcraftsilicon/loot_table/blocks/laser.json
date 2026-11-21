@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftsilicon:blocks/laser"
+  "random_sequence": "buildcraftsilicon:blocks/laser",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftsilicon:laser"
+    }
+  ]
 }

@@ -112,10 +112,8 @@ public class StatementParameterItemStack implements IStatementParameter {
         if (stack.isEmpty()) {
             return ImmutableList.of();
         }
-        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         List<String> tooltip = new java.util.ArrayList<>();
-        for (net.minecraft.network.chat.Component line : stack.getTooltipLines(
-            net.minecraft.world.item.Item.TooltipContext.of(mc.level), mc.player, TooltipFlag.NORMAL)) {
+        for (net.minecraft.network.chat.Component line : ClientTooltip.lines(stack)) {
             tooltip.add(line.getString());
         }
         if (!tooltip.isEmpty()) {
@@ -139,5 +137,15 @@ public class StatementParameterItemStack implements IStatementParameter {
     @Override
     public IStatementParameter[] getPossible(IStatementContainer source) {
         return null;
+    }
+
+    /** The client's tooltip for a stack. A separate class so the server never loads (or verifies) code that names
+     * client classes: passing the client level/player to getTooltipLines makes the verifier load them. */
+    private static final class ClientTooltip {
+        static List<net.minecraft.network.chat.Component> lines(ItemStack stack) {
+            net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+            return stack.getTooltipLines(net.minecraft.world.item.Item.TooltipContext.of(mc.level), mc.player,
+                TooltipFlag.NORMAL);
+        }
     }
 }

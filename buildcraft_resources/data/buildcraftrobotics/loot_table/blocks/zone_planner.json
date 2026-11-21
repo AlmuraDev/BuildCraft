@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftrobotics:blocks/zone_planner"
+  "random_sequence": "buildcraftrobotics:blocks/zone_planner",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftrobotics:zone_planner"
+    }
+  ]
 }

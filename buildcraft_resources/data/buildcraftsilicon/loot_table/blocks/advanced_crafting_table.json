@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftsilicon:blocks/advanced_crafting_table"
+  "random_sequence": "buildcraftsilicon:blocks/advanced_crafting_table",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftsilicon:advanced_crafting_table"
+    }
+  ]
 }

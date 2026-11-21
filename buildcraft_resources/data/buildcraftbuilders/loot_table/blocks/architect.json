@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftbuilders:blocks/architect"
+  "random_sequence": "buildcraftbuilders:blocks/architect",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftbuilders:architect"
+    }
+  ]
 }

@@ -525,6 +525,10 @@ def main(mods):
                     write_json(os.path.join(RES, 'data', mod, 'advancement', fn),
                                convert_advancement(data, warnings, mod + '/' + fn))
         for name, table in LOOT.get(mod, {}).items():
+            # Skipped when the block isn't registered (dev-only or disabled in the config): a loot table naming a
+            # missing block or item fails the whole registry load on 26.3
+            table = dict(table)
+            table.setdefault('neoforge:conditions', exists(mod + ':' + name))
             write_json(os.path.join(RES, 'data', mod, 'loot_table', 'blocks', name + '.json'), table)
     for tag, values in TAGS.items():
         if not any(v.lstrip('#').split(':')[0] in mods or v.startswith('#') for v in values):

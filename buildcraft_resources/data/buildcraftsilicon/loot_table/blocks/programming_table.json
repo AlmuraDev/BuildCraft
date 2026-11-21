@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftsilicon:blocks/programming_table"
+  "random_sequence": "buildcraftsilicon:blocks/programming_table",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftsilicon:programming_table"
+    }
+  ]
 }

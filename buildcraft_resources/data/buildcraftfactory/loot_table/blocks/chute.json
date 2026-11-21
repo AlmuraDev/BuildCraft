@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftfactory:blocks/chute"
+  "random_sequence": "buildcraftfactory:blocks/chute",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:chute"
+    }
+  ]
 }

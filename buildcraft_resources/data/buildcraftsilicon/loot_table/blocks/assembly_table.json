@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftsilicon:blocks/assembly_table"
+  "random_sequence": "buildcraftsilicon:blocks/assembly_table",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftsilicon:assembly_table"
+    }
+  ]
 }

@@ -73,5 +73,11 @@
       ]
     }
   ],
-  "random_sequence": "buildcraftfactory:blocks/water_gel"
+  "random_sequence": "buildcraftfactory:blocks/water_gel",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftfactory:water_gel"
+    }
+  ]
 }

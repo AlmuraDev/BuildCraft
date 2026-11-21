@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftcore:blocks/marker_volume"
+  "random_sequence": "buildcraftcore:blocks/marker_volume",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:marker_volume"
+    }
+  ]
 }

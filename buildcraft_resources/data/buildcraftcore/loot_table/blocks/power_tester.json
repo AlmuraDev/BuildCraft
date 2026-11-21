@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftcore:blocks/power_tester"
+  "random_sequence": "buildcraftcore:blocks/power_tester",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:power_tester"
+    }
+  ]
 }

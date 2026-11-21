@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftbuilders:blocks/quarry"
+  "random_sequence": "buildcraftbuilders:blocks/quarry",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftbuilders:quarry"
+    }
+  ]
 }

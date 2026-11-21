@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftsilicon:blocks/integration_table"
+  "random_sequence": "buildcraftsilicon:blocks/integration_table",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftsilicon:integration_table"
+    }
+  ]
 }

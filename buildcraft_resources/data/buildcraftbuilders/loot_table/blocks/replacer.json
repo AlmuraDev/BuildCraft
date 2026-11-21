@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftbuilders:blocks/replacer"
+  "random_sequence": "buildcraftbuilders:blocks/replacer",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftbuilders:replacer"
+    }
+  ]
 }

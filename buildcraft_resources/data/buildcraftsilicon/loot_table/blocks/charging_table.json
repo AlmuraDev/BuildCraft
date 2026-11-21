@@ -14,5 +14,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftsilicon:blocks/charging_table"
+  "random_sequence": "buildcraftsilicon:blocks/charging_table",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftsilicon:charging_table"
+    }
+  ]
 }

@@ -23,5 +23,11 @@
       }
     }
   ],
-  "random_sequence": "buildcraftcore:blocks/decorated"
+  "random_sequence": "buildcraftcore:blocks/decorated",
+  "neoforge:conditions": [
+    {
+      "type": "neoforge:registered",
+      "value": "buildcraftcore:decorated"
+    }
+  ]
 }
