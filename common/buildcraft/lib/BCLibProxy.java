@@ -69,6 +69,10 @@ public abstract class BCLibProxy {
         MessageManager.registerMessageClass(BCModules.LIB, MessageDebugRequest.class, MessageDebugRequest.HANDLER,
             LogicalSide.SERVER);
         MessageManager.registerMessageClass(BCModules.LIB, MessageDebugResponse.class, LogicalSide.CLIENT);
+        MessageManager.registerMessageClass(BCModules.LIB, buildcraft.lib.net.MessageGuideRecipes.Request.class,
+            buildcraft.lib.net.MessageGuideRecipes.Request.HANDLER, LogicalSide.SERVER);
+        MessageManager.registerMessageClass(BCModules.LIB, buildcraft.lib.net.MessageGuideRecipes.Response.class,
+            LogicalSide.CLIENT);
     }
 
     void fmlInit() {}

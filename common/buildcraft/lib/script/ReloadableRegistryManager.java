@@ -42,9 +42,8 @@ public enum ReloadableRegistryManager implements IReloadableRegistryManager {
             isLoadingAll = true;
 
             DATA_PACKS.reloadAll();
-            if (BuildCraftRegistryManager.managerResourcePacks != null) {
-                RESOURCE_PACKS.reloadAll();
-            }
+            // Resource pack registries (the guide's pages) aren't loaded here: this runs at load complete, before item
+            // components are bound, so every page naming an item failed. The guide loads them when it is first opened.
 
         } finally {
             isLoadingAll = false;

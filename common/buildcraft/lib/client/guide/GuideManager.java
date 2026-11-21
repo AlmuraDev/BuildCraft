@@ -120,6 +120,11 @@ public enum GuideManager implements ResourceManagerReloadListener {
 
     private boolean needsReload = true;
 
+    /** The server's recipes arrived (or changed): rebuild the guide's pages the next time it opens. */
+    public void onRecipesChanged() {
+        needsReload = true;
+    }
+
     /** Loads the guide if resources changed since it was last loaded (call before showing it). */
     public void reloadIfNeeded() {
         if (!needsReload) {

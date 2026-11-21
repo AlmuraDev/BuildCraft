@@ -48,7 +48,7 @@ public class MessageManager {
     public static final boolean DEBUG = BCDebugging.shouldDebugLog("lib.messages");
 
     /** Bumped whenever a message's format changes, so mismatched clients and servers refuse each other. */
-    public static final String PROTOCOL_VERSION = "1";
+    public static final String PROTOCOL_VERSION = "2";
 
     private static final Map<String, SortedMap<String, PerMessageInfo<?>>> MOD_MESSAGES = new TreeMap<>();
     private static final Map<Class<? extends IMessage>, PerMessageInfo<?>> MESSAGE_HANDLERS = new HashMap<>();

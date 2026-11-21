@@ -93,6 +93,8 @@ public class BCLibClient {
         MessageManager.setHandler(MessageMarker.class, MessageMarker.HANDLER, LogicalSide.CLIENT);
         MessageManager.setHandler(MessageObjectCacheResponse.class, MessageObjectCacheResponse.HANDLER, LogicalSide.CLIENT);
         MessageManager.setHandler(MessageDebugResponse.class, MessageDebugResponse.HANDLER, LogicalSide.CLIENT);
+        MessageManager.setHandler(buildcraft.lib.net.MessageGuideRecipes.Response.class,
+            buildcraft.lib.client.guide.parts.recipe.GuideRecipeAccess.RESPONSE_HANDLER, LogicalSide.CLIENT);
         buildcraft.lib.gui.config.GuiConfigManager.loadFromConfigFile();
     }
 
@@ -115,6 +117,17 @@ public class BCLibClient {
     @SubscribeEvent
     public static void onConnectToServer(ClientPlayerNetworkEvent.LoggingIn event) {
         BuildCraftObjectCaches.onClientJoinServer();
+        // The guide's crafting/smelting panels need the server's recipes (dedicated servers only; single player reads
+        // the integrated server directly)
+        buildcraft.lib.client.guide.parts.recipe.GuideRecipeAccess.onDisconnect();
+        if (buildcraft.lib.BCLibItems.isGuideEnabled()) {
+            buildcraft.lib.client.guide.parts.recipe.GuideRecipeAccess.requestFromServer();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onDisconnectFromServer(ClientPlayerNetworkEvent.LoggingOut event) {
+        buildcraft.lib.client.guide.parts.recipe.GuideRecipeAccess.onDisconnect();
     }
 
     @SubscribeEvent

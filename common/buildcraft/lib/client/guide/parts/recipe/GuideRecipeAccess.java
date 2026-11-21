@@ -23,19 +23,32 @@ import net.minecraft.world.item.crafting.display.ShapedCraftingRecipeDisplay;
 import net.minecraft.world.item.crafting.display.ShapelessCraftingRecipeDisplay;
 import net.minecraft.world.item.crafting.display.SlotDisplay;
 import net.minecraft.world.item.crafting.display.SlotDisplayContext;
+import buildcraft.lib.net.IMessage;
+import buildcraft.lib.net.IMessageHandler;
+import buildcraft.lib.net.MessageGuideRecipes;
+import buildcraft.lib.net.MessageManager;
 
 /** The recipes the guide shows, as resolved stacks.
  * <p>
  * 1.12.2 read every recipe from the client's recipe registry. 26.3 clients aren't sent recipes (only what the recipe
- * book shows), so the guide reads them from the integrated server: crafting and smelting panels appear in single
- * player and on LAN hosts, and are left out on a dedicated server. TODO(26.3): sync the recipes the guide needs. */
+ * book shows): in single player (and on a LAN host) the guide reads the integrated server's recipes; on a dedicated
+ * server it asks for them once per connection ({@link MessageGuideRecipes}) and uses what the server sends. */
 public final class GuideRecipeAccess {
     /** A crafting recipe in a 3x3 grid (index x + y * 3), each slot a list of alternatives. */
     public record Crafting(List<List<ItemStack>> grid, List<ItemStack> outputs) {}
 
     public record Smelting(List<ItemStack> inputs, List<ItemStack> outputs) {}
 
-    private static MinecraftServer cachedFor;
+    /** What the current recipes were built from: the integrated server, or {@link #remote} (null: nothing yet). */
+    private static Object cachedFor;
+    /** The recipe displays the dedicated server sent for this connection, or null if none arrived yet. */
+    @Nullable
+    private static volatile List<RecipeDisplay> remote;
+    /** The connection {@link #remote} belongs to (and that the request was sent on). */
+    @Nullable
+    private static Object requestedOn;
+    /** Parts of the server's answer received so far. */
+    private static final List<RecipeDisplay> receiving = new ArrayList<>();
     private static List<Crafting> crafting = Collections.emptyList();
     private static List<Smelting> smelting = Collections.emptyList();
 
@@ -58,23 +71,69 @@ public final class GuideRecipeAccess {
         return smelting;
     }
 
+    /** Asks a dedicated server for its recipes (called when the client joins a world, and again if needed). */
+    public static void requestFromServer() {
+        Minecraft mc = Minecraft.getInstance();
+        Object connection = mc.getConnection();
+        if (connection == null || mc.getSingleplayerServer() != null || connection == requestedOn) {
+            return;
+        }
+        requestedOn = connection;
+        remote = null;
+        receiving.clear();
+        MessageManager.sendToServer(new MessageGuideRecipes.Request());
+    }
+
+    /** Forgets the server's recipes (on leaving a world). */
+    public static void onDisconnect() {
+        requestedOn = null;
+        remote = null;
+        receiving.clear();
+        invalidate();
+    }
+
+    /** Receives the dedicated server's recipes ({@link MessageGuideRecipes.Response}). */
+    public static final IMessageHandler<MessageGuideRecipes.Response, IMessage> RESPONSE_HANDLER = (message, ctx) -> {
+        receiving.addAll(message.displays);
+        if (!message.last) {
+            return null;
+        }
+        remote = List.copyOf(receiving);
+        receiving.clear();
+        invalidate();
+        // Pages made before the recipes arrived are rebuilt the next time the guide opens
+        buildcraft.lib.client.guide.GuideManager.INSTANCE.onRecipesChanged();
+        return null;
+    };
+
     private static void refresh() {
         Minecraft mc = Minecraft.getInstance();
         MinecraftServer server = mc.getSingleplayerServer();
-        if (server == cachedFor) {
+        List<RecipeDisplay> fromServer = remote;
+        Object source = server != null ? server : fromServer;
+        if (source == cachedFor && source != null) {
             return;
         }
-        cachedFor = server;
+        cachedFor = source;
         crafting = new ArrayList<>();
         smelting = new ArrayList<>();
-        if (server == null || mc.level == null) {
+        if (mc.level == null) {
             return;
         }
         ContextMap context = SlotDisplayContext.fromLevel(mc.level);
-        for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
-            for (RecipeDisplay display : holder.value().display()) {
+        if (server != null) {
+            for (RecipeHolder<?> holder : server.getRecipeManager().getRecipes()) {
+                for (RecipeDisplay display : holder.value().display()) {
+                    add(display, context);
+                }
+            }
+        } else if (fromServer != null) {
+            for (RecipeDisplay display : fromServer) {
                 add(display, context);
             }
+        } else {
+            // Not asked yet on this connection (or the answer is on its way)
+            requestFromServer();
         }
     }
 
