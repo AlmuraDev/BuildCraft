@@ -755,7 +755,7 @@ public class PipeFlowFluids extends PipeFlow implements IFlowFluid, IDebuggable 
                 for (EnumPipePart part : EnumPipePart.VALUES) {
                     Section section = sections.get(part);
                     if (full || buffer.readBoolean()) {
-                        section.target = buffer.readShort();
+                        section.target = MathUtil.clamp(buffer.readShort(), 0, capacity);
                         if (full) {
                             section.clientAmountLast = section.clientAmountThis = section.target;
                         }
@@ -817,7 +817,8 @@ public class PipeFlowFluids extends PipeFlow implements IFlowFluid, IDebuggable 
         }
 
         void readFromNbt(CompoundTag nbt) {
-            this.amount = nbt.getShortOr("capacity", (short) 0);
+            // Pipes saved by 1.12.2 (or with another config) can hold more than this pipe's capacity now
+            this.amount = MathUtil.clamp(nbt.getShortOr("capacity", (short) 0), 0, capacity);
             this.lastSentAmount = nbt.getShortOr("lastSentAmount", (short) 0);
             this.ticksInDirection = nbt.getShortOr("ticksInDirection", (short) 0);
 
@@ -938,9 +939,11 @@ public class PipeFlowFluids extends PipeFlow implements IFlowFluid, IDebuggable 
                 offsetThis = VecUtil.offset(offsetLast, part.face, -FLOW_MULTIPLIER * (mult));
             }
 
-            double dx = offsetThis.x >= 0.5 ? -1 : offsetThis.x <= 0.5 ? 1 : 0;
-            double dy = offsetThis.y >= 0.5 ? -1 : offsetThis.y <= 0.5 ? 1 : 0;
-            double dz = offsetThis.z >= 0.5 ? -1 : offsetThis.z <= 0.5 ? 1 : 0;
+            // Keeps the offset within [-0.5, 0.5] (1.12.2 compared with +0.5 twice, so every axis jumped a whole
+            // block back and forth each tick)
+            double dx = offsetThis.x >= 0.5 ? -1 : offsetThis.x <= -0.5 ? 1 : 0;
+            double dy = offsetThis.y >= 0.5 ? -1 : offsetThis.y <= -0.5 ? 1 : 0;
+            double dz = offsetThis.z >= 0.5 ? -1 : offsetThis.z <= -0.5 ? 1 : 0;
             if (dx != 0 || dy != 0 || dz != 0) {
                 offsetThis = offsetThis.add(dx, dy, dz);
                 offsetLast = offsetLast.add(dx, dy, dz);

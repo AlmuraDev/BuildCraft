@@ -161,27 +161,11 @@ public class FluidRenderer {
         final double zb = realMax.z;
 
         if (type == FluidSpriteType.FROZEN) {
-            if (min.x > 1) {
-                xTexDiff = Math.floor(min.x);
-            } else if (min.x < 0) {
-                xTexDiff = Math.floor(min.x);
-            } else {
-                xTexDiff = 0;
-            }
-            if (min.y > 1) {
-                yTexDiff = Math.floor(min.y);
-            } else if (min.y < 0) {
-                yTexDiff = Math.floor(min.y);
-            } else {
-                yTexDiff = 0;
-            }
-            if (min.z > 1) {
-                zTexDiff = Math.floor(min.z);
-            } else if (min.z < 0) {
-                zTexDiff = Math.floor(min.z);
-            } else {
-                zTexDiff = 0;
-            }
+            // The texture tile this cuboid sits in. A small tolerance keeps boxes that poke a hair past a block edge
+            // (pipe connections reach -0.005 and 1.005) on their own tile instead of the neighbouring one.
+            xTexDiff = Math.floor(min.x + 0.01);
+            yTexDiff = Math.floor(min.y + 0.01);
+            zTexDiff = Math.floor(min.z + 0.01);
         } else {
             xTexDiff = 0;
             yTexDiff = 0;
@@ -348,6 +332,9 @@ public class FluidRenderer {
             if (invertV) {
                 realv = 1 - realv;
             }
+            // Never sample outside the fluid's own sprite (the atlas holds other textures next to it)
+            realu = Mth.clamp(realu, 0, 1);
+            realv = Mth.clamp(realv, 0, 1);
             vertex.texf(sprite.getU((float) realu), sprite.getV((float) realv));
         }
     }

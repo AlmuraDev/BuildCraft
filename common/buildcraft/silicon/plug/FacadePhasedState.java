@@ -31,7 +31,9 @@ public class FacadePhasedState implements IFacadePhasedState {
         FacadeBlockStateInfo stateInfo = FacadeStateManager.defaultState;
         if (nbt.contains("state")) {
             try {
-                BlockState blockState = NbtUtils.readBlockState(BuiltInRegistries.BLOCK, nbt.getCompoundOrEmpty("state"));
+                // Facades saved by 1.12.2 name the pre-flattening state (minecraft:stonebrick variant=stonebrick)
+                BlockState blockState = NbtUtils.readBlockState(BuiltInRegistries.BLOCK,
+                    buildcraft.lib.misc.LegacyBlockStates.upgrade(nbt.getCompoundOrEmpty("state")));
                 stateInfo = FacadeStateManager.validFacadeStates.get(blockState);
                 if (stateInfo == null) {
                     stateInfo = FacadeStateManager.defaultState;

@@ -60,7 +60,7 @@ public class RenderTank implements BlockEntityRenderer<TileTank, RecordedRenderS
             int light = state.lightCoords;
             FluidRenderer.vertex.lighti(Math.max(blocklight, LightCoordsUtil.block(light)), LightCoordsUtil.sky(light));
             FluidRenderer.renderFluid(FluidSpriteType.STILL, fluid, forRender.amount, tile.tank.getCapacity(), min, max,
-                state.translucent, sideRender);
+                state.fluid, sideRender);
         }
         state.finish();
     }

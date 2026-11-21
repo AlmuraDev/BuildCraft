@@ -129,6 +129,8 @@ public class TilePipeHolder extends TileBC_Neptune implements IPipeHolder, ITick
     private final Map<Direction, PluggableHolder> pluggables = new EnumMap<>(Direction.class);
     private Pipe pipe;
     private boolean scheduleRenderUpdate = true;
+    /** False until this tile's first tick (see {@link #update()}). */
+    private boolean firstTickDone = false;
     private final Set<PipeMessageReceiver> networkUpdates = EnumSet.noneOf(PipeMessageReceiver.class);
     private final Set<PipeMessageReceiver> networkGuiUpdates = EnumSet.noneOf(PipeMessageReceiver.class);
     private CompoundTag unknownData;
@@ -303,8 +305,13 @@ public class TilePipeHolder extends TileBC_Neptune implements IPipeHolder, ITick
 
         if (scheduleRenderUpdate) {
             scheduleRenderUpdate = false;
-            redrawBlock();
+            // The first tick's redraw is only for the client: clients get the pipe in the chunk data and redraw on
+            // their own first tick, so a server redraw then would send every loaded pipe to every client again
+            if (world.isClientSide() || firstTickDone) {
+                redrawBlock();
+            }
         }
+        firstTickDone = true;
 
         wireManager.tick();
 

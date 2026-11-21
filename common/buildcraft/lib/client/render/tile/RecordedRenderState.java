@@ -40,22 +40,27 @@ public class RecordedRenderState extends BlockEntityRenderState {
 
     public WorldRenderContext.Recording cutout = new WorldRenderContext.Recording();
     public WorldRenderContext.Recording translucent = new WorldRenderContext.Recording();
+    /** Fluid cuboids, drawn translucent with back faces culled ({@link WorldRenderContext#FLUID_BLOCK_ATLAS}). */
+    public WorldRenderContext.Recording fluid = new WorldRenderContext.Recording();
 
     /** Starts a new frame (call at the start of extraction). */
     public void reset() {
         cutout = new WorldRenderContext.Recording();
         translucent = new WorldRenderContext.Recording();
+        fluid = new WorldRenderContext.Recording();
     }
 
     /** Ends the frame (call at the end of extraction). */
     public void finish() {
         cutout.finish();
         translucent.finish();
+        fluid.finish();
     }
 
     public void submit(PoseStack poseStack, SubmitNodeCollector collector) {
         WorldRenderContext.Recording c = cutout;
         WorldRenderContext.Recording t = translucent;
+        WorldRenderContext.Recording f = fluid;
         if (!c.isEmpty()) {
             collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(TextureAtlas.LOCATION_BLOCKS),
                 (pose, buffer) -> c.replay(buffer, pose));
@@ -63,6 +68,10 @@ public class RecordedRenderState extends BlockEntityRenderState {
         if (!t.isEmpty()) {
             collector.submitCustomGeometry(poseStack, WorldRenderContext.TRANSLUCENT_BLOCK_ATLAS,
                 (pose, buffer) -> t.replay(buffer, pose));
+        }
+        if (!f.isEmpty()) {
+            collector.submitCustomGeometry(poseStack, WorldRenderContext.FLUID_BLOCK_ATLAS,
+                (pose, buffer) -> f.replay(buffer, pose));
         }
     }
 }

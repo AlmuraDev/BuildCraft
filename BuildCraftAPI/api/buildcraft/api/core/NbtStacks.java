@@ -71,15 +71,80 @@ public final class NbtStacks {
         return ItemStack.OPTIONAL_CODEC.parse(ops(), nbt).result().orElse(ItemStack.EMPTY);
     }
 
-    /** @return The 26.3 form of a stack saved by Minecraft 1.12.2. */
+    /** Runs the vanilla data fixer for 1.12.2 stacks, one at a time, off whatever thread asked. */
+    private static final java.util.concurrent.ExecutorService FIXER_THREAD =
+        java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "BuildCraft legacy item fixer");
+            t.setDaemon(true);
+            return t;
+        });
+
+    /** Set once the data fixer has hung or failed: from then on every 1.12.2 stack takes the direct upgrade. */
+    private static volatile boolean fixerBroken = false;
+
+    /** How long a caller waits for the data fixer before giving up on it (the first upgrade builds its rules). */
+    private static final long FIXER_TIMEOUT_FIRST_MS = 20_000;
+    private static final long FIXER_TIMEOUT_MS = 5_000;
+    private static volatile boolean fixerUsed = false;
+
+    /** @return The 26.3 form of a stack saved by Minecraft 1.12.2.
+     *
+     *          <p>The vanilla data fixer is never run on the calling thread: on a 26.3 dedicated server a fixer rule that
+     *          another thread left pending blocks DFU's Type.rewrite forever, which froze the server thread while it
+     *          loaded a 1.12.2 diamond pipe. The fixer runs on its own thread with a time limit; if it hangs or fails
+     *          the stack is upgraded directly (flattened id, count, the 1.12.2 tag kept as custom data). */
     @Nonnull
     public static CompoundTag upgradeLegacyItemStack(@Nonnull CompoundTag nbt) {
         CompoundTag fixed = legacyItemFixer.apply(nbt.copy());
+        if (!fixerBroken) {
+            java.util.concurrent.Future<CompoundTag> future = FIXER_THREAD.submit(() -> runDataFixer(fixed.copy()));
+            long timeout = fixerUsed ? FIXER_TIMEOUT_MS : FIXER_TIMEOUT_FIRST_MS;
+            try {
+                CompoundTag result = future.get(timeout, java.util.concurrent.TimeUnit.MILLISECONDS);
+                fixerUsed = true;
+                return result;
+            } catch (java.util.concurrent.TimeoutException e) {
+                fixerBroken = true;
+                future.cancel(true);
+                BCLog.logger.error("[api.nbt] The data fixer didn't upgrade a 1.12.2 item stack within " + timeout
+                    + " ms; upgrading 1.12.2 stacks directly from now on. Stack: " + nbt);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } catch (java.util.concurrent.ExecutionException e) {
+                BCLog.logger.warn("[api.nbt] The data fixer failed on a 1.12.2 item stack, upgrading it directly: " + nbt,
+                    e.getCause());
+            }
+        }
+        return upgradeDirectly(fixed);
+    }
+
+    private static CompoundTag runDataFixer(CompoundTag fixed) {
         int current = SharedConstants.getCurrentVersion().dataVersion().version();
         Dynamic<Tag> upgraded = DataFixers.getDataFixer().update(References.ITEM_STACK, new Dynamic<>(NbtOps.INSTANCE, fixed),
             DATA_VERSION_1_12_2, current);
         Tag tag = upgraded.getValue();
         return tag instanceof CompoundTag compound ? compound : new CompoundTag();
+    }
+
+    /** A 1.12.2 stack upgraded without the data fixer: the 1.13 flattening of id + damage, the count, and the 1.12.2
+     * tag kept whole under minecraft:custom_data (so nothing is lost; names and enchantments aren't converted). */
+    private static CompoundTag upgradeDirectly(CompoundTag legacy) {
+        String id = legacy.getStringOr("id", "minecraft:air");
+        int damage = legacy.getShortOr("Damage", (short) 0);
+        if (!id.contains(":")) {
+            id = "minecraft:" + id;
+        }
+        String flattened = net.minecraft.util.datafix.fixes.ItemStackTheFlatteningFix.updateItem(id, damage);
+        CompoundTag out = new CompoundTag();
+        out.putString("id", flattened != null ? flattened : id);
+        out.putInt("count", Math.max(1, legacy.getByteOr("Count", (byte) 1)));
+        CompoundTag tag = legacy.getCompoundOrEmpty("tag");
+        if (!tag.isEmpty()) {
+            CompoundTag components = new CompoundTag();
+            components.put("minecraft:custom_data", tag.copy());
+            out.put("components", components);
+        }
+        return out;
     }
 
     @Nonnull

@@ -10,6 +10,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.minecraft.util.LightCoordsUtil;
 
+import buildcraft.lib.misc.MathUtil;
 import buildcraft.api.transport.pipe.IPipeRenderOutput;
 
 import buildcraft.lib.client.render.OffsetVertexConsumer;
@@ -47,7 +48,10 @@ public enum PipeFlowRendererFluids implements IPipeFlowRenderer<PipeFlowFluids> 
         Arrays.fill(sides, true);
 
         double[] amounts = flow.getAmountsForRender(partialTicks);
-        Vec3[] offsets = flow.getOffsetsForRender(partialTicks);
+        // 1.12.2 slid the fluid's texture along with its flow offset. On 26.3 the fluid is the animated still sprite
+        // in the shared block atlas, and a shifted cuboid maps part of its faces outside that sprite (other textures
+        // flash through), so the texture stays put; the sprite's own animation shows the movement.
+        Vec3[] offsets = new Vec3[EnumPipePart.VALUES.length];
 
         int blocklight = forRender.getFluid().getFluidType().getLightLevel(forRender);
         int light = out.light();
@@ -62,7 +66,7 @@ public enum PipeFlowRendererFluids implements IPipeFlowRenderer<PipeFlowFluids> 
 
         for (Direction face : Direction.values()) {
             double size = ((Pipe) flow.pipe).getConnectedDist(face);
-            double amount = amounts[face.get3DDataValue()];
+            double amount = MathUtil.clamp(amounts[face.get3DDataValue()], 0, flow.capacity);
             if (face.getAxis() != Axis.Y) {
                 horizontal |= flow.pipe.isConnected(face) && amount > 0;
             }
@@ -94,7 +98,7 @@ public enum PipeFlowRendererFluids implements IPipeFlowRenderer<PipeFlowFluids> 
             }
         }
 
-        double amount = amounts[EnumPipePart.CENTER.getIndex()];
+        double amount = MathUtil.clamp(amounts[EnumPipePart.CENTER.getIndex()], 0, flow.capacity);
 
         double horizPos = 0.26;
 

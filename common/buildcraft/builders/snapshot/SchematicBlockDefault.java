@@ -382,7 +382,8 @@ public class SchematicBlockDefault implements ISchematicBlock {
         NBTUtilBC.readCompoundList(nbt.get("requiredBlockOffsets"))
             .map(NBTUtilBC::readLegacyPosTag)
             .forEach(requiredBlockOffsets::add);
-        blockState = NbtUtils.readBlockState(net.minecraft.core.registries.BuiltInRegistries.BLOCK, nbt.getCompoundOrEmpty("blockState"));
+        blockState = NbtUtils.readBlockState(net.minecraft.core.registries.BuiltInRegistries.BLOCK,
+            buildcraft.lib.misc.LegacyBlockStates.upgrade(nbt.getCompoundOrEmpty("blockState")));
         NBTUtilBC.readStringList(nbt.get("ignoredProperties"))
             .map(propertyName ->
                 blockState.getProperties().stream()

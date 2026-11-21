@@ -90,7 +90,7 @@ public class RenderHeatExchange implements BlockEntityRenderer<TileHeatExchange,
         state.reset();
         BlockState blockState = tile.getBlockState();
         if (tile.isStart() && blockState.getBlock() == BCFactoryBlocks.heatExchange) {
-            render(tile, blockState, state.lightCoords, partialTicks, state.translucent);
+            render(tile, blockState, state.lightCoords, partialTicks, state.fluid);
         }
         state.finish();
     }

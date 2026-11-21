@@ -120,7 +120,8 @@ public class SchematicBlockFluid implements ISchematicBlock {
 
     @Override
     public void deserializeNBT(CompoundTag nbt) throws InvalidInputDataException {
-        blockState = NbtUtils.readBlockState(net.minecraft.core.registries.BuiltInRegistries.BLOCK, nbt.getCompoundOrEmpty("blockState"));
+        blockState = NbtUtils.readBlockState(net.minecraft.core.registries.BuiltInRegistries.BLOCK,
+            buildcraft.lib.misc.LegacyBlockStates.upgrade(nbt.getCompoundOrEmpty("blockState")));
         isFlowing = nbt.getBooleanOr("isFlowing", false);
     }
 

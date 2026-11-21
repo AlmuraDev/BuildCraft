@@ -130,7 +130,7 @@ public class RenderPipeHolder implements BlockEntityRenderer<TilePipeHolder, Ren
                 (pose, buffer) -> cutout.replay(buffer, pose));
         }
         if (!translucent.isEmpty()) {
-            collector.submitCustomGeometry(poseStack, WorldRenderContext.TRANSLUCENT_BLOCK_ATLAS,
+            collector.submitCustomGeometry(poseStack, WorldRenderContext.FLUID_BLOCK_ATLAS,
                 (pose, buffer) -> translucent.replay(buffer, pose));
         }
         if (!state.items.isEmpty()) {

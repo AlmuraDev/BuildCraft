@@ -98,7 +98,7 @@ public class RenderDistiller implements BlockEntityRenderer<TileDistiller_BC8, R
         FluidRenderer.vertex.lighti(Math.max(blockLight, LightCoordsUtil.block(combinedLight)),
             LightCoordsUtil.sky(combinedLight));
         FluidRenderer.renderFluid(FluidSpriteType.STILL, fluid.fluid, fluid.amount, tank.getCapacity(), size.min,
-            size.max, state.translucent, null);
+            size.max, state.fluid, null);
     }
 
     static class TankRenderSizes {

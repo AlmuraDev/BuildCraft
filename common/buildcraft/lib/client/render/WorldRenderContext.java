@@ -27,6 +27,10 @@ public final class WorldRenderContext {
     /** Block-atlas quads with alpha (lasers). */
     public static final RenderType TRANSLUCENT_BLOCK_ATLAS = RenderTypes.entityTranslucent(TextureAtlas.LOCATION_BLOCKS);
 
+    /** Block-atlas fluid cuboids (tanks, pipes): translucent with back faces culled, as 1.12.2 drew them. Without
+     * culling each cuboid's far faces show through its near ones and swap order as the camera moves (flicker). */
+    public static final RenderType FLUID_BLOCK_ATLAS = RenderTypes.entityTranslucentCull(TextureAtlas.LOCATION_BLOCKS);
+
     private static PoseStack poseStack;
     private static Recording recording;
 
