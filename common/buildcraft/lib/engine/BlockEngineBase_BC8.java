@@ -62,6 +62,18 @@ public abstract class BlockEngineBase_BC8<E extends Enum<E> & IEngineType & Stri
         return engineTileTypes.containsKey(type);
     }
 
+    /** The engine type comes from the stack. 26.3's BlockItem places the default state (wood) and only applies the
+     * stack's block_state component afterwards, by which time the wood engine's tile already exists. */
+    @Override
+    @Nullable
+    public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
+        BlockState state = super.getStateForPlacement(context);
+        if (state == null) {
+            return null;
+        }
+        return state.setValue(getEngineProperty(), getType(context.getItemInHand()));
+    }
+
     @Override
     @Nullable
     public BlockEntityType<?> getTileType(BlockState state) {

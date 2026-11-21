@@ -64,6 +64,19 @@ public class BlockSpring extends BlockBCBase_Neptune implements EntityBlock, Til
         return state.getValue(SPRING_TYPE).tileType;
     }
 
+    /** The spring type comes from the stack: 26.3's BlockItem places the default state and only applies the stack's
+     * block_state component afterwards, after the default spring's tile (or none) was made. */
+    @Override
+    @Nullable
+    public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
+        BlockState state = super.getStateForPlacement(context);
+        if (state == null) {
+            return null;
+        }
+        return context.getItemInHand().getOrDefault(net.minecraft.core.component.DataComponents.BLOCK_STATE,
+            net.minecraft.world.item.component.BlockItemStateProperties.EMPTY).apply(state);
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
