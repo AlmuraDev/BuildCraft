@@ -66,7 +66,6 @@ def deferredSources = [
         'buildcraft/lib/client/render/HudRenderer.java',
         'buildcraft/lib/client/render/fluid/SpriteFluidFrozen.java',
         'buildcraft/lib/client/render/tile/RenderMachineWave.java',
-        'buildcraft/core/client/*Config*.java',
 ]
 
 // transport client and GUIs (render batch / GUIs batch)

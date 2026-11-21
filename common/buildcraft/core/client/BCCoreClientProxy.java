@@ -33,6 +33,7 @@ public class BCCoreClientProxy extends BCCoreProxy {
         super.fmlPreInit();
         BCCoreSprites.fmlPreInit();
         BCCoreModels.fmlPreInit();
+        ConfigScreenBC.register();
         BCCore.MOD_BUS.addListener(BCCoreModels::registerRenderers);
         DetachedRenderer.INSTANCE.addRenderer(RenderMatrixType.FROM_WORLD_ORIGIN, RenderVolumeBoxes.INSTANCE);
         RenderMarkerConnections.register();

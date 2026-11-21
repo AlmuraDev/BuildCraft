@@ -69,7 +69,7 @@ public class BCLibClient {
             buildcraft.lib.script.ReloadableRegistryManager.RESOURCE_PACKS;
         buildcraft.api.registry.BuildCraftRegistryManager.managerResourcePacks = resourceManager;
         resourceManager.registerRegistry(buildcraft.lib.client.guide.GuidePageRegistry.INSTANCE);
-        // TODO(26.3): the config change listener (lib/client/reload) and the config screen.
+        // TODO(26.3): the config change listener (lib/client/reload). The config screen is buildcraft.core.client.ConfigScreenBC.
         BCLibSprites.fmlPreInitClient();
 
         // Stacks in network messages are encoded with the client's registries
