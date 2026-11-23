@@ -91,10 +91,15 @@ public abstract class GuiBC8<C extends ContainerBC_Neptune> extends AbstractCont
     }
 
     private void updatePosition() {
-        leftPos = (width - xSize) / 2;
+        leftPos = computeLeftPos();
         topPos = (height - ySize) / 2;
         guiLeft = leftPos;
         guiTop = topPos;
+    }
+
+    /** Where the gui's left edge goes: centred, unless a subclass moves it (the auto workbench's recipe book). */
+    protected int computeLeftPos() {
+        return (width - xSize) / 2;
     }
 
     public int getGuiLeft() {

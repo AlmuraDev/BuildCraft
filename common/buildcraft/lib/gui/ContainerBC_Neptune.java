@@ -20,6 +20,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.RecipeBookMenu;
+import net.minecraft.world.inventory.RecipeBookType;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -43,7 +45,9 @@ import buildcraft.lib.net.MessageManager;
 import buildcraft.lib.net.PacketBufferBC;
 import buildcraft.lib.tile.item.IItemHandlerAdv;
 
-public abstract class ContainerBC_Neptune extends AbstractContainerMenu {
+/** Extends {@link RecipeBookMenu} (doing nothing by default) so a BuildCraft container can host 26.3's recipe book:
+ * the server only hands recipe book clicks to menus that are recipe book menus. */
+public abstract class ContainerBC_Neptune extends RecipeBookMenu {
     public static final boolean DEBUG = BCDebugging.shouldDebugLog("lib.container");
 
     protected static final IdAllocator IDS = new IdAllocator("container");
@@ -346,5 +350,22 @@ public abstract class ContainerBC_Neptune extends AbstractContainerMenu {
                 buffer.writeItemStack(stack);
             }
         });
+    }
+
+    // Recipe book (only containers that show one override these)
+
+    @Override
+    public RecipeBookMenu.PostPlaceAction handlePlacement(boolean useMaxItems, boolean allowDroppingItemsToClear,
+        net.minecraft.world.item.crafting.RecipeHolder<?> recipe, net.minecraft.server.level.ServerLevel level,
+        net.minecraft.world.entity.player.Inventory inventory) {
+        return RecipeBookMenu.PostPlaceAction.NOTHING;
+    }
+
+    @Override
+    public void fillCraftSlotsStackedContents(net.minecraft.world.entity.player.StackedItemContents stackedContents) {}
+
+    @Override
+    public RecipeBookType getRecipeBookType() {
+        return RecipeBookType.CRAFTING;
     }
 }
