@@ -42,12 +42,16 @@ public class RecordedRenderState extends BlockEntityRenderState {
     public WorldRenderContext.Recording translucent = new WorldRenderContext.Recording();
     /** Fluid cuboids, drawn translucent with back faces culled ({@link WorldRenderContext#FLUID_BLOCK_ATLAS}). */
     public WorldRenderContext.Recording fluid = new WorldRenderContext.Recording();
+    /** Cutout with back faces culled: for double-faced geometry (1.12.2's double-faced lasers relied on GL culling to
+     * hide the reversed copy; without culling both copies z-fight). */
+    public WorldRenderContext.Recording cutoutCull = new WorldRenderContext.Recording();
 
     /** Starts a new frame (call at the start of extraction). */
     public void reset() {
         cutout = new WorldRenderContext.Recording();
         translucent = new WorldRenderContext.Recording();
         fluid = new WorldRenderContext.Recording();
+        cutoutCull = new WorldRenderContext.Recording();
     }
 
     /** Ends the frame (call at the end of extraction). */
@@ -55,12 +59,18 @@ public class RecordedRenderState extends BlockEntityRenderState {
         cutout.finish();
         translucent.finish();
         fluid.finish();
+        cutoutCull.finish();
     }
 
     public void submit(PoseStack poseStack, SubmitNodeCollector collector) {
         WorldRenderContext.Recording c = cutout;
         WorldRenderContext.Recording t = translucent;
         WorldRenderContext.Recording f = fluid;
+        WorldRenderContext.Recording cc = cutoutCull;
+        if (!cc.isEmpty()) {
+            collector.submitCustomGeometry(poseStack, RenderTypes.entityCutoutCull(TextureAtlas.LOCATION_BLOCKS),
+                (pose, buffer) -> cc.replay(buffer, pose));
+        }
         if (!c.isEmpty()) {
             collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(TextureAtlas.LOCATION_BLOCKS),
                 (pose, buffer) -> c.replay(buffer, pose));

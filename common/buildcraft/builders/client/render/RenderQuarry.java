@@ -80,12 +80,16 @@ public class RenderQuarry implements BlockEntityRenderer<TileQuarry, RecordedRen
         BlockEntityRenderer.super.extractRenderState(tile, state, partialTicks, cameraPosition, breakProgress);
         state.reset();
         if (tile.frameBox.isInitialized() && tile.getLevel() != null) {
-            render(tile, partialTicks, state.translucent, RecordedRenderState.worldPose(tile.getBlockPos()));
+            render(tile, partialTicks, state.translucent, state.cutoutCull,
+                RecordedRenderState.worldPose(tile.getBlockPos()));
         }
         state.finish();
     }
 
-    private static void render(TileQuarry tile, float partialTicks, VertexConsumer buffer, PoseStack.Pose pose) {
+    /** The laser and the frame box stripes go into the translucent buffer; the gantry and drill, which are double faced,
+     * into the culled cutout one. */
+    private static void render(TileQuarry tile, float partialTicks, VertexConsumer buffer, VertexConsumer frameBuffer,
+        PoseStack.Pose pose) {
         final BlockPos min = tile.frameBox.min();
         final BlockPos max = tile.frameBox.max();
         double yOffset = 1 + 4 / 16D;
@@ -122,13 +126,13 @@ public class RenderQuarry implements BlockEntityRenderer<TileQuarry, RecordedRen
                 .add(tile.clientDrillPos.subtract(tile.prevClientDrillPos).scale(partialTicks));
             double top = max.getY() + 0.5;
 
-            laser(buffer, pose, FRAME, new Vec3(ip.x + 0.5, top, ip.z), new Vec3(ip.x + 0.5, top, max.getZ() + 12 / 16D));
-            laser(buffer, pose, FRAME, new Vec3(ip.x + 0.5, top, ip.z), new Vec3(ip.x + 0.5, top, min.getZ() + 4 / 16D));
-            laser(buffer, pose, FRAME, new Vec3(ip.x, top, ip.z + 0.5), new Vec3(max.getX() + 12 / 16D, top, ip.z + 0.5));
-            laser(buffer, pose, FRAME, new Vec3(ip.x, top, ip.z + 0.5), new Vec3(min.getX() + 4 / 16D, top, ip.z + 0.5));
-            laser(buffer, pose, FRAME_BOTTOM, new Vec3(ip.x + 0.5, ip.y + 1 + 4 / 16D, ip.z + 0.5),
+            laser(frameBuffer, pose, FRAME, new Vec3(ip.x + 0.5, top, ip.z), new Vec3(ip.x + 0.5, top, max.getZ() + 12 / 16D));
+            laser(frameBuffer, pose, FRAME, new Vec3(ip.x + 0.5, top, ip.z), new Vec3(ip.x + 0.5, top, min.getZ() + 4 / 16D));
+            laser(frameBuffer, pose, FRAME, new Vec3(ip.x, top, ip.z + 0.5), new Vec3(max.getX() + 12 / 16D, top, ip.z + 0.5));
+            laser(frameBuffer, pose, FRAME, new Vec3(ip.x, top, ip.z + 0.5), new Vec3(min.getX() + 4 / 16D, top, ip.z + 0.5));
+            laser(frameBuffer, pose, FRAME_BOTTOM, new Vec3(ip.x + 0.5, ip.y + 1 + 4 / 16D, ip.z + 0.5),
                 new Vec3(ip.x + 0.5, top, ip.z + 0.5));
-            laser(buffer, pose, DRILL, new Vec3(ip.x + 0.5, ip.y + 1 + yOffset, ip.z + 0.5),
+            laser(frameBuffer, pose, DRILL, new Vec3(ip.x + 0.5, ip.y + 1 + yOffset, ip.z + 0.5),
                 new Vec3(ip.x + 0.5, ip.y + yOffset, ip.z + 0.5));
         } else {
             LaserBoxRenderer.renderLaserBoxDynamic(tile.frameBox, BuildCraftLaserManager.STRIPES_WRITE, buffer, pose,

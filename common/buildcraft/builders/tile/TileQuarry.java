@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableList;
 
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Items;
@@ -414,11 +415,18 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
         frameBreakBlockPoses.remove(blockPos);
         framePlaceFramePoses.remove(blockPos);
         if (shouldBeFrame(blockPos)) {
-            if (world.getBlockState(blockPos).getBlock() != BCBuildersBlocks.frame) {
+            BlockState current = world.getBlockState(blockPos);
+            if (current.getBlock() != BCBuildersBlocks.frame) {
                 if (canIgnoreInFrameBox(blockPos)) {
                     frameBreakBlockPoses.add(blockPos);
                 } else {
                     framePlaceFramePoses.add(blockPos);
+                }
+            } else {
+                // Frames placed before 2026-11-22 kept the unconnected default state: connect them
+                BlockState connected = BCBuildersBlocks.frame.getConnectedState(world, blockPos);
+                if (connected != current) {
+                    world.setBlock(blockPos, connected, Block.UPDATE_CLIENTS);
                 }
             }
         } else {
@@ -1114,7 +1122,8 @@ public class TileQuarry extends TileBC_Neptune implements ITickable, IDebuggable
             if (canIgnoreInFrameBox(framePos)) {
                 return false;
             }
-            world.setBlockAndUpdate(framePos, BCBuildersBlocks.frame.defaultBlockState());
+            // The default state has no connections, and only the neighbours get updated by the placement
+            world.setBlockAndUpdate(framePos, BCBuildersBlocks.frame.getConnectedState(world, framePos));
             return true;
         }
 

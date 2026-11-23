@@ -57,6 +57,12 @@ public class BlockFrame extends BlockBCBase_Neptune {
         return block instanceof BlockFrame || block instanceof BlockQuarry;
     }
 
+    /** The state a frame placed at pos should have, connected to the frames (and quarry) already around it. The
+     * quarry places frames itself, so it can't rely on getStateForPlacement. */
+    public BlockState getConnectedState(BlockGetter world, BlockPos pos) {
+        return withConnections(defaultBlockState(), world, pos);
+    }
+
     private BlockState withConnections(BlockState state, BlockGetter world, BlockPos pos) {
         for (Direction side : Direction.values()) {
             state = state.setValue(CONNECTED_MAP.get(side), connectsTo(world.getBlockState(pos.relative(side))));
