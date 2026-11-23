@@ -246,7 +246,7 @@ public class TilePump extends TileMiner {
                 if (world.getBlockState(spring).getBlock() == BCCoreBlocks.spring) {
                     BlockEntity tile = world.getBlockEntity(spring);
                     if (tile instanceof ITileOilSpring) {
-                        springPositions.add(spring);
+                        springPositions.add(spring.immutable());
                     }
                 }
             }

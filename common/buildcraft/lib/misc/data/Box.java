@@ -134,7 +134,8 @@ public class Box implements IBox {
         List<BlockPos> blocks = new ArrayList<>();
 
         for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
-            blocks.add(pos);
+            // betweenClosed hands out one MutableBlockPos (1.12.2's getAllInBox gave immutable ones)
+            blocks.add(pos.immutable());
         }
 
         return blocks;
