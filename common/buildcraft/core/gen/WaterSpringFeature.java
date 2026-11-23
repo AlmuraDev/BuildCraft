@@ -47,7 +47,12 @@ public record WaterSpringFeature() implements Feature {
             int y = i > 0 ? minY + i : minY;
             BlockState springState = BCCoreBlocks.spring.defaultBlockState()
                 .setValue(BuildCraftProperties.SPRING_TYPE, EnumSpring.WATER);
-            level.setBlock(new BlockPos(origin.getX(), y, origin.getZ()), springState, 2);
+            BlockPos springPos = new BlockPos(origin.getX(), y, origin.getZ());
+            level.setBlock(springPos, springState, 2);
+            // The spring block can hold a tile (oil springs do), so world gen stored a "DUMMY" block entity for it
+            // that the finished chunk would fill in; water springs have none, which logged "Tried to load a block
+            // entity ... but failed" for every generated water spring. Drop it.
+            level.getChunk(springPos).removeBlockEntity(springPos);
             // Fill the column above with water up to the first air, so the spring flows straight away
             for (int j = y + 2; j < level.getMaxY(); j++) {
                 BlockPos above = new BlockPos(origin.getX(), j, origin.getZ());
