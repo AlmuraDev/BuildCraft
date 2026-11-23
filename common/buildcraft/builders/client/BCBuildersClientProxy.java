@@ -21,7 +21,7 @@ import buildcraft.builders.BCBuildersProxy;
 import buildcraft.builders.snapshot.MessageSnapshotResponse;
 
 /** Builders' client proxy, created by name from {@link BCBuildersProxy} so the server never loads it.
- * TODO(26.3): the blueprint previews in the replacer and library GUIs (1.12.2 drew a fake world of the snapshot). 1.12.2 also turned on the stencil buffer for the
+ * The replacer and tooltip snapshot previews are drawn by {@link SnapshotPreview}. 1.12.2 also turned on the stencil buffer for the
  * architect table's scan preview (BCBuildersConfig.enableStencil); 26.3's main render target always has one. */
 public class BCBuildersClientProxy extends BCBuildersProxy {
     @Override
@@ -29,6 +29,7 @@ public class BCBuildersClientProxy extends BCBuildersProxy {
         super.fmlPreInit();
         BCBuildersModels.fmlPreInit();
         BCBuilders.MOD_BUS.addListener(BCBuildersClientProxy::registerScreens);
+        SnapshotPreview.register(BCBuilders.MOD_BUS);
         MessageManager.setHandler(MessageSnapshotResponse.class, MessageSnapshotResponse.HANDLER, LogicalSide.CLIENT);
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post event) -> {
             if (!Minecraft.getInstance().isPaused()) {

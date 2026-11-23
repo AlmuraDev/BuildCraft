@@ -40,7 +40,9 @@ public class GuiReplacer extends GuiBC8<ContainerReplacer> {
     @Override
     protected void drawBackgroundLayer(float partialTicks) {
         ICON_GUI.drawAt(mainGui.rootElement);
-        // TODO(26.3): 1.12.2 drew a preview of the snapshot here (ClientSnapshots.renderSnapshot, a fake world)
+        buildcraft.builders.client.SnapshotPreview.draw(buildcraft.lib.gui.GuiDraw.graphics(),
+            BCBuildersItems.snapshot.getHeader(container.tile.invSnapshot.getStackInSlot(0)), guiLeft + 8, guiTop + 9,
+            160, 100);
     }
 
     @Override

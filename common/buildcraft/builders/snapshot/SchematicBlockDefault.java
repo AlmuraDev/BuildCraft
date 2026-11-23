@@ -445,4 +445,9 @@ public class SchematicBlockDefault implements ISchematicBlock {
         result = 31 * result + canBeReplacedWithBlocks.hashCode();
         return result;
     }
+
+    /** The state the GUI previews draw (client only reads it). */
+    public BlockState getPreviewState() {
+        return blockState;
+    }
 }

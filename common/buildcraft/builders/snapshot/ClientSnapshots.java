@@ -11,9 +11,8 @@ import java.util.List;
 
 import buildcraft.lib.net.MessageManager;
 
-/** The client's cache of snapshots it asked the server for (by key).
- * TODO(26.3 GUIs batch): 1.12.2 also drew snapshots into GUIs (renderSnapshot), through a fake world baked into a
- * vertex buffer; that comes back with the builders GUIs. */
+/** The client's cache of snapshots it asked the server for (by key). GUI previews of them are drawn by
+ * buildcraft.builders.client.SnapshotPreview. */
 public enum ClientSnapshots {
     INSTANCE;
 

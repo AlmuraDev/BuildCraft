@@ -145,4 +145,9 @@ public class SchematicBlockFluid implements ISchematicBlock {
         result = 31 * result + (isFlowing ? 1 : 0);
         return result;
     }
+
+    /** The state the GUI previews draw (client only reads it). */
+    public BlockState getPreviewState() {
+        return blockState;
+    }
 }
