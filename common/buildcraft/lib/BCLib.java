@@ -99,6 +99,7 @@ public class BCLib {
         NeoForge.EVENT_BUS.register(BCLibEventDist.class);
         NeoForge.EVENT_BUS.register(buildcraft.lib.world.WorldEventListeners.class);
         NeoForge.EVENT_BUS.addListener(BCLib::registerCommands);
+        NeoForge.EVENT_BUS.addListener(buildcraft.lib.misc.BlockUtil::onBlockDrops);
 
         modBus.addListener(MessageManager::onRegisterPayloads);
         modBus.addListener(TileTypes::onRegisterCapabilities);

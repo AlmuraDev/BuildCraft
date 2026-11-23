@@ -135,9 +135,26 @@ public final class BlockUtil {
         BlockState destroyed = block.playerWillDestroy(world, pos, state, fakePlayer);
         if (world.removeBlock(pos, false)) {
             block.destroy(world, pos, destroyed);
-            block.playerDestroy(world, fakePlayer, pos, destroyed, tile, tool);
+            breakingWithoutXp++;
+            try {
+                block.playerDestroy(world, fakePlayer, pos, destroyed, tile, tool);
+            } finally {
+                breakingWithoutXp--;
+            }
         }
         return true;
+    }
+
+    /** Above 0 while a BuildCraft machine breaks a block: its drops then carry no experience. */
+    private static int breakingWithoutXp = 0;
+
+    /** NeoForge's BlockDropsEvent gives every drop with a breaker and tool the block's experience (playerDestroy
+     * passes our fake player), so quarries and mining wells spilled xp orbs. 1.12.2's Forge only dropped experience
+     * for real players mining, so machines dropped none. Registered on the game bus by BCLib. */
+    public static void onBlockDrops(net.neoforged.neoforge.event.level.BlockDropsEvent event) {
+        if (breakingWithoutXp > 0) {
+            event.setDroppedExperience(0);
+        }
     }
 
     public static boolean destroyBlock(ServerLevel world, BlockPos pos, @Nonnull ItemStack tool, GameProfile owner) {
@@ -146,7 +163,12 @@ public final class BlockUtil {
             return false;
         }
 
-        world.destroyBlock(pos, true);
+        breakingWithoutXp++;
+        try {
+            world.destroyBlock(pos, true);
+        } finally {
+            breakingWithoutXp--;
+        }
 
         return true;
     }
